@@ -249,12 +249,18 @@ def feature_detection(file_name, params=None, cal_g_score=True, cal_a_score=True
             annotate_isotope(d)
         # if anno_in_source_fragment:
         #     annotate_in_source_fragment(d)
+        if anno_adduct:
+            annotate_adduct(d)
 
         # calc peak-peak correlations for feature groups
         ppc_score_dict = calc_all_ppc(d)
 
-        if anno_adduct:
-            annotate_adduct(d)
+        #########################
+        # prepare peak groups and rev cos match
+        # note: one roi (metabolic feature) can appear in multiple peak groups
+        #########################
+
+
 
         # annotate MS2 spectra
         if annotation and d.params.msms_library is not None:
