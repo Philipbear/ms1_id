@@ -2,30 +2,28 @@
 create a workflow for MS1_ID using masscube backend.
 """
 
-import os
 import multiprocessing
+import os
 import pickle
 from copy import deepcopy
-import pandas as pd
-import numpy as np
-from tqdm import tqdm
 
-from masscube.raw_data_utils import MSData, get_start_time
-from masscube.params import Params, find_ms_info
-# from masscube.feature_grouping import annotate_isotope, annotate_adduct, annotate_in_source_fragment
-from group_feature import annotate_isotope, calc_all_ppc, annotate_adduct
+from masscube.feature_grouping import annotate_isotope
 from masscube.alignment import feature_alignment, gap_filling, output_feature_table
-from masscube.annotation import feature_annotation, annotate_rois, output_ms2_to_msp
+from masscube.annotation import feature_annotation, annotate_rois
+from masscube.feature_table_utils import convert_features_to_df
 from masscube.normalization import sample_normalization
-from masscube.visualization import plot_ms2_matching_from_feature_table
-from masscube.network import network_analysis
-from masscube.stats import statistical_analysis
-from masscube.feature_table_utils import calculate_fill_percentage
+from masscube.params import Params, find_ms_info
+from masscube.raw_data_utils import MSData
+
+from annotate_adduct import annotate_adduct
+from calculate_ppc import calc_all_ppc
+from group_ppc_aligned_feature import generate_pseudo_ms1
 
 
-def main_workflow(path=None, batch_size=100, cpu_ratio=0.8):
+def main_workflow(path=None, ms1_id=True, ms2_id=False,
+                  batch_size=100, cpu_ratio=0.8):
     # init a new config object
-    config = init_config(path)
+    config = init_config(path, sample_dir='data')
 
     with open(os.path.join(config.project_dir, "project.mc"), "wb") as f:
         pickle.dump(config, f)
@@ -33,6 +31,8 @@ def main_workflow(path=None, batch_size=100, cpu_ratio=0.8):
     raw_file_names = os.listdir(config.sample_dir)
     raw_file_names = [f for f in raw_file_names if f.lower().endswith(".mzml") or f.lower().endswith(".mzxml")]
     raw_file_names = [f for f in raw_file_names if not f.startswith(".")]  # for Mac OS
+    total_file_num = len(raw_file_names)
+
     # skip the files that have been processed
     txt_files = os.listdir(config.single_file_dir)
     txt_files = [f.split(".")[0] for f in txt_files if f.lower().endswith(".txt")]
@@ -40,10 +40,12 @@ def main_workflow(path=None, batch_size=100, cpu_ratio=0.8):
     raw_file_names = [f for f in raw_file_names if f.split(".")[0] not in txt_files]
     raw_file_names = [os.path.join(config.sample_dir, f) for f in raw_file_names]
 
-    print("Total number of files to be processed: " + str(len(raw_file_names)))
+    print("\t{} raw file are found, {} files to be processed.".format(total_file_num, len(raw_file_names)))
+
     # process files by multiprocessing, each batch contains 100 files by default (tunable in batch_size)
-    print("Processing files by multiprocessing...")
+    print("Processing individual files for feature detection, evaluation, and grouping...")
     workers = int(multiprocessing.cpu_count() * cpu_ratio)
+    print("\tA total of {} CPU cores are detected, {} cores are used.".format(multiprocessing.cpu_count(), workers))
     for i in range(0, len(raw_file_names), batch_size):
         if len(raw_file_names) - i < batch_size:
             print("Processing files from " + str(i) + " to " + str(len(raw_file_names)))
@@ -54,67 +56,42 @@ def main_workflow(path=None, batch_size=100, cpu_ratio=0.8):
         p.close()
         p.join()
 
-    if not os.path.exists(os.path.join(config.project_dir, "aligned_feature_table_before_normalization.txt")):
-        # feature alignment
-        print("Aligning features...")
-        feature_table = feature_alignment(config.single_file_dir, config)
+    # feature alignment
+    print("Aligning features...")
+    features = feature_alignment(config.single_file_dir, config, drop_by_fill_pct_ratio=0.1)
 
-        # gap filling
-        print("Filling gaps...")
-        feature_table = gap_filling(feature_table, config)
+    # gap filling
+    print("Filling gaps...")
+    features = gap_filling(features, config)
 
-        # calculate fill percentage
-        feature_table = calculate_fill_percentage(feature_table, params.individual_sample_groups)
+    if ms1_id and config.msms_library is not None and os.path.exists(config.msms_library):
+        # generate pseudo ms1 spec from aligned table, for ms1_id
+        pseudo_ms1_spectra = generate_pseudo_ms1(config, features, align_rt_tol=0.1, hdbscan_prob_cutoff=0.2)
 
-        # annotation
-        print("Annotating features...")
-        if params.msms_library is not None and os.path.exists(params.msms_library):
-            feature_annotation(feature_table, params)
-        else:
-            print("No MS2 library is found. Skipping annotation...")
+        # perform rev cos search
 
-        output_path = os.path.join(params.project_dir, "ms2.msp")
-        output_ms2_to_msp(feature_table, output_path)
-    else:
-        feature_table = pd.read_csv(os.path.join(params.project_dir, "aligned_feature_table_before_normalization.txt"),
-                                    sep="\t")
+
+    # annotation (using MS2 library)
+    print("Annotating features (MS2)...")
+    if ms2_id and config.msms_library is not None and os.path.exists(config.msms_library):
+        features = feature_annotation(features, config)
+        print("\tMS2 annotation is completed.")
+
+    feature_table = convert_features_to_df(features, config.sample_names)
 
     # normalization
-    if params.run_normalization:
-        output_path = os.path.join(params.project_dir, "aligned_feature_table_before_normalization.txt")
-        output_feature_table(feature_table, output_path)
-        feature_table_before_normalization = deepcopy(feature_table)
+    if config.run_normalization:
         print("Running normalization...")
-        feature_table = sample_normalization(feature_table, params.individual_sample_groups,
-                                             params.normalization_method)
-
-    # statistical analysis
-    if params.run_statistics:
-        print("Running statistical analysis...")
-        feature_table_before_normalization = statistical_analysis(feature_table_before_normalization, params,
-                                                                  before_norm=True)
-        feature_table = statistical_analysis(feature_table, params)
+        output_path = os.path.join(config.project_dir, "aligned_feature_table_before_normalization.txt")
+        output_feature_table(feature_table, output_path)
+        # feature_table_before_normalization = deepcopy(feature_table)
+        feature_table = sample_normalization(feature_table, config.individual_sample_groups,
+                                             config.normalization_method)
 
     # output feature table
-    output_path = os.path.join(params.project_dir, "aligned_feature_table.txt")
+    output_path = os.path.join(config.project_dir, "aligned_feature_table.txt")
     output_feature_table(feature_table, output_path)
 
-    # network analysis
-    if params.run_network:
-        print("Running network analysis...This may take several minutes...")
-        network_analysis(feature_table)
-
-    # plot annoatated metabolites
-    if params.plot_ms2:
-        print("Plotting annotated metabolites...")
-        plot_ms2_matching_from_feature_table(feature_table, params)
-
-    # output feature table
-    output_path = os.path.join(params.project_dir, "aligned_feature_table.txt")
-    output_feature_table(feature_table, output_path)
-
-    # output parameters and metadata
-    params.output_parameters(os.path.join(params.project_dir, "data_processing_metadata.json"))
     print("The workflow is completed.")
 
 
@@ -145,22 +122,23 @@ def init_config(path=None, sample_dir='data'):
     ms_type, ion_mode, _ = find_ms_info(file_name)
 
     if ms_type == "orbitrap":
-        config.int_tol = 30000
+        config.int_tol = 5000
     elif ms_type == "tof":
-        config.int_tol = 1000
+        config.int_tol = 500
 
     ##########################
     # The project
     # config.project_dir = None  # Project directory, character string
-    config.sample_names = [f.split(".")[0] for f in os.listdir(config.sample_dir)]  # Absolute paths to the raw files, without extension, list of character strings
-    config.sample_groups = ["sample"] * len(config.sample_names)  # Sample groups, list of character strings
+    config.sample_names = [f.split(".")[0] for f in os.listdir(config.sample_dir)]
+    config.sample_groups = ["sample"] * len(config.sample_names)
     config.individual_sample_groups = ["sample"] * len(config.sample_names)
-    config.sample_group_num = 1  # Number of sample groups, integer
+    config.sample_group_num = 1
+
     # config.sample_dir = None  # Directory for the sample information, character string
     # config.single_file_dir = None  # Directory for the single file output, character string
     config.annotation_dir = None  # Directory for the annotation output, character string
     config.chromatogram_dir = None  # Directory for the chromatogram output, character string
-    config.network_dir = None  # DirectoTry for the network output, character string
+    config.network_dir = None  # Directory for the network output, character string
     config.statistics_dir = None  # Directory for the statistical analysis output, character string
 
     # MS data acquisition
@@ -171,12 +149,14 @@ def init_config(path=None, sample_dir='data'):
     config.mz_tol_ms1 = 0.01  # m/z tolerance for MS1, default is 0.01
     config.mz_tol_ms2 = 0.015  # m/z tolerance for MS2, default is 0.015
     # config.int_tol = 30000  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments, integer
-    config.roi_gap = 30  # Gap within a feature, default is 10 (i.e. 10 consecutive scans without signal), integer
-    config.min_ion_num = 10  # Minimum scan number a feature, default is 10, integer
+    config.roi_gap = 30  # Gap within a feature, default is 30 (i.e. 30 consecutive scans without signal), integer
+    config.ppr = 0.7  # Peak peak correlation threshold for feature grouping, default is 0.7
 
     # Parameters for feature alignment
     config.align_mz_tol = 0.01  # m/z tolerance for MS1, default is 0.01
     config.align_rt_tol = 0.2  # RT tolerance, default is 0.2
+    config.run_rt_correction = True  # Whether to perform RT correction, default is True
+    config.min_scan_num_for_alignment = 6  # Minimum scan number a feature to be aligned, default is 6
 
     # Parameters for feature annotation
     config.msms_library = None  # Path to the MS/MS library (.msp or .pickle), character string
@@ -244,30 +224,15 @@ def feature_detection(file_name, params=None, cal_g_score=True, cal_a_score=True
         # label short ROIs, find the best MS2, and sort ROIs by m/z
         d.summarize_roi(cal_g_score=cal_g_score, cal_a_score=cal_a_score)
 
-        # annotate isotopes, adducts, and in-source fragments
         if anno_isotope:
-            annotate_isotope(d)
+            annotate_isotope(d, mz_tol=0.015, rt_tol=0.1)
         # if anno_in_source_fragment:
         #     annotate_in_source_fragment(d)
         if anno_adduct:
-            annotate_adduct(d)
+            annotate_adduct(d, mz_tol=0.01, rt_tol=0.05)
 
-        # calc peak-peak correlations for feature groups
-        ppc_score_dict = calc_all_ppc(d)
-
-        #########################
-        # prepare peak groups and rev cos match
-        # note: one roi (metabolic feature) can appear in multiple peak groups
-        #########################
-
-
-
-        # annotate MS2 spectra
-        if annotation and d.params.msms_library is not None:
-            annotate_rois(d)
-
-        if params.plot_bpc:
-            d.plot_bpc(label_name=True, output=os.path.join(params.bpc_dir, d.file_name + "_bpc.png"))
+        # calc peak-peak correlations for feature groups and output
+        calc_all_ppc(d, rt_tol=0.1)
 
         # output single file to a txt file
         if d.params.output_single_file:
@@ -279,3 +244,6 @@ def feature_detection(file_name, params=None, cal_g_score=True, cal_a_score=True
         print("Error: " + str(e))
         return None
 
+
+if __name__ == "__main__":
+    main_workflow(path='')

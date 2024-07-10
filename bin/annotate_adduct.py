@@ -1,124 +1,14 @@
 """
-A module to group metabolic features from unique compounds
-1. annotate isotopes
-2. annotate adducts
-3. annotate in-source fragments
+annotate adduct for single files and aligned features
 """
 
-
 import numpy as np
-from collections import defaultdict
-
-
-def annotate_isotope(d, mz_tol=0.015, rt_tol=0.1):
-    """
-    Function to annotate isotopes in a MS data.
-
-    Parameters
-    ----------------------------------------------------------
-    d: MSData object
-        An MSData object.
-    """
-
-    # rank the rois (d.rois) in each file by m/z
-    d.rois.sort(key=lambda x: x.mz)
-
-    for r in d.rois:
-
-        if r.is_isotope:
-            continue
-
-        r.isotope_int_seq = [r.peak_height]
-        r.isotope_mz_seq = [r.mz]
-
-        last_mz = r.mz
-
-        # check if the current ion is doubly charged
-        r.charge_state = 1
-        target_mz = r.mz + 1.003355 / 2
-        v = np.where(np.logical_and(np.abs(d.roi_mz_seq - target_mz) < mz_tol, np.abs(d.roi_rt_seq - r.rt) < rt_tol))[0]
-        if len(v) > 0:
-            # intensity rules against M0
-            v = [v[i] for i in range(len(v)) if d.rois[v[i]].peak_height < 1.2 * r.peak_height]
-            v = [v[i] for i in range(len(v)) if d.rois[v[i]].peak_height > 0.01 * r.peak_height]
-            if len(v) > 0:
-                r.charge_state = 2
-
-        isotope_id_seq = []
-        target_mz = r.mz + 1.003355 / r.charge_state
-        total_int = r.peak_height
-
-        # find roi using isotope list
-        i = 0
-        while i < 5:  # maximum 5 isotopes
-            # if isotope is not found in two daltons, stop searching
-            if target_mz - last_mz > 2.2:
-                break
-
-            v = np.where(np.logical_and(np.abs(d.roi_mz_seq - target_mz) < mz_tol, np.abs(d.roi_rt_seq - r.rt) < rt_tol))[0]
-
-            if len(v) == 0:
-                i += 1
-                continue
-
-            # an isotope can't have intensity 1.2 fold or higher than M0 or 0.1% lower than the M0
-            v = [v[i] for i in range(len(v)) if d.rois[v[i]].peak_height < 1.2 * r.peak_height]
-            v = [v[i] for i in range(len(v)) if d.rois[v[i]].peak_height > 0.001 * total_int]
-
-            if len(v) == 0:
-                i += 1
-                continue
-
-            # for high-resolution data, C and N isotopes can be separated and need to be summed
-            total_int = np.sum([d.rois[vi].peak_height for vi in v])
-            last_mz = np.mean([d.rois[vi].mz for vi in v])
-
-            r.isotope_mz_seq.append(last_mz)
-            r.isotope_int_seq.append(total_int)
-
-            for vi in v:
-                d.rois[vi].is_isotope = True
-                isotope_id_seq.append(d.rois[vi].id)
-
-            target_mz = last_mz + 1.003355 / r.charge_state
-            i += 1
-
-        r.charge_state = get_charge_state(r.isotope_mz_seq)
-        r.isotope_id_seq = isotope_id_seq
-
-
-def calc_all_ppc(d):
-    """
-    A function to calculate all peak-peak correlations
-
-    Parameters
-    ----------------------------------------------------------
-    d: MSData object
-        An MSData object that contains the detected rois to be grouped.
-
-    Returns
-    ----------------------------------------------------------
-    ppc_scores: dict
-        A dictionary where keys are ROI IDs and values are dictionaries of
-        {other_roi_id: ppc_score} pairs.
-    """
-    rois = d.rois  # Assuming d.rois is a list of Roi objects
-    ppc_scores = defaultdict(dict)
-
-    for i, roi1 in enumerate(rois):
-        for j, roi2 in enumerate(rois[i + 1:], start=i + 1):
-            ppc = calculate_ppc(roi1, roi2)
-
-            # Store the PPC score for both ROIs
-            ppc_scores[roi1.id][roi2.id] = ppc
-            ppc_scores[roi2.id][roi1.id] = ppc
-
-    return ppc_scores
+from masscube.feature_grouping import peak_peak_correlation
 
 
 def annotate_adduct(d, mz_tol=0.01, rt_tol=0.05):
     """
-    A function to annotate adducts from the same compound.
+    A function to annotate adducts for single files
 
     Parameters
     ----------------------------------------------------------
@@ -167,7 +57,7 @@ def annotate_adduct(d, mz_tol=0.01, rt_tol=0.05):
             else:
                 v = v[0]
 
-            if calculate_ppc(r, d.rois[v]) > d.params.ppr:
+            if peak_peak_correlation(r, d.rois[v]) > d.params.ppr:
                 roi_to_label[v] = False
                 d.rois[v].adduct_type = adduct[i]['name']
                 d.rois[v].adduct_parent_roi_id = r.id
@@ -181,64 +71,7 @@ def annotate_adduct(d, mz_tol=0.01, rt_tol=0.05):
             r.adduct_type = default_single_adduct if r.charge_state == 1 else default_double_adduct
 
 
-def calculate_ppc(roi1, roi2):
-    """
-    A function to calculate the peak-peak correlation between two ROIs,
-    filling in zeros for missing intensities and using the entire vector.
-
-    Parameters
-    ----------------------------------------------------------
-    roi1: ROI object
-        An ROI object with attributes scan_idx_seq and int_seq.
-    roi2: ROI object
-        An ROI object with attributes scan_idx_seq and int_seq.
-
-    Returns
-    ----------------------------------------------------------
-    pp_cor: float
-        The peak-peak correlation between the two ROIs.
-    """
-    # Find the union of all scan indices
-    all_scans = np.union1d(roi1.scan_idx_seq, roi2.scan_idx_seq)
-
-    # Create full intensity vectors for both ROIs
-    int1 = np.zeros(len(all_scans))
-    int2 = np.zeros(len(all_scans))
-
-    # Fill in the intensities where they exist
-    idx1 = np.searchsorted(all_scans, roi1.scan_idx_seq)
-    idx2 = np.searchsorted(all_scans, roi2.scan_idx_seq)
-    int1[idx1] = roi1.int_seq
-    int2[idx2] = roi2.int_seq
-
-    # Handle special cases
-    if len(all_scans) <= 1:
-        return 0.0  # Not enough data points for correlation
-    if np.all(int1 == int1[0]) and np.all(int2 == int2[0]):
-        return 1.0 if int1[0] == int2[0] else 0.0  # All values are the same
-
-    # Calculate the correlation
-    pp_cor = np.corrcoef(int1, int2)[0, 1]
-
-    # Handle potential NaN result (e.g., if one vector is all zeros)
-    return 0.0 if np.isnan(pp_cor) else pp_cor
-
-
-def get_charge_state(mz_seq):
-    if len(mz_seq) < 2:
-        return 1
-    else:
-        mass_diff = mz_seq[1] - mz_seq[0]
-
-        # check mass diff is closer to 1 or 0.5 | note, mass_diff can be larger than 1
-        if abs(mass_diff - 1) < abs(mass_diff - 0.5):
-            return 1
-        else:
-            return 2
-
-
 def _calc_exact_mol_mass(mz, charge_state, ion_mode):
-
     if ion_mode == 'positive':
         if charge_state == 1:
             return mz - 1.00727645223
@@ -252,7 +85,6 @@ def _calc_exact_mol_mass(mz, charge_state, ion_mode):
 
 
 def _pop_adduct_list(_adduct_pos, _adduct_neg, ion_mode):
-
     if ion_mode == 'positive':
         copy_1 = list(_adduct_pos)
         copy_2 = list(_adduct_pos)
@@ -261,8 +93,6 @@ def _pop_adduct_list(_adduct_pos, _adduct_neg, ion_mode):
         copy_1 = list(_adduct_pos)
         copy_2 = list(_adduct_pos)
         return copy_1.pop(0), copy_2.pop(12)
-
-
 
 
 _adduct_pos = [
