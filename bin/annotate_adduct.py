@@ -59,7 +59,7 @@ def annotate_adduct(d, mz_tol=0.01, rt_tol=0.05):
 
             if peak_peak_correlation(r, d.rois[v]) > d.params.ppr:
                 roi_to_label[v] = False
-                d.rois[v].adduct_type = adduct[i]['name']
+                d.rois[v].adduct_type = adduct['name']
                 d.rois[v].adduct_parent_roi_id = r.id
                 r.adduct_child_roi_id.append(d.rois[v].id)
 
@@ -86,13 +86,13 @@ def _calc_exact_mol_mass(mz, charge_state, ion_mode):
 
 def _pop_adduct_list(_adduct_pos, _adduct_neg, ion_mode):
     if ion_mode == 'positive':
-        copy_1 = list(_adduct_pos)
-        copy_2 = list(_adduct_pos)
-        return copy_1.pop(0), copy_2.pop(16)
+        copy_1 = _adduct_pos.copy()
+        copy_2 = _adduct_pos.copy()
+        return copy_1[1:], copy_2[:16] + copy_2[17:]  # Remove first and 17th items
     else:
-        copy_1 = list(_adduct_pos)
-        copy_2 = list(_adduct_pos)
-        return copy_1.pop(0), copy_2.pop(12)
+        copy_1 = _adduct_neg.copy()
+        copy_2 = _adduct_neg.copy()
+        return copy_1[1:], copy_2[:12] + copy_2[13:]  # Remove first and 13th items
 
 
 _adduct_pos = [
@@ -121,7 +121,7 @@ _adduct_pos = [
     {'name': '[M+Fe]2+', 'm': 1, 'charge': 2, 'mass': 55.93383917}
 ]
 
-_adduct_neg = {
+_adduct_neg = [
     {'name': '[M-H]-', 'm': 1, 'charge': 1, 'mass': -1.00727645223},
     {'name': '[M+Cl]-', 'm': 1, 'charge': 1, 'mass': 34.968304102},
     {'name': '[M+Br]-', 'm': 1, 'charge': 1, 'mass': 78.91778902},
@@ -139,4 +139,4 @@ _adduct_neg = {
     {'name': '[M-2H]2-', 'm': 1, 'charge': 2, 'mass': -2.01455290446},
     {'name': '[M-H+Cl]2-', 'm': 1, 'charge': 2, 'mass': 33.96157622977},
     {'name': '[M-H+Br]2-', 'm': 1, 'charge': 2, 'mass': 77.91106114777},
-}
+]

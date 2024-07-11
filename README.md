@@ -12,3 +12,8 @@ use masscube workflow, add feature correlation, do rev cos search against librar
 - which compound classes are easier to have ISF, such that they can be annotated using MS1 (nist20)
 - rev cos match FDR
 - MS imaging
+
+## data
+- GNPS: ALL_GNPS_NO_PROPOGATED.msp, downloaded on July 11, 2024
+- MassBank (https://github.com/MassBank/MassBank-data/releases, MassBank_NIST, 2024.6 release), 120184 spectra
+- NIST20
