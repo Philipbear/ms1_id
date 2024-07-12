@@ -29,6 +29,7 @@ class SpecAnnotation:
         self.inchikey = None
         self.instrument_type = None
         self.collision_energy = None
+        self.peaks = None
 
     def __str__(self):
         return f"name {self.name}, score {self.score}, matched_peak {self.matched_peak}, db_id {self.db_id}"

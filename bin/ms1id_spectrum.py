@@ -19,7 +19,8 @@ def annotate_ms1_id(ms1_spectra,
                     mz_tol=0.01,
                     precursor_in_spec=True,
                     score_cutoff=0.8,
-                    min_matched_peak=6):
+                    min_matched_peak=6,
+                    min_relative_intensity_in_parent_ms2=0.05):
     """
     Perform ms1 annotation
     :param ms1_spectra: a list of PseudoMS1-like object
@@ -28,6 +29,7 @@ def annotate_ms1_id(ms1_spectra,
     :param precursor_in_spec: bool, whether the precursor is in the spectrum
     :param score_cutoff: float, score cutoff
     :param min_matched_peak: int, minimum number of matched peaks
+    :param min_relative_intensity_in_parent_ms2: float, minimum relative intensity in parent MS2
     :return: annotated ms1_spectra
     """
 
@@ -36,7 +38,8 @@ def annotate_ms1_id(ms1_spectra,
                              mz_tol=mz_tol,
                              precursor_in_spec=precursor_in_spec,
                              score_cutoff=score_cutoff,
-                             min_matched_peak=min_matched_peak)
+                             min_matched_peak=min_matched_peak,
+                             min_relative_intensity_in_parent_ms2=min_relative_intensity_in_parent_ms2)
 
 
 if __name__ == "__main__":
@@ -55,7 +58,8 @@ if __name__ == "__main__":
                                             mz_tol=0.01,
                                             precursor_in_spec=True,
                                             score_cutoff=0.8,
-                                            min_matched_peak=6)
+                                            min_matched_peak=6,
+                                            min_relative_intensity_in_parent_ms2=0.05)
 
     # print the results
     for spec in annotated_ms1_spectra:

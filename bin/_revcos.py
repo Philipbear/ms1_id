@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
-from _flash_revcos_search import FlashRevcosSearch
+from flash_revcos_search import FlashRevcosSearch
 from ms_entropy import read_one_spectrum
 from _utils import SpecAnnotation
 
@@ -53,7 +53,32 @@ def prepare_ms2_lib(ms2db, mz_tol=0.01):
 
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_spec=True,
-                      score_cutoff=0.8, min_matched_peak=6):
+                      score_cutoff=0.8, min_matched_peak=6, min_relative_intensity_in_parent_ms2=0.05):
+    """
+    Perform ms1 annotation
+    :param ms1_spec_ls: a list of PseudoMS1-like object
+    :param ms2_library: path to the pickle file, indexed library
+    :param mz_tol: mz tolerance in Da, for rev cos matching
+    :param precursor_in_spec: whether to ask the target precursor exists in the spectrum
+    :param score_cutoff: for rev cos
+    :param min_matched_peak: for rev cos
+    :param min_relative_intensity_in_parent_ms2: float, minimum relative intensity in parent MS2 such that ISF annotation is removed
+    :return: PseudoMS1-like object
+    """
+
+    # perform revcos matching
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=mz_tol, precursor_in_spec=precursor_in_spec,
+                                         score_cutoff=score_cutoff, min_matched_peak=min_matched_peak)
+
+    # refine the results
+    ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
+                                        min_relative_intensity_in_parent_ms2=min_relative_intensity_in_parent_ms2)
+
+    return ms1_spec_ls
+
+
+def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_spec=True,
+                           score_cutoff=0.8, min_matched_peak=6):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
@@ -104,41 +129,84 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_spec=T
                 v = np.array(valid_matches)
 
             if len(v) > 0:
-                print([search_eng[a]['name'] for a in v])
+                # print([search_eng[a]['name'] for a in v])
 
-                # Find the index of the match with the highest score
-                best_match_index = v[np.argmax(score_arr[v])]
+                for matched_index in v:
+                    # Get the details of each match
+                    matched_score = score_arr[matched_index]
+                    matched_peaks = matched_peak_arr[matched_index]
+                    # matched_spec_usage = spec_usage_arr[matched_index]
 
-                # Get the details of the best match
-                best_score = score_arr[best_match_index]
-                best_matched_peaks = matched_peak_arr[best_match_index]
-                # best_spec_usage = spec_usage_arr[best_match_index]
+                    # Get the corresponding spectrum from the search engine's database
+                    matched_spectrum = search_eng[matched_index]
+                    matched = {k.lower(): q for k, q in matched_spectrum.items()}
 
-                # Get the corresponding spectrum from the search engine's database
-                best_match_spectrum = search_eng[best_match_index]
-                matched = {k.lower(): v for k, v in best_match_spectrum.items()}
+                    # Create a SpecAnnotation object for the match
+                    annotation = SpecAnnotation(matched_score, matched_peaks)
 
-                # Create a SpecAnnotation object for the best match
-                annotation = SpecAnnotation(best_score, best_matched_peaks)
+                    # Fill in the database info from the matched spectrum
+                    annotation.db_id = matched.get('id')
+                    annotation.name = matched.get('name')
+                    annotation.precursor_type = matched.get('precursor_type')
+                    annotation.formula = matched.get('formula')
+                    annotation.inchikey = matched.get('inchikey')
+                    annotation.instrument_type = matched.get('instrument_type')
+                    annotation.collision_energy = matched.get('collision_energy')
+                    annotation.peaks = matched.get('peaks')
 
-                # Fill in the database info from the best match spectrum
-                annotation.db_id = matched.get('id')
-                annotation.name = matched.get('name')
-                annotation.precursor_type = matched.get('precursor_type')
-                annotation.formula = matched.get('formula')
-                annotation.inchikey = matched.get('inchikey')
-                annotation.instrument_type = matched.get('instrument_type')
-                annotation.collision_energy = matched.get('collision_energy')
+                    # Add the annotation to the spectrum
+                    spec.annotated = True
+                    spec.annotation_ls.append(annotation)
 
-                # Add the annotation to the spectrum
-                spec.annotated = True
-                spec.annotation_ls.append(annotation)
+                # sort the annotations by precursor m/z in descending order
+                spec.annotation_ls = sorted(spec.annotation_ls, key=lambda x: x.precursor_mz, reverse=True)
+
             else:
                 spec.annotated = False
         else:
             spec.annotated = False
 
     # After the loop, ms1_spec_ls will have updated annotations
+    return ms1_spec_ls
+
+
+def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, min_relative_intensity_in_parent_ms2=0.05):
+    """
+    Refine the ms1 id results, to avoid redundant annotations (ATP, ADP, AMP all annotated at the same RT)
+    :param ms1_spec_ls: a list of PseudoMS1-like object
+    :param mz_tol: float, mz tolerance
+    :param min_relative_intensity_in_parent_ms2: float, minimum relative intensity in parent MS2 such that ISF annotation is removed
+    :return: refined ms1_spec_ls
+    """
+
+    for spec in ms1_spec_ls:
+        if not spec.annotated or len(spec.annotation_ls) == 0:
+            continue
+
+        all_precursor_mzs = np.array([annotation.precursor_mz for annotation in spec.annotation_ls])
+        annotation_bool_arr = np.array([True] * len(spec.annotation_ls))
+
+        for i, annotation in enumerate(spec.annotation_ls):
+            # Skip if this annotation is already labeled as False
+            if not annotation_bool_arr[i]:
+                continue
+
+            # Get the peaks from the annotation
+            peaks = annotation.peaks
+            if peaks is None or len(peaks) == 0:
+                continue
+
+            # Get the m/z values of the peaks with relative intensities > min_relative_intensity_in_parent_ms2
+            max_intensity = np.max(peaks[:, 1])
+            peak_mzs = peaks[:, 0][peaks[:, 1] / max_intensity >= min_relative_intensity_in_parent_ms2]
+
+            # Check which precursor mzs exist in the peak mz list
+            matches = np.any(np.abs(all_precursor_mzs[i + 1:, np.newaxis] - peak_mzs) <= mz_tol, axis=1)
+            annotation_bool_arr[i + 1:][matches] = False
+
+        # Remove annotations that didn't pass the checks
+        spec.annotation_ls = [ann for ann, keep in zip(spec.annotation_ls, annotation_bool_arr) if keep]
+
     return ms1_spec_ls
 
 
@@ -155,11 +223,13 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
 
     out_list = []
     for spec in ms1_spec_ls:
+
+        pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f}" for mz, intensity in zip(spec.mzs, spec.intensities)])
+
         for annotation in spec.annotation_ls:
             # pseudo_ms1_str: mz1 int1; mz2 int2; ...
-            pseudo_ms1_str = ' '.join([f"{mz} {intensity}" for mz, intensity in zip(spec.mzs, spec.intensities)])
             out_list.append({
-                'rt': spec.rt,
+                'rt': round(spec.rt, 2) if spec.rt is not None else None,
                 'pseudo_ms1': pseudo_ms1_str,
                 'score': round(annotation.score, 4),
                 'matched_peak': annotation.matched_peak,
@@ -173,7 +243,7 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
             })
 
     out_df = pd.DataFrame(out_list)
-    out_df.to_csv(out_path, index=False)
+    out_df.to_csv(out_path, index=False, sep='\t')
 
 
 if __name__ == "__main__":

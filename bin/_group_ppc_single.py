@@ -34,7 +34,7 @@ def generate_pseudo_ms1_single(msdata, ppc_matrix, peak_cor_rt_tol=0.1, hdbscan_
             roi = roi_dict[feature_id]
             mz_ls.append(roi.mz)
             rt_ls.append(roi.rt)
-            int_ls.append(roi.intensity)
+            int_ls.append(roi.peak_height)
 
         avg_rt = sum(rt_ls) / len(rt_ls)
 

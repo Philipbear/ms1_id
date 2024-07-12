@@ -23,7 +23,7 @@ from _group_ppc_single import generate_pseudo_ms1_single
 
 
 # default parameters
-orbitrap_mass_detect_int_tol = 5000
+orbitrap_mass_detect_int_tol = 10000
 tof_mass_detect_int_tol = 500
 
 
@@ -180,6 +180,8 @@ def init_config(path=None, msms_library_path=None,
             config.int_tol = orbitrap_mass_detect_int_tol
         elif ms_type == "tof":
             config.int_tol = tof_mass_detect_int_tol
+        else:
+            config.int_tol = 10000
 
     ##########################
     # The project
@@ -375,7 +377,7 @@ def main_workflow_single(file_path,
 
     if plot_bpc:
         bpc_path = os.path.splitext(file_path)[0] + "_bpc.png"
-        d.plot_bpc(label_name=True, output=bpc_path)
+        d.plot_bpc(label_name=True, output_dir=bpc_path)
 
     # output single file to a txt file, in the same directory as the raw file
     out_path = os.path.splitext(file_path)[0] + ".txt"
@@ -397,6 +399,8 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
             config.int_tol = orbitrap_mass_detect_int_tol
         elif ms_type == "tof":
             config.int_tol = tof_mass_detect_int_tol
+        else:
+            config.int_tol = 10000
 
     ##########################
     # The project
@@ -466,11 +470,11 @@ if __name__ == "__main__":
     #               peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
     #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)
 
-    main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzML/data/000001527_RG8_01_6306.mzML',
+    main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzXML/std/Standards_p_1ugmL_glycocholic.mzXML',
                          msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                         mass_detect_int_tol=None,
-                         peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+                         mass_detect_int_tol=30000,  # default is 10000 for Orbitrap and 500 for TOF
+                         peak_cor_rt_tol=0.05, hdbscan_prob_cutoff=0.2,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
                          plot_bpc=False)
