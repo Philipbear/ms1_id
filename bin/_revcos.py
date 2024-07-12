@@ -52,39 +52,40 @@ def prepare_ms2_lib(ms2db, mz_tol=0.01):
     return search_engine
 
 
-def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_spec=True,
-                      score_cutoff=0.8, min_matched_peak=6, min_relative_intensity_in_parent_ms2=0.05):
+def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_int_in_ms1=0.01,
+                      score_cutoff=0.8, min_matched_peak=6, max_prec_rel_int_in_other_ms2=0.05):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
     :param ms2_library: path to the pickle file, indexed library
     :param mz_tol: mz tolerance in Da, for rev cos matching
-    :param precursor_in_spec: whether to ask the target precursor exists in the spectrum
+    :param min_prec_rel_int_in_ms1: float, minimum required precursor relative intensity in MS1 spectrum
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
-    :param min_relative_intensity_in_parent_ms2: float, minimum relative intensity in parent MS2 such that ISF annotation is removed
+    :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
     :return: PseudoMS1-like object
     """
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=mz_tol, precursor_in_spec=precursor_in_spec,
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
+                                         min_prec_rel_int_in_ms1=min_prec_rel_int_in_ms1,
                                          score_cutoff=score_cutoff, min_matched_peak=min_matched_peak)
 
     # refine the results
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
-                                        min_relative_intensity_in_parent_ms2=min_relative_intensity_in_parent_ms2)
+                                        max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
 
     return ms1_spec_ls
 
 
-def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_spec=True,
+def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_int_in_ms1=0.01,
                            score_cutoff=0.8, min_matched_peak=6):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
     :param ms2_library: path to the pickle file, indexed library
     :param mz_tol: mz tolerance in Da, for rev cos matching
-    :param precursor_in_spec: whether to ask the target precursor exists in the spectrum
+    :param min_prec_rel_int_in_ms1: float, minimum precursor relative intensity in MS1 spectrum
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
     :return: PseudoMS1-like object
@@ -116,26 +117,26 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_s
         v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
 
         if len(v) > 0:
-            if precursor_in_spec:
-                # Filter matches where precursor m/z is in the query spectrum
-                valid_matches = []
-                for idx in v:
-                    matched = {k.lower(): v for k, v in search_eng[idx].items()}
-                    precursor_mz = matched.get('precursor_mz')
-                    if precursor_mz is not None:
-                        # Check if precursor m/z is in the query spectrum (within mz_tol)
-                        if any(abs(mz - precursor_mz) <= mz_tol for mz in spec.mzs):
+            # Filter matches based on precursor relative intensity in MS1
+            valid_matches = []
+            max_intensity = max(spec.intensities)
+            for idx in v:
+                matched = {k.lower(): v for k, v in search_eng[idx].items()}
+                precursor_mz = matched.get('precursor_mz')
+                if precursor_mz is not None:
+                    # Find the closest m/z in the spectrum to the precursor m/z
+                    closest_mz_idx = np.argmin(np.abs(np.array(spec.mzs) - precursor_mz))
+                    if abs(spec.mzs[closest_mz_idx] - precursor_mz) <= mz_tol:
+                        relative_intensity = spec.intensities[closest_mz_idx] / max_intensity
+                        if relative_intensity >= min_prec_rel_int_in_ms1:
                             valid_matches.append(idx)
-                v = np.array(valid_matches)
+            v = np.array(valid_matches)
 
             if len(v) > 0:
-                # print([search_eng[a]['name'] for a in v])
-
                 for matched_index in v:
                     # Get the details of each match
                     matched_score = score_arr[matched_index]
                     matched_peaks = matched_peak_arr[matched_index]
-                    # matched_spec_usage = spec_usage_arr[matched_index]
 
                     # Get the corresponding spectrum from the search engine's database
                     matched_spectrum = search_eng[matched_index]
@@ -147,6 +148,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_s
                     # Fill in the database info from the matched spectrum
                     annotation.db_id = matched.get('id')
                     annotation.name = matched.get('name')
+                    annotation.precursor_mz = matched.get('precursor_mz')
                     annotation.precursor_type = matched.get('precursor_type')
                     annotation.formula = matched.get('formula')
                     annotation.inchikey = matched.get('inchikey')
@@ -170,12 +172,12 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_s
     return ms1_spec_ls
 
 
-def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, min_relative_intensity_in_parent_ms2=0.05):
+def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms2=0.05):
     """
     Refine the ms1 id results, to avoid redundant annotations (ATP, ADP, AMP all annotated at the same RT)
     :param ms1_spec_ls: a list of PseudoMS1-like object
     :param mz_tol: float, mz tolerance
-    :param min_relative_intensity_in_parent_ms2: float, minimum relative intensity in parent MS2 such that ISF annotation is removed
+    :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
     :return: refined ms1_spec_ls
     """
 
@@ -196,9 +198,9 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, min_relative_intensity_in_pa
             if peaks is None or len(peaks) == 0:
                 continue
 
-            # Get the m/z values of the peaks with relative intensities > min_relative_intensity_in_parent_ms2
+            # Get the m/z values of the peaks with relative intensities >= max_prec_rel_int_in_other_ms2
             max_intensity = np.max(peaks[:, 1])
-            peak_mzs = peaks[:, 0][peaks[:, 1] / max_intensity >= min_relative_intensity_in_parent_ms2]
+            peak_mzs = peaks[:, 0][peaks[:, 1] / max_intensity >= max_prec_rel_int_in_other_ms2]
 
             # Check which precursor mzs exist in the peak mz list
             matches = np.any(np.abs(all_precursor_mzs[i + 1:, np.newaxis] - peak_mzs) <= mz_tol, axis=1)

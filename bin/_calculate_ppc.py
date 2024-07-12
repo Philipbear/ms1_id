@@ -34,7 +34,7 @@ def peak_peak_correlation_numba(scan_idx1, int_seq1, scan_idx2, int_seq2):
             i += 1
             j += 1
 
-    if n < 5:
+    if n < 4:
         return 1.0
 
     numerator = n * sum_xy - sum_x * sum_y

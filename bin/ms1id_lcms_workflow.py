@@ -21,7 +21,6 @@ from _group_ppc_aligned_feature import generate_pseudo_ms1
 from _revcos import ms1_id_annotation, write_ms1_id_results
 from _group_ppc_single import generate_pseudo_ms1_single
 
-
 # default parameters
 orbitrap_mass_detect_int_tol = 10000
 tof_mass_detect_int_tol = 500
@@ -34,7 +33,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                   mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                   peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
-                  ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6):
+                  ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+                  ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05):
     """
     Main workflow for MS1_ID.
     :param project_path: path to the project directory
@@ -56,6 +56,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     :param hdbscan_prob_cutoff: HDBSCAN probability cutoff
     :param ms1id_score_cutoff: ms1 ID score cutoff
     :param ms1id_min_matched_peak: ms1 ID min matched peak
+    :param ms1id_min_prec_rel_int_in_ms1: ms1 ID, min precursor relative intensity in MS1
+    :param ms1id_max_prec_rel_int_in_other_ms2: ms1 ID, max precursor relative intensity in other MS2
     :return:
     """
 
@@ -114,7 +116,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
 
         # perform rev cos search
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
-                                               precursor_in_spec=True,
+                                               min_prec_rel_int_in_ms1=ms1id_min_prec_rel_int_in_ms1,
+                                               max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
         # write out ms1 id results
@@ -122,8 +125,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
         write_ms1_id_results(pseudo_ms1_spectra, output_path)
 
     # annotation (using MS2 library)
-    print("Annotating features (MS2)...")
     if ms2_id and config.msms_library is not None and os.path.exists(config.msms_library):
+        print("Annotating features (MS2)...")
         features = feature_annotation(features, config)
         print("\tMS2 annotation is completed.")
 
@@ -170,6 +173,7 @@ def init_config(path=None, msms_library_path=None,
     # determine the type of MS and ion mode
     file_names = os.listdir(config.sample_dir)
     file_names = [f for f in file_names if f.lower().endswith(".mzml") or f.lower().endswith(".mzxml")]
+    file_names = [f for f in file_names if not f.startswith(".")]  # for Mac OS
     file_name = os.path.join(config.sample_dir, file_names[0])
     ms_type, ion_mode, _ = find_ms_info(file_name)
 
@@ -186,7 +190,8 @@ def init_config(path=None, msms_library_path=None,
     ##########################
     # The project
     # config.project_dir = None  # Project directory, character string
-    config.sample_names = [f.split(".")[0] for f in os.listdir(config.sample_dir)]
+    config.sample_names = [f.split(".")[0] for f in os.listdir(config.sample_dir)
+                           if not f.startswith(".")]
     config.sample_groups = ["sample"] * len(config.sample_names)
     config.individual_sample_groups = ["sample"] * len(config.sample_names)
     config.sample_group_num = 1
@@ -213,7 +218,7 @@ def init_config(path=None, msms_library_path=None,
     config.align_mz_tol = align_mz_tol  # m/z tolerance for MS1, default is 0.01
     config.align_rt_tol = align_rt_tol  # RT tolerance, default is 0.2
     config.run_rt_correction = run_rt_correction  # Whether to perform RT correction, default is True
-    config.min_scan_num_for_alignment = 6  # Minimum scan number a feature to be aligned, default is 6
+    config.min_scan_num_for_alignment = 5  # Minimum scan number a feature to be aligned, default is 6
 
     # Parameters for feature annotation
     config.msms_library = msms_library_path  # Path to the MS/MS library (.msp or .pickle), character string
@@ -309,6 +314,7 @@ def main_workflow_single(file_path,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                          peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                         ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          plot_bpc=False):
     """
     Untargeted feature detection from a single file (.mzML or .mzXML).
@@ -363,7 +369,8 @@ def main_workflow_single(file_path,
         # perform rev cos search
         print('Performing MS1 ID annotation...')
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
-                                               precursor_in_spec=True,
+                                               min_prec_rel_int_in_ms1=ms1id_min_prec_rel_int_in_ms1,
+                                               max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
         # write out ms1 id results
@@ -430,7 +437,7 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
     config.align_mz_tol = 0.01  # m/z tolerance for MS1, default is 0.01
     config.align_rt_tol = 0.2  # RT tolerance, default is 0.2
     config.run_rt_correction = True  # Whether to perform RT correction, default is True
-    config.min_scan_num_for_alignment = 6  # Minimum scan number a feature to be aligned, default is 6
+    config.min_scan_num_for_alignment = 5  # Minimum scan number a feature to be aligned, default is 6
 
     # Parameters for feature annotation
     config.msms_library = msms_library_path  # Path to the MS/MS library (.msp or .pickle), character string
@@ -458,23 +465,25 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
 
 
 if __name__ == "__main__":
+    main_workflow(project_path='/Users/shipei/Documents/test_data/mzML',
+                  msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
+                  sample_dir='data',
+                  ms1_id=True, ms2_id=False,
+                  batch_size=100, cpu_ratio=0.8,
+                  run_rt_correction=True, run_normalization=True,
+                  mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
+                  align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+                  peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                  ms1id_min_prec_rel_int_in_ms1=0.01, ms1id_max_prec_rel_int_in_other_ms2=0.05)
 
-    # main_workflow(project_path='/Users/shipei/Documents/test_data/mzML',
-    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
-    #               sample_dir='data',
-    #               ms1_id=True, ms2_id=False,
-    #               batch_size=100, cpu_ratio=0.8,
-    #               run_rt_correction=True, run_normalization=False,
-    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
-    #               align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-    #               peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
-    #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)
-
-    main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzXML/std/Standards_p_1ugmL_glycocholic.mzXML',
-                         msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
-                         ms1_id=True, ms2_id=False,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                         mass_detect_int_tol=30000,  # default is 10000 for Orbitrap and 500 for TOF
-                         peak_cor_rt_tol=0.05, hdbscan_prob_cutoff=0.2,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
-                         plot_bpc=False)
+    # main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzXML/std/Standards_p_1ugmL_glycocholic.mzXML',
+    #                      msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
+    #                      ms1_id=True, ms2_id=False,
+    #                      mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+    #                      mass_detect_int_tol=30000,  # default is 10000 for Orbitrap and 500 for TOF
+    #                      peak_cor_rt_tol=0.05, hdbscan_prob_cutoff=0.2,
+    #                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+    #                      ms1id_min_prec_rel_int_in_ms1=0.01,
+    #                      ms1id_max_prec_rel_int_in_other_ms2=0.05,
+    #                      plot_bpc=False)

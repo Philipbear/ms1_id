@@ -17,29 +17,29 @@ def prepare_ms2_db(msp_path, mz_tol=0.01):
 def annotate_ms1_id(ms1_spectra,
                     msms_library_path,
                     mz_tol=0.01,
-                    precursor_in_spec=True,
+                    min_prec_rel_int_in_ms1=0.01,
                     score_cutoff=0.8,
                     min_matched_peak=6,
-                    min_relative_intensity_in_parent_ms2=0.05):
+                    max_prec_rel_int_in_other_ms2=0.05):
     """
     Perform ms1 annotation
     :param ms1_spectra: a list of PseudoMS1-like object
-    :param msms_library_path: path to the pickle file, indexed library
+    :param msms_library_path: path to the msms library
     :param mz_tol: float, mz tolerance
-    :param precursor_in_spec: bool, whether the precursor is in the spectrum
+    :param min_prec_rel_int_in_ms1: float, minimum relative intensity in the precursor ion
     :param score_cutoff: float, score cutoff
-    :param min_matched_peak: int, minimum number of matched peaks
-    :param min_relative_intensity_in_parent_ms2: float, minimum relative intensity in parent MS2
+    :param min_matched_peak: int, minimum matched peak
+    :param max_prec_rel_int_in_other_ms2: float, maximum relative intensity in the precursor ion
     :return: annotated ms1_spectra
     """
 
     return ms1_id_annotation(ms1_spec_ls=ms1_spectra,
                              ms2_library=msms_library_path,
                              mz_tol=mz_tol,
-                             precursor_in_spec=precursor_in_spec,
+                             min_prec_rel_int_in_ms1=min_prec_rel_int_in_ms1,
                              score_cutoff=score_cutoff,
                              min_matched_peak=min_matched_peak,
-                             min_relative_intensity_in_parent_ms2=min_relative_intensity_in_parent_ms2)
+                             max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
 
 
 if __name__ == "__main__":

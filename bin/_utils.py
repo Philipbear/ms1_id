@@ -24,6 +24,7 @@ class SpecAnnotation:
         self.matched_peak = matched_peak
         self.db_id = None
         self.name = None
+        self.precursor_mz = None
         self.precursor_type = None
         self.formula = None
         self.inchikey = None
