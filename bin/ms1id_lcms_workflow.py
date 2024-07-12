@@ -5,7 +5,6 @@ create a workflow for MS1_ID using masscube backend.
 import multiprocessing
 import os
 import pickle
-from copy import deepcopy
 
 from masscube.feature_grouping import annotate_isotope
 from masscube.alignment import feature_alignment, gap_filling, output_feature_table
@@ -17,9 +16,8 @@ from masscube.raw_data_utils import MSData
 
 from _annotate_adduct import annotate_adduct
 from _calculate_ppc import calc_all_ppc
-from _group_ppc_aligned_feature import generate_pseudo_ms1
 from _revcos import ms1_id_annotation, write_ms1_id_results
-from _group_ppc_single import generate_pseudo_ms1_single
+from _group_ppc import generate_pseudo_ms1, retrieve_pseudo_ms1_spectra
 
 # default parameters
 orbitrap_mass_detect_int_tol = 10000
@@ -32,7 +30,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                   run_rt_correction=True, run_normalization=False,
                   mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+                  peak_cor_rt_tol=0.1,
                   ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
                   ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05):
     """
@@ -110,9 +108,9 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
 
     if ms1_id and config.msms_library is not None and os.path.exists(config.msms_library):
         print("MS1 ID annotation...")
-        # generate pseudo ms1 spec from aligned table, for ms1_id
-        pseudo_ms1_spectra = generate_pseudo_ms1(config, features, peak_cor_rt_tol=peak_cor_rt_tol,
-                                                 hdbscan_prob_cutoff=hdbscan_prob_cutoff)
+
+        # get all presaved pseudo ms1 spectra
+        pseudo_ms1_spectra = retrieve_pseudo_ms1_spectra(config)
 
         # perform rev cos search
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
@@ -295,8 +293,10 @@ def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1,
             annotate_adduct(d, mz_tol=0.01, rt_tol=peak_cor_rt_tol)
 
         # calc peak-peak correlations for feature groups and output
-        calc_all_ppc(d, rt_tol=peak_cor_rt_tol,
-                     path=os.path.join(d.params.single_file_dir, d.file_name + "_peakCor.npz"))
+        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, save=False)
+
+        # generate pseudo ms1 spec, for ms1_id
+        generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol, save=True)
 
         # output single file to a txt file
         d.output_single_file()
@@ -312,7 +312,7 @@ def main_workflow_single(file_path,
                          msms_library_path,
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
-                         peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+                         peak_cor_rt_tol=0.1,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
                          ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          plot_bpc=False):
@@ -361,10 +361,9 @@ def main_workflow_single(file_path,
         print('Calculating peak-peak correlations...')
         ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, save=False)
 
-        # generate pseudo ms1 spec from aligned table, for ms1_id
+        # generate pseudo ms1 spec, for ms1_id
         print('Generating pseudo MS1 spectra...')
-        pseudo_ms1_spectra = generate_pseudo_ms1_single(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
-                                                        hdbscan_prob_cutoff=hdbscan_prob_cutoff)
+        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol)
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
@@ -465,25 +464,25 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
 
 
 if __name__ == "__main__":
-    # main_workflow(project_path='/Users/shipei/Documents/test_data/mzML',
-    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
-    #               sample_dir='data',
-    #               ms1_id=True, ms2_id=False,
-    #               batch_size=100, cpu_ratio=0.8,
-    #               run_rt_correction=True, run_normalization=True,
-    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
-    #               align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-    #               peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
-    #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
-    #               ms1id_min_prec_rel_int_in_ms1=0.01, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+    main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/std_mix_MSV000083297',
+                  msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
+                  sample_dir='data',
+                  ms1_id=True, ms2_id=False,
+                  batch_size=100, cpu_ratio=0.8,
+                  run_rt_correction=True, run_normalization=True,
+                  mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
+                  align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+                  peak_cor_rt_tol=0.1,
+                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                  ms1id_min_prec_rel_int_in_ms1=0.01, ms1id_max_prec_rel_int_in_other_ms2=0.05)
 
-    main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzXML/std/Standards_p_1ugmL_glycocholic.mzXML',
-                         msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
-                         ms1_id=True, ms2_id=False,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                         mass_detect_int_tol=30000,  # default is 10000 for Orbitrap and 500 for TOF
-                         peak_cor_rt_tol=0.05, hdbscan_prob_cutoff=0.2,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
-                         ms1id_min_prec_rel_int_in_ms1=0.01,
-                         ms1id_max_prec_rel_int_in_other_ms2=0.05,
-                         plot_bpc=False)
+    # main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzXML/std/Standards_p_1ugmL_glycocholic.mzXML',
+    #                      msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
+    #                      ms1_id=True, ms2_id=False,
+    #                      mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+    #                      mass_detect_int_tol=30000,  # default is 10000 for Orbitrap and 500 for TOF
+    #                      peak_cor_rt_tol=0.05,
+    #                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+    #                      ms1id_min_prec_rel_int_in_ms1=0.01,
+    #                      ms1id_max_prec_rel_int_in_other_ms2=0.05,
+    #                      plot_bpc=False)

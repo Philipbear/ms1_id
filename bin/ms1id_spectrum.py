@@ -17,9 +17,9 @@ def prepare_ms2_db(msp_path, mz_tol=0.01):
 def annotate_ms1_id(ms1_spectra,
                     msms_library_path,
                     mz_tol=0.01,
-                    min_prec_rel_int_in_ms1=0.01,
                     score_cutoff=0.8,
                     min_matched_peak=6,
+                    min_prec_rel_int_in_ms1=0.01,
                     max_prec_rel_int_in_other_ms2=0.05):
     """
     Perform ms1 annotation
@@ -56,10 +56,10 @@ if __name__ == "__main__":
     annotated_ms1_spectra = annotate_ms1_id(ms1_spectra=ms1_spectra,
                                             msms_library_path='data/MSMS.pkl',
                                             mz_tol=0.01,
-                                            precursor_in_spec=True,
                                             score_cutoff=0.8,
                                             min_matched_peak=6,
-                                            min_relative_intensity_in_parent_ms2=0.05)
+                                            min_prec_rel_int_in_ms1=0.01,
+                                            max_prec_rel_int_in_other_ms2=0.05)
 
     # print the results
     for spec in annotated_ms1_spectra:

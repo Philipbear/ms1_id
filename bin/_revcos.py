@@ -137,6 +137,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
                     # Get the details of each match
                     matched_score = score_arr[matched_index]
                     matched_peaks = matched_peak_arr[matched_index]
+                    spectral_usage = spec_usage_arr[matched_index]
 
                     # Get the corresponding spectrum from the search engine's database
                     matched_spectrum = search_eng[matched_index]
@@ -144,6 +145,11 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
 
                     # Create a SpecAnnotation object for the match
                     annotation = SpecAnnotation(matched_score, matched_peaks)
+
+                    annotation.spectral_usage = spectral_usage
+
+                    # annotation intensity: the intensity of the precursor peak in the MS1 spectrum
+                    annotation.intensity = spec.intensities[np.argmin(np.abs(np.array(spec.mzs) - matched.get('precursor_mz')))]
 
                     # Fill in the database info from the matched spectrum
                     annotation.db_id = matched.get('id')
@@ -231,10 +237,11 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
         for annotation in spec.annotation_ls:
             # pseudo_ms1_str: mz1 int1; mz2 int2; ...
             out_list.append({
-                'rt': round(spec.rt, 2) if spec.rt is not None else None,
+                'rt': round(spec.rt, 2) if spec.rt else None,
                 'pseudo_ms1': pseudo_ms1_str,
                 'score': round(annotation.score, 4),
                 'matched_peak': annotation.matched_peak,
+                'spectral_usage': round(annotation.spectral_usage, 4) if annotation.spectral_usage else None,
                 'db_id': annotation.db_id,
                 'name': annotation.name,
                 'precursor_type': annotation.precursor_type,

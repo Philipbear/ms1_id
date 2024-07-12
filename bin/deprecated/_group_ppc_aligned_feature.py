@@ -12,29 +12,28 @@ from scipy.sparse import csr_matrix, save_npz, load_npz
 from _utils import PseudoMS1, FeaturePair
 
 
-def generate_pseudo_ms1(config, features, peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+def generate_pseudo_ms1(config, features, peak_cor_rt_tol=0.1,
                         file_selection_mode='sum_normalized'):
     """
     Generate PseudoMS1 spectra
     :param config: Params
     :param features: list of Feature objects
     :param peak_cor_rt_tol: retention time tolerance for aligning features
-    :param hdbscan_prob_cutoff: probability cutoff for HDBSCAN clustering
     :param file_selection_mode: 'max_detection' or 'sum_normalized'
     :return: list of PseudoMS1 objects
     """
     feature_pair_ls = _gen_ppc_for_aligned_features(config, features, rt_tol=peak_cor_rt_tol)
 
-    cluster_features = _perform_hdbscan_for_feature_pairs(feature_pair_ls, hdbscan_prob_cutoff)
+    cluster_features = _perform_hdbscan_for_feature_pairs(feature_pair_ls)
 
-    pseudo_ms1_spectra = _map_hdbscan_labels_to_pseudo_ms1(config, features, cluster_features, file_selection_mode)
+    pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(config, features, cluster_features, file_selection_mode)
 
     return pseudo_ms1_spectra
 
 
-def _map_hdbscan_labels_to_pseudo_ms1(config, features, cluster_features, file_selection_mode='sum_normalized'):
+def _map_cluster_labels_to_pseudo_ms1(config, features, cluster_features, file_selection_mode='sum_normalized'):
     """
-    Map HDBSCAN cluster labels to PseudoMS1 objects
+    Map clustering labels to PseudoMS1 objects
     :param config: Params
     :param features: list of Feature objects
     :param cluster_features: dictionary of cluster labels and feature IDs
@@ -141,14 +140,13 @@ def _map_hdbscan_labels_to_pseudo_ms1(config, features, cluster_features, file_s
     return pseudo_ms1_spectra
 
 
-def _perform_hdbscan_for_feature_pairs(feature_pairs, prob_cutoff=0.2, min_cluster_size=5, min_samples=None):
+def _perform_hdbscan_for_feature_pairs(feature_pairs, min_cluster_size=5, min_samples=None):
     """
     Perform HDBSCAN clustering on FeaturePair objects
     :param feature_pairs: list of FeaturePair objects
-    :param prob_cutoff: probability cutoff for HDBSCAN clustering
     :param min_cluster_size: minimum cluster size for HDBSCAN
     :param min_samples: minimum number of samples for HDBSCAN
-    :return: all cluster labels, cluster features
+    :return: cluster features
     """
     unique_ids = list(set([fp.id_1 for fp in feature_pairs] + [fp.id_2 for fp in feature_pairs]))
     id_to_index = {id_: index for index, id_ in enumerate(unique_ids)}
@@ -173,17 +171,17 @@ def _perform_hdbscan_for_feature_pairs(feature_pairs, prob_cutoff=0.2, min_clust
     cluster_features = defaultdict(set)
     for index, (label, prob) in enumerate(zip(clusterer.labels_, clusterer.probabilities_)):
         feature_id = index_to_id[index]
-        if label != -1 and prob >= prob_cutoff:
+        if label != -1:
             cluster_features[label].add(feature_id)
         else:
             # Assign to the cluster with highest probability among neighboring points
-            neighbor_labels = clusterer.labels_[distance_matrix[index] < np.median(distance_matrix[index])]
-            if len(neighbor_labels) > 0:
-                # if all neighbors are noise points, continue
-                if np.all(neighbor_labels == -1):
-                    continue
-                most_common_label = np.argmax(np.bincount(neighbor_labels[neighbor_labels != -1]))
-                cluster_features[most_common_label].add(feature_id)
+            neighbor_indices = np.where(distance_matrix[index] < np.median(distance_matrix[index]))[0]
+            neighbor_labels = clusterer.labels_[neighbor_indices]
+            if len(neighbor_labels) > 0 and not np.all(neighbor_labels == -1):
+                valid_labels = neighbor_labels[neighbor_labels != -1]
+                if len(valid_labels) > 0:
+                    most_common_label = np.argmax(np.bincount(valid_labels))
+                    cluster_features[most_common_label].add(feature_id)
 
     return cluster_features
 
