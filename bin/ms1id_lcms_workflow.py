@@ -21,6 +21,7 @@ from _group_ppc_aligned_feature import generate_pseudo_ms1
 from _revcos import ms1_id_annotation, write_ms1_id_results
 from _group_ppc_single import generate_pseudo_ms1_single
 
+
 # default parameters
 orbitrap_mass_detect_int_tol = 5000
 tof_mass_detect_int_tol = 500
@@ -287,7 +288,8 @@ def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1,
             annotate_adduct(d, mz_tol=0.01, rt_tol=peak_cor_rt_tol)
 
         # calc peak-peak correlations for feature groups and output
-        calc_all_ppc(d, rt_tol=peak_cor_rt_tol)
+        calc_all_ppc(d, rt_tol=peak_cor_rt_tol,
+                     path=os.path.join(d.params.single_file_dir, d.file_name + "_peakCor.npz"))
 
         # output single file to a txt file
         d.output_single_file()
@@ -302,7 +304,7 @@ def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1,
 def main_workflow_single(file_path,
                          msms_library_path,
                          ms1_id=True, ms2_id=False,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
+                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                          peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
                          plot_bpc=False):
@@ -324,32 +326,40 @@ def main_workflow_single(file_path,
     d = MSData()
 
     # read raw data
+    print('Reading raw data...')
     d.read_raw_data(file_path, config)
 
     # detect region of interests (ROIs)
+    print('Detecting ROIs...')
     d.find_rois()
 
     # cut ROIs
     d.cut_rois()
 
     # label short ROIs, find the best MS2, and sort ROIs by m/z
+    print('Summarizing ROIs...')
     d.summarize_roi()
 
     # annotate isotopes, adducts
+    print('Annotating isotopes and adducts...')
     annotate_isotope(d)
     annotate_adduct(d)
 
     # generate pseudo ms1 spec for ms1_id
     if ms1_id and config.msms_library is not None:
         print("MS1 ID annotation...")
+
         # calc peak-peak correlations for feature groups and output
-        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol)
+        print('Calculating peak-peak correlations...')
+        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, save=False)
 
         # generate pseudo ms1 spec from aligned table, for ms1_id
+        print('Generating pseudo MS1 spectra...')
         pseudo_ms1_spectra = generate_pseudo_ms1_single(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
                                                         hdbscan_prob_cutoff=hdbscan_prob_cutoff)
 
         # perform rev cos search
+        print('Performing MS1 ID annotation...')
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
                                                precursor_in_spec=True,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
@@ -360,6 +370,7 @@ def main_workflow_single(file_path,
 
     # annotate MS2 spectra
     if ms2_id and config.msms_library is not None:
+        print("Annotating MS2 spectra...")
         annotate_rois(d)
 
     if plot_bpc:
@@ -407,7 +418,7 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
     # Feature detection
     config.mz_tol_ms1 = mz_tol_ms1  # m/z tolerance for MS1, default is 0.01
     config.mz_tol_ms2 = mz_tol_ms2  # m/z tolerance for MS2, default is 0.015
-    config.int_tol = mass_detect_int_tol  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments, integer
+    # config.int_tol = 30000  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments, integer
     config.roi_gap = 30  # Gap within a feature, default is 30 (i.e. 30 consecutive scans without signal), integer
     config.ppr = 0.7  # Peak peak correlation threshold for feature grouping, default is 0.7
 
@@ -443,23 +454,23 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
 
 
 if __name__ == "__main__":
-    # params = init_config(path='/Users/shipei/Documents/test_data/mzML')
-    # feature_detection(file_name='/Users/shipei/Documents/test_data/mzML/data/000001527_RG8_01_6306.mzML', params=params)
 
-    main_workflow(project_path='/Users/shipei/Documents/test_data/mzML',
-                  msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
-                  sample_dir='data',
-                  ms1_id=True, ms2_id=False,
-                  batch_size=100, cpu_ratio=0.8,
-                  run_rt_correction=True, run_normalization=False,
-                  mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
-                  align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
-                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)
+    # main_workflow(project_path='/Users/shipei/Documents/test_data/mzML',
+    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
+    #               sample_dir='data',
+    #               ms1_id=True, ms2_id=False,
+    #               batch_size=100, cpu_ratio=0.8,
+    #               run_rt_correction=True, run_normalization=False,
+    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
+    #               align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+    #               peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+    #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)
 
     main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzML/data/000001527_RG8_01_6306.mzML',
                          msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
                          ms1_id=True, ms2_id=False,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
+                         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+                         mass_detect_int_tol=None,
                          peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)
+                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                         plot_bpc=False)

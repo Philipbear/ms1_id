@@ -4,7 +4,7 @@ This is to get all features with high PPCs, generate pseudo MS1 for a single fil
 from collections import defaultdict
 import numpy as np
 import hdbscan
-from scipy.sparse import csr_matrix
+from scipy.sparse import lil_matrix, csr_matrix
 
 from _utils import PseudoMS1
 
@@ -57,7 +57,15 @@ def _filter_ppc_matrix_by_rt(msdata, ppc_matrix, rt_tol):
     rt_diff = np.abs(rt_array[:, np.newaxis] - rt_array)
     rt_mask = rt_diff <= rt_tol
 
-    filtered_matrix = ppc_matrix.multiply(csr_matrix(rt_mask))
+    # Convert to LIL format for efficient modification
+    lil_ppc_matrix = ppc_matrix.tolil()
+
+    # Apply the RT filter
+    lil_ppc_matrix[~rt_mask] = 0
+
+    # Convert back to CSR format for efficient computations
+    filtered_matrix = lil_ppc_matrix.tocsr()
+
     return filtered_matrix
 
 
