@@ -97,15 +97,6 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
         p.close()
         p.join()
 
-    # feature alignment
-    print("Aligning features...")
-    features = feature_alignment(config.single_file_dir, config,
-                                 drop_by_fill_pct_ratio=alignment_drop_by_fill_pct_ratio)
-
-    # gap filling
-    print("Filling gaps...")
-    features = gap_filling(features, config)
-
     if ms1_id and config.msms_library is not None and os.path.exists(config.msms_library):
         print("MS1 ID annotation...")
 
@@ -119,8 +110,17 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
         # write out ms1 id results
-        output_path = os.path.join(config.project_dir, "aligned_feature_table_ms1_id.tsv")
+        output_path = os.path.join(config.project_dir, "all_ms1_id_results.tsv")
         write_ms1_id_results(pseudo_ms1_spectra, output_path)
+
+    # feature alignment
+    print("Aligning features...")
+    features = feature_alignment(config.single_file_dir, config,
+                                 drop_by_fill_pct_ratio=alignment_drop_by_fill_pct_ratio)
+
+    # gap filling
+    print("Filling gaps...")
+    features = gap_filling(features, config)
 
     # annotation (using MS2 library)
     if ms2_id and config.msms_library is not None and os.path.exists(config.msms_library):
@@ -373,7 +373,7 @@ def main_workflow_single(file_path,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
         # write out ms1 id results
-        output_path = os.path.splitext(file_path)[0] + "_ms1_id.tsv"
+        output_path = os.path.splitext(file_path)[0] + "_ms1_id_results.tsv"
         write_ms1_id_results(pseudo_ms1_spectra, output_path)
 
     # annotate MS2 spectra

@@ -232,13 +232,14 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
     out_list = []
     for spec in ms1_spec_ls:
 
-        pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f}" for mz, intensity in zip(spec.mzs, spec.intensities)])
+        pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
             # pseudo_ms1_str: mz1 int1; mz2 int2; ...
             out_list.append({
+                'file_name': spec.file_name,
                 'rt': round(spec.rt, 2) if spec.rt else None,
-                'pseudo_ms1': pseudo_ms1_str,
+                'intensity': round(annotation.intensity, 0) if annotation.intensity else None,
                 'score': round(annotation.score, 4),
                 'matched_peak': annotation.matched_peak,
                 'spectral_usage': round(annotation.spectral_usage, 4) if annotation.spectral_usage else None,
@@ -248,7 +249,8 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
                 'formula': annotation.formula,
                 'inchikey': annotation.inchikey,
                 'instrument_type': annotation.instrument_type,
-                'collision_energy': annotation.collision_energy
+                'collision_energy': annotation.collision_energy,
+                # 'pseudo_ms1': pseudo_ms1_str
             })
 
     out_df = pd.DataFrame(out_list)

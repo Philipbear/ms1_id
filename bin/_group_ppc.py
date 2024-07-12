@@ -22,7 +22,7 @@ def retrieve_pseudo_ms1_spectra(config):
 
     files = os.listdir(config.single_file_dir)
     for file in files:
-        if file.endswith('_PseudoMS1.pkl'):
+        if file.endswith('_pseudoMS1.pkl'):
             try:
                 with open(os.path.join(config.single_file_dir, file), 'rb') as f:
                     new_pseudo_ms1_spectra = pickle.load(f)
