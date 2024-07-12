@@ -2,9 +2,9 @@ import os
 import pickle
 import numpy as np
 import pandas as pd
-from flash_revcos_search import FlashRevcosSearch
+from _flash_revcos_search import FlashRevcosSearch
 from ms_entropy import read_one_spectrum
-from group_ppc_aligned_feature import SpecAnnotation
+from _utils import SpecAnnotation
 
 
 def prepare_ms2_lib(ms2db, mz_tol=0.01):
@@ -49,6 +49,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.01):
         pickle.dump(search_engine, file)
 
     print(f"Pickle file saved to: {new_path}")
+    return search_engine
 
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_spec=True,
@@ -103,13 +104,15 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, precursor_in_spec=T
                 v = np.array(valid_matches)
 
             if len(v) > 0:
+                print([search_eng[a]['name'] for a in v])
+
                 # Find the index of the match with the highest score
                 best_match_index = v[np.argmax(score_arr[v])]
 
                 # Get the details of the best match
                 best_score = score_arr[best_match_index]
                 best_matched_peaks = matched_peak_arr[best_match_index]
-                best_spec_usage = spec_usage_arr[best_match_index]
+                # best_spec_usage = spec_usage_arr[best_match_index]
 
                 # Get the corresponding spectrum from the search engine's database
                 best_match_spectrum = search_eng[best_match_index]

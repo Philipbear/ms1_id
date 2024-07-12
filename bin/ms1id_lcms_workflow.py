@@ -15,10 +15,10 @@ from masscube.normalization import sample_normalization
 from masscube.params import Params, find_ms_info
 from masscube.raw_data_utils import MSData
 
-from annotate_adduct import annotate_adduct
-from calculate_ppc import calc_all_ppc
-from group_ppc_aligned_feature import generate_pseudo_ms1
-from revcos import ms1_id_annotation, write_ms1_id_results
+from _annotate_adduct import annotate_adduct
+from _calculate_ppc import calc_all_ppc
+from _group_ppc_aligned_feature import generate_pseudo_ms1
+from _revcos import ms1_id_annotation, write_ms1_id_results
 
 
 def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
@@ -307,7 +307,7 @@ if __name__ == "__main__":
                   mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                   peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
-                  ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6)
+                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)
 
     # from masscube.workflows import untargeted_metabolomics_workflow
     # untargeted_metabolomics_workflow(path='/Users/shipei/Documents/test_data/mzML')

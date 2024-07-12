@@ -9,9 +9,11 @@ import os
 from tqdm import tqdm
 from scipy.sparse import csr_matrix, save_npz, load_npz
 
+from _utils import PseudoMS1
+
 
 def generate_pseudo_ms1(config, features, peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
-                        file_selection_mode='max_detection'):
+                        file_selection_mode='sum_normalized'):
     """
     Generate PseudoMS1 spectra
     :param config: Params
@@ -74,7 +76,7 @@ def generate_pseudo_ms1(config, features, peak_cor_rt_tol=0.1, hdbscan_prob_cuto
 
                     file_intensities.append(intensity)
 
-                # Check if at leaat 20% of features are detected in this file
+                # Check if at least 20% of features are detected in this file
                 if detected_features >= min_detection_threshold:
                     files_passed_threshold += 1
 
@@ -246,25 +248,3 @@ class FeaturePair:
         self.file_roi_id_seq_2 = arr_2
         self.ppc_seq = np.zeros(len(arr_1))
 
-
-class PseudoMS1:
-    def __init__(self, mz_ls, int_ls, feature_ids, rt):
-        self.mzs = mz_ls
-        self.intensities = int_ls
-        self.feature_ids = feature_ids
-        self.rt = rt
-        self.annotated = False
-        self.annotation_ls = []
-
-
-class SpecAnnotation:
-    def __init__(self, score, matched_peak):
-        self.score = score
-        self.matched_peak = matched_peak
-        self.db_id = None
-        self.name = None
-        self.precursor_type = None
-        self.formula = None
-        self.inchikey = None
-        self.instrument_type = None
-        self.collision_energy = None
