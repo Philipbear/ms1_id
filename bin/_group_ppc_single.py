@@ -3,7 +3,7 @@ This is to get all features with high PPCs, generate pseudo MS1 for a single fil
 """
 from collections import defaultdict
 import numpy as np
-from hdbscan import HDBSCAN, all_points_membership_vectors
+import hdbscan
 from scipy.sparse import lil_matrix, csr_matrix
 
 from _utils import PseudoMS1
@@ -21,12 +21,24 @@ def generate_pseudo_ms1_single(msdata, ppc_matrix, peak_cor_rt_tol=0.1, hdbscan_
     # Filter PPC matrix based on RT tolerance
     filtered_ppc_matrix = _filter_ppc_matrix_by_rt(msdata, ppc_matrix, peak_cor_rt_tol)
 
-    all_cluster_labels, cluster_features = _perform_hdbscan(filtered_ppc_matrix, hdbscan_prob_cutoff)
+    cluster_features = _perform_hdbscan(filtered_ppc_matrix, hdbscan_prob_cutoff)
 
+    pseudo_ms1_spectra = _map_hdb_labels_to_pseudo_ms1(msdata, cluster_features)
+
+    return pseudo_ms1_spectra
+
+
+def _map_hdb_labels_to_pseudo_ms1(msdata, cluster_features):
+    """
+    Map HDBSCAN labels to PseudoMS1 spectra
+    :param msdata: MSData object
+    :param cluster_features: dictionary of cluster labels and feature indices
+    :return: list of PseudoMS1 objects
+    """
     pseudo_ms1_spectra = []
     roi_dict = {roi.id: roi for roi in msdata.rois}
 
-    for cluster_label in all_cluster_labels:
+    for cluster_label in cluster_features.keys():
         feature_ids = list(cluster_features[cluster_label])
         mz_ls, rt_ls, int_ls = [], [], []
 
@@ -81,36 +93,24 @@ def _perform_hdbscan(ppc_matrix, prob_cutoff=0.2, min_cluster_size=5, min_sample
     distance_matrix = 1 - ppc_matrix.toarray()
 
     # Perform HDBSCAN clustering
-    clusterer = HDBSCAN(metric='precomputed',
-                        min_cluster_size=min_cluster_size,
-                        min_samples=min_samples,
-                        prediction_data=True)  # Enable prediction data for soft clustering
+    clusterer = hdbscan.HDBSCAN(metric='precomputed',
+                                min_cluster_size=min_cluster_size,
+                                min_samples=min_samples)
     clusterer.fit(distance_matrix)
 
-    # Get soft clustering probabilities
-    soft_clusters = all_points_membership_vectors(clusterer)
-
+    # Use probabilities as a proxy for soft clustering
     cluster_features = defaultdict(set)
-    all_cluster_labels = set()
+    for index, (label, prob) in enumerate(zip(clusterer.labels_, clusterer.probabilities_)):
+        if label != -1 and prob >= prob_cutoff:
+            cluster_features[label].add(index)
+        else:
+            # Assign to the cluster with highest probability among neighboring points
+            neighbor_labels = clusterer.labels_[distance_matrix[index] < np.median(distance_matrix[index])]
+            if len(neighbor_labels) > 0:
+                # if all neighbors are noise points, continue
+                if np.all(neighbor_labels == -1):
+                    continue
+                most_common_label = np.argmax(np.bincount(neighbor_labels[neighbor_labels != -1]))
+                cluster_features[most_common_label].add(index)
 
-    for index, probabilities in enumerate(soft_clusters):
-        # Assign to all clusters where probability exceeds the cutoff
-        assigned = False
-        for cluster, prob in enumerate(probabilities):
-            if prob >= prob_cutoff:
-                cluster_features[cluster].add(index)
-                all_cluster_labels.add(cluster)
-                assigned = True
-
-        # If not assigned to any cluster, assign to the cluster with highest probability
-        if not assigned:
-            best_cluster = np.argmax(probabilities)
-            cluster_features[best_cluster].add(index)
-            all_cluster_labels.add(best_cluster)
-
-    # Remove noise cluster (-1) if present
-    if -1 in all_cluster_labels:
-        all_cluster_labels.remove(-1)
-        cluster_features.pop(-1, None)
-
-    return all_cluster_labels, cluster_features
+    return cluster_features

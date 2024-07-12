@@ -4,7 +4,7 @@ This is to get all features with high PPCs, generate pseudo MS1
 from collections import defaultdict
 import numpy as np
 from numba import njit
-from hdbscan import HDBSCAN, all_points_membership_vectors
+import hdbscan
 import os
 from tqdm import tqdm
 from scipy.sparse import csr_matrix, save_npz, load_npz
@@ -25,12 +25,27 @@ def generate_pseudo_ms1(config, features, peak_cor_rt_tol=0.1, hdbscan_prob_cuto
     """
     feature_pair_ls = _gen_ppc_for_aligned_features(config, features, rt_tol=peak_cor_rt_tol)
 
-    all_cluster_labels, cluster_features = _perform_hdbscan_for_feature_pairs(feature_pair_ls, hdbscan_prob_cutoff)
+    cluster_features = _perform_hdbscan_for_feature_pairs(feature_pair_ls, hdbscan_prob_cutoff)
+
+    pseudo_ms1_spectra = _map_hdbscan_labels_to_pseudo_ms1(config, features, cluster_features, file_selection_mode)
+
+    return pseudo_ms1_spectra
+
+
+def _map_hdbscan_labels_to_pseudo_ms1(config, features, cluster_features, file_selection_mode='sum_normalized'):
+    """
+    Map HDBSCAN cluster labels to PseudoMS1 objects
+    :param config: Params
+    :param features: list of Feature objects
+    :param cluster_features: dictionary of cluster labels and feature IDs
+    :param file_selection_mode: 'max_detection' or 'sum_normalized'
+    :return: list of PseudoMS1 objects
+    """
 
     pseudo_ms1_spectra = []
     feature_dict = {feature.id: feature for feature in features}
 
-    for cluster_label in all_cluster_labels:
+    for cluster_label in cluster_features.keys():
         feature_ids = list(cluster_features[cluster_label])
         mz_ls, rt_ls = [], []
         file_counts = np.zeros(len(config.sample_names), dtype=int)
@@ -149,39 +164,28 @@ def _perform_hdbscan_for_feature_pairs(feature_pairs, prob_cutoff=0.2, min_clust
     distance_matrix = 1 - similarity_matrix
 
     # Perform HDBSCAN clustering
-    clusterer = HDBSCAN(metric='precomputed',
-                        min_cluster_size=min_cluster_size,
-                        min_samples=min_samples,
-                        prediction_data=True)  # Enable prediction data for soft clustering
+    clusterer = hdbscan.HDBSCAN(metric='precomputed',
+                                min_cluster_size=min_cluster_size,
+                                min_samples=min_samples)
     clusterer.fit(distance_matrix)
 
-    # Get soft clustering probabilities
-    soft_clusters = all_points_membership_vectors(clusterer)
-
+    # Use probabilities as a proxy for soft clustering
     cluster_features = defaultdict(set)
-    all_cluster_labels = set()
-
-    for index, probabilities in enumerate(soft_clusters):
+    for index, (label, prob) in enumerate(zip(clusterer.labels_, clusterer.probabilities_)):
         feature_id = index_to_id[index]
+        if label != -1 and prob >= prob_cutoff:
+            cluster_features[label].add(feature_id)
+        else:
+            # Assign to the cluster with highest probability among neighboring points
+            neighbor_labels = clusterer.labels_[distance_matrix[index] < np.median(distance_matrix[index])]
+            if len(neighbor_labels) > 0:
+                # if all neighbors are noise points, continue
+                if np.all(neighbor_labels == -1):
+                    continue
+                most_common_label = np.argmax(np.bincount(neighbor_labels[neighbor_labels != -1]))
+                cluster_features[most_common_label].add(feature_id)
 
-        # Assign to all clusters where probability exceeds the cutoff
-        for cluster, prob in enumerate(probabilities):
-            if prob >= prob_cutoff:
-                cluster_features[cluster].add(feature_id)
-                all_cluster_labels.add(cluster)
-
-        # If not assigned to any cluster, assign to the cluster with highest probability
-        if all(prob < prob_cutoff for prob in probabilities):
-            best_cluster = np.argmax(probabilities)
-            cluster_features[best_cluster].add(feature_id)
-            all_cluster_labels.add(best_cluster)
-
-    # Remove noise cluster (-1) if present
-    if -1 in all_cluster_labels:
-        all_cluster_labels.remove(-1)
-        del cluster_features[-1]
-
-    return all_cluster_labels, cluster_features
+    return cluster_features
 
 
 def _gen_ppc_for_aligned_features(config, features, rt_tol=0.1):
