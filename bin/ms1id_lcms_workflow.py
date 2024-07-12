@@ -19,6 +19,11 @@ from _annotate_adduct import annotate_adduct
 from _calculate_ppc import calc_all_ppc
 from _group_ppc_aligned_feature import generate_pseudo_ms1
 from _revcos import ms1_id_annotation, write_ms1_id_results
+from _group_ppc_single import generate_pseudo_ms1_single
+
+# default parameters
+orbitrap_mass_detect_int_tol = 5000
+tof_mass_detect_int_tol = 500
 
 
 def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
@@ -87,7 +92,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
         else:
             print("Processing files from " + str(i) + " to " + str(i + batch_size))
         p = multiprocessing.Pool(workers)
-        p.starmap(feature_detection, [(f, config) for f in raw_file_names[i:i + batch_size]])
+        p.starmap(feature_detection, [(f, config, peak_cor_rt_tol) for f in raw_file_names[i:i + batch_size]])
         p.close()
         p.join()
 
@@ -171,9 +176,9 @@ def init_config(path=None, msms_library_path=None,
         config.int_tol = mass_detect_int_tol
     else:
         if ms_type == "orbitrap":
-            config.int_tol = 5000
+            config.int_tol = orbitrap_mass_detect_int_tol
         elif ms_type == "tof":
-            config.int_tol = 500
+            config.int_tol = tof_mass_detect_int_tol
 
     ##########################
     # The project
@@ -233,7 +238,8 @@ def init_config(path=None, msms_library_path=None,
     return config
 
 
-def feature_detection(file_name, params=None, cal_g_score=True, cal_a_score=True,
+def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1,
+                      cal_g_score=True, cal_a_score=True,
                       anno_isotope=True, anno_adduct=True, anno_in_source_fragment=False,
                       annotation=False, ms2_library_path=None, cut_roi=True):
     """
@@ -242,59 +248,201 @@ def feature_detection(file_name, params=None, cal_g_score=True, cal_a_score=True
     Returns: An MSData object containing the processed data.
     """
 
-    # try:
-    # except Exception as e:
-    #     print("Error: " + str(e))
-    #     return None
+    try:
+        # create a MSData object
+        d = MSData()
+
+        # set parameters
+        ms_type, ion_mode, centroid = find_ms_info(file_name)
+        if not centroid:
+            print("File: " + file_name + " is not centroided and skipped.")
+            return None
+
+        # if params is None, use the default parameters
+        if params is None:
+            params = Params()
+            params.set_default(ms_type, ion_mode)
+
+        if ms2_library_path is not None:
+            params.msms_library = ms2_library_path
+
+        # read raw data
+        d.read_raw_data(file_name, params)
+
+        # detect region of interests (ROIs)
+        d.find_rois()
+
+        # cut ROIs
+        if cut_roi:
+            d.cut_rois()
+
+        # label short ROIs, find the best MS2, and sort ROIs by m/z
+        d.summarize_roi(cal_g_score=cal_g_score, cal_a_score=cal_a_score)
+
+        if anno_isotope:
+            annotate_isotope(d, mz_tol=0.015, rt_tol=peak_cor_rt_tol)
+        # if anno_in_source_fragment:
+        #     annotate_in_source_fragment(d)
+        if anno_adduct:
+            annotate_adduct(d, mz_tol=0.01, rt_tol=peak_cor_rt_tol)
+
+        # calc peak-peak correlations for feature groups and output
+        calc_all_ppc(d, rt_tol=peak_cor_rt_tol)
+
+        # output single file to a txt file
+        d.output_single_file()
+
+    except Exception as e:
+        print("Error: " + str(e))
+        return None
+
+    return d
+
+
+def main_workflow_single(file_path,
+                         msms_library_path,
+                         ms1_id=True, ms2_id=False,
+                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
+                         peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                         plot_bpc=False):
+    """
+    Untargeted feature detection from a single file (.mzML or .mzXML).
+    """
+
+    ms_type, ion_mode, centroid = find_ms_info(file_path)
+
+    if not centroid:
+        raise ValueError("The file is not centroided.")
+
+    # init a new config object
+    config = init_config_single(ms_type, ion_mode, msms_library_path,
+                                mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
+                                mass_detect_int_tol=mass_detect_int_tol)
 
     # create a MSData object
     d = MSData()
 
-    # set parameters
-    ms_type, ion_mode, centroid = find_ms_info(file_name)
-    if not centroid:
-        print("File: " + file_name + " is not centroided and skipped.")
-        return None
-
-    # if params is None, use the default parameters
-    if params is None:
-        params = Params()
-        params.set_default(ms_type, ion_mode)
-
-    if ms2_library_path is not None:
-        params.msms_library = ms2_library_path
-
     # read raw data
-    d.read_raw_data(file_name, params)
+    d.read_raw_data(file_path, config)
 
     # detect region of interests (ROIs)
     d.find_rois()
 
     # cut ROIs
-    if cut_roi:
-        d.cut_rois()
+    d.cut_rois()
 
     # label short ROIs, find the best MS2, and sort ROIs by m/z
-    d.summarize_roi(cal_g_score=cal_g_score, cal_a_score=cal_a_score)
+    d.summarize_roi()
 
-    if anno_isotope:
-        annotate_isotope(d, mz_tol=0.015, rt_tol=0.1)
-    # if anno_in_source_fragment:
-    #     annotate_in_source_fragment(d)
-    if anno_adduct:
-        annotate_adduct(d, mz_tol=0.01, rt_tol=0.05)
+    # annotate isotopes, adducts
+    annotate_isotope(d)
+    annotate_adduct(d)
 
-    # calc peak-peak correlations for feature groups and output
-    calc_all_ppc(d, rt_tol=0.1)
+    # generate pseudo ms1 spec for ms1_id
+    if ms1_id and config.msms_library is not None:
+        print("MS1 ID annotation...")
+        # calc peak-peak correlations for feature groups and output
+        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol)
 
-    # output single file to a txt file
-    d.output_single_file()
+        # generate pseudo ms1 spec from aligned table, for ms1_id
+        pseudo_ms1_spectra = generate_pseudo_ms1_single(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
+                                                        hdbscan_prob_cutoff=hdbscan_prob_cutoff)
+
+        # perform rev cos search
+        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
+                                               precursor_in_spec=True,
+                                               score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
+
+        # write out ms1 id results
+        output_path = os.path.splitext(file_path)[0] + "_ms1_id.tsv"
+        write_ms1_id_results(pseudo_ms1_spectra, output_path)
+
+    # annotate MS2 spectra
+    if ms2_id and config.msms_library is not None:
+        annotate_rois(d)
+
+    if plot_bpc:
+        bpc_path = os.path.splitext(file_path)[0] + "_bpc.png"
+        d.plot_bpc(label_name=True, output=bpc_path)
+
+    # output single file to a txt file, in the same directory as the raw file
+    out_path = os.path.splitext(file_path)[0] + ".txt"
+    d.output_single_file(out_path)
 
     return d
 
 
-if __name__ == "__main__":
+def init_config_single(ms_type, ion_mode, msms_library_path,
+                       mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+                       mass_detect_int_tol=None):
+    # init
+    config = Params()
 
+    if mass_detect_int_tol is not None:
+        config.int_tol = mass_detect_int_tol
+    else:
+        if ms_type == "orbitrap":
+            config.int_tol = orbitrap_mass_detect_int_tol
+        elif ms_type == "tof":
+            config.int_tol = tof_mass_detect_int_tol
+
+    ##########################
+    # The project
+    config.project_dir = None  # Project directory, character string
+    config.sample_names = None  # Absolute paths to the raw files, without extension, list of character strings
+    config.sample_groups = None  # Sample groups, list of character strings
+    config.sample_group_num = None  # Number of sample groups, integer
+    config.sample_dir = None  # Directory for the sample information, character string
+    config.single_file_dir = None  # Directory for the single file output, character string
+    config.annotation_dir = None  # Directory for the annotation output, character string
+    config.chromatogram_dir = None  # Directory for the chromatogram output, character string
+    # config.network_dir = None             # Directory for the network output, character string
+    config.statistics_dir = None  # Directory for the statistical analysis output, character string
+
+    # MS data acquisition
+    config.rt_range = [0.0, 1000.0]  # RT range in minutes, list of two floats
+    config.ion_mode = ion_mode  # Ionization mode, "positive" or "negative", character string
+
+    # Feature detection
+    config.mz_tol_ms1 = mz_tol_ms1  # m/z tolerance for MS1, default is 0.01
+    config.mz_tol_ms2 = mz_tol_ms2  # m/z tolerance for MS2, default is 0.015
+    config.int_tol = mass_detect_int_tol  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments, integer
+    config.roi_gap = 30  # Gap within a feature, default is 30 (i.e. 30 consecutive scans without signal), integer
+    config.ppr = 0.7  # Peak peak correlation threshold for feature grouping, default is 0.7
+
+    # Parameters for feature alignment
+    config.align_mz_tol = 0.01  # m/z tolerance for MS1, default is 0.01
+    config.align_rt_tol = 0.2  # RT tolerance, default is 0.2
+    config.run_rt_correction = True  # Whether to perform RT correction, default is True
+    config.min_scan_num_for_alignment = 6  # Minimum scan number a feature to be aligned, default is 6
+
+    # Parameters for feature annotation
+    config.msms_library = msms_library_path  # Path to the MS/MS library (.msp or .pickle), character string
+    config.ms2_sim_tol = 0.7  # MS2 similarity tolerance, default is 0.7
+
+    # Parameters for normalization
+    config.run_normalization = False  # Whether to normalize the data, default is False
+    config.normalization_method = "pqn"  # Normalization method, default is "pqn" (probabilistic quotient normalization), character string
+
+    # Parameters for output
+    config.output_single_file = False  # Whether to output the processed individual files to a csv file
+    config.output_aligned_file = False  # Whether to output aligned features to a csv file
+
+    # Statistical analysis
+    config.run_statistics = False  # Whether to perform statistical analysis
+
+    # # Network analysis
+    # config.run_network = False            # Whether to perform network analysis
+
+    # Visualization
+    config.plot_bpc = False  # Whether to plot base peak chromatogram
+    config.plot_ms2 = False  # Whether to plot mirror plots for MS2 matching
+
+    return config
+
+
+if __name__ == "__main__":
     # params = init_config(path='/Users/shipei/Documents/test_data/mzML')
     # feature_detection(file_name='/Users/shipei/Documents/test_data/mzML/data/000001527_RG8_01_6306.mzML', params=params)
 
@@ -309,5 +457,9 @@ if __name__ == "__main__":
                   peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
                   ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)
 
-    # from masscube.workflows import untargeted_metabolomics_workflow
-    # untargeted_metabolomics_workflow(path='/Users/shipei/Documents/test_data/mzML')
+    main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzML/data/000001527_RG8_01_6306.mzML',
+                         msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
+                         ms1_id=True, ms2_id=False,
+                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
+                         peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
+                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6)

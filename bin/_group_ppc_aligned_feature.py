@@ -9,7 +9,7 @@ import os
 from tqdm import tqdm
 from scipy.sparse import csr_matrix, save_npz, load_npz
 
-from _utils import PseudoMS1
+from _utils import PseudoMS1, FeaturePair
 
 
 def generate_pseudo_ms1(config, features, peak_cor_rt_tol=0.1, hdbscan_prob_cutoff=0.2,
@@ -237,14 +237,3 @@ def get_ppc_score(ppc_matrix, roi_id1, roi_id2):
     :return: PPC score
     """
     return ppc_matrix[roi_id1, roi_id2]
-
-
-class FeaturePair:
-    def __init__(self, id_1, id_2, arr_1, arr_2):
-        self.id_1 = min(id_1, id_2)
-        self.id_2 = max(id_1, id_2)
-        self.id = f"{self.id_1}_{self.id_2}"
-        self.file_roi_id_seq_1 = arr_1
-        self.file_roi_id_seq_2 = arr_2
-        self.ppc_seq = np.zeros(len(arr_1))
-
