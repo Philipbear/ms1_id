@@ -1,14 +1,15 @@
 """
 This is to get all features with high PPCs, generate pseudo MS1 for a single file
 """
-from collections import defaultdict
-import numpy as np
 import os
-from numba import njit
-import hdbscan
 import pickle
-from scipy.sparse import lil_matrix, csr_matrix
+from collections import defaultdict
 
+import hdbscan
+import numpy as np
+from numba import njit
+
+import networkx as nx
 from _utils import PseudoMS1, RoiPair
 
 
@@ -33,18 +34,31 @@ def retrieve_pseudo_ms1_spectra(config):
     return pseudo_ms1_spectra
 
 
-def generate_pseudo_ms1(msdata, ppc_matrix, peak_cor_rt_tol=0.1, save=False, save_dir=None):
+def generate_pseudo_ms1(msdata, ppc_matrix, peak_cor_rt_tol=0.1,
+                        method='louvain', min_ppc_threshold=0.6,
+                        save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for a single file
     :param msdata: MSData object
     :param ppc_matrix: sparse matrix of PPC scores
     :param peak_cor_rt_tol: peak correlation retention time tolerance
+    :param method: clustering method (louvain or hdbscan)
+    :param min_ppc_threshold: minimum PPC threshold for overlapping communities
+    :param resolution: resolution parameter for Louvain method
+        (Lower resolution values (< 1.0) tend to result in fewer, larger communities.)
     :param save: whether to save the pseudo MS1 spectra
     :param save_dir: directory to save the pseudo MS1 spectra
     :return:
     """
     roi_pairs = _gen_ppc_for_rois(msdata, ppc_matrix, rt_tol=peak_cor_rt_tol)
-    cluster_rois = _perform_hdbscan_for_roi_pairs(roi_pairs)
+
+    if method == 'louvain':
+        cluster_rois = _perform_louvain_for_roi_pairs(roi_pairs, min_ppc_threshold=min_ppc_threshold)
+    elif method == 'hdbscan':
+        cluster_rois = _perform_hdbscan_for_roi_pairs(roi_pairs)
+    else:
+        raise ValueError("Invalid clustering method")
+
     pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
 
     if save:
@@ -85,6 +99,38 @@ def _gen_ppc_for_rois(msdata, ppc_matrix, rt_tol=0.1):
     return roi_pairs
 
 
+def _perform_louvain_for_roi_pairs(roi_pairs, min_ppc_threshold=0.6, min_cluster_size=6):
+    """
+    Cluster ROIs allowing for overlap based on high PPC scores
+    :param roi_pairs: list of RoiPair objects
+    :param min_ppc_threshold: min threshold for considering a PPC score as high
+    :param min_cluster_size: minimum number of ROIs in a cluster
+    :return: dictionary of cluster labels and ROI IDs
+    """
+    # Create a graph with edges for high PPC scores only
+    G = nx.Graph()
+    for rp in roi_pairs:
+        if rp.ppc >= min_ppc_threshold:
+            G.add_edge(rp.id_1, rp.id_2, weight=rp.ppc)
+
+    # Perform Louvain clustering
+    partition = nx.community.louvain_communities(G, weight='weight')
+
+    # Convert partition to cluster dictionary and filter small clusters
+    cluster_rois = {i: set(cluster) for i, cluster in enumerate(partition) if len(cluster) >= min_cluster_size}
+
+    # Print summary
+    total_rois = sum(len(cluster) for cluster in cluster_rois.values())
+    avg_cluster_size = total_rois / len(cluster_rois) if cluster_rois else 0
+
+    print(f"Louvain clustering summary:")
+    print(f"  Number of clusters: {len(cluster_rois)}")
+    print(f"  Total ROIs in clusters: {total_rois}")
+    print(f"  Average cluster size: {avg_cluster_size:.2f}")
+
+    return cluster_rois
+
+
 def _perform_hdbscan_for_roi_pairs(roi_pairs, min_cluster_size=5, min_samples=None):
     """
     Perform HDBSCAN clustering on RoiPair objects
@@ -117,15 +163,15 @@ def _perform_hdbscan_for_roi_pairs(roi_pairs, min_cluster_size=5, min_samples=No
         roi_id = index_to_id[index]
         if label != -1:
             cluster_rois[label].add(roi_id)
-        else:
-            # Assign to the cluster with highest probability among neighboring points
-            neighbor_indices = np.where(distance_matrix[index] < np.median(distance_matrix[index]))[0]
-            neighbor_labels = clusterer.labels_[neighbor_indices]
-            if len(neighbor_labels) > 0 and not np.all(neighbor_labels == -1):
-                valid_labels = neighbor_labels[neighbor_labels != -1]
-                if len(valid_labels) > 0:
-                    most_common_label = np.argmax(np.bincount(valid_labels))
-                    cluster_rois[most_common_label].add(roi_id)
+        # else:
+        #     # Assign to the cluster with highest probability among neighboring points
+        #     neighbor_indices = np.where(distance_matrix[index] < np.median(distance_matrix[index]))[0]
+        #     neighbor_labels = clusterer.labels_[neighbor_indices]
+        #     if len(neighbor_labels) > 0 and not np.all(neighbor_labels == -1):
+        #         valid_labels = neighbor_labels[neighbor_labels != -1]
+        #         if len(valid_labels) > 0:
+        #             most_common_label = np.argmax(np.bincount(valid_labels))
+        #             cluster_rois[most_common_label].add(roi_id)
 
     return cluster_rois
 
@@ -140,20 +186,20 @@ def _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois):
     pseudo_ms1_spectra = []
     roi_dict = {roi.id: roi for roi in msdata.rois}
 
-    for cluster_label in cluster_rois.keys():
-        roi_ids = list(cluster_rois[cluster_label])
+    for cluster_label, roi_ids in cluster_rois.items():
         mz_ls, rt_ls, int_ls = [], [], []
 
         for roi_id in roi_ids:
-            roi = roi_dict[roi_id]
-            mz_ls.append(roi.mz)
-            rt_ls.append(roi.rt)
-            int_ls.append(roi.peak_height)
+            if roi_id in roi_dict:
+                roi = roi_dict[roi_id]
+                mz_ls.append(roi.mz)
+                rt_ls.append(roi.rt)
+                int_ls.append(roi.peak_height)
 
-        avg_rt = sum(rt_ls) / len(rt_ls)
-
-        pseudo_ms1 = PseudoMS1(mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt)
-        pseudo_ms1_spectra.append(pseudo_ms1)
+        if len(rt_ls) > 0:  # Only create PseudoMS1 if the cluster is not empty
+            avg_rt = sum(rt_ls) / len(rt_ls)
+            pseudo_ms1 = PseudoMS1(mz_ls, int_ls, list(roi_ids), msdata.file_name, avg_rt)
+            pseudo_ms1_spectra.append(pseudo_ms1)
 
     return pseudo_ms1_spectra
 

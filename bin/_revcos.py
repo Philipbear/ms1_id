@@ -1,13 +1,15 @@
 import os
 import pickle
+
 import numpy as np
 import pandas as pd
-from flash_revcos_search import FlashRevcosSearch
 from ms_entropy import read_one_spectrum
+
 from _utils import SpecAnnotation
+from flash_revcos_search import FlashRevcosSearch
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.01):
+def prepare_ms2_lib(ms2db, mz_tol=0.01, sqrt_transform=True):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -32,7 +34,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.01):
                                       mz_index_step=0.0001,
                                       low_memory=False,
                                       path_data=None,
-                                      sqrt_transform=False)
+                                      sqrt_transform=sqrt_transform)
     print('building index')
     search_engine.build_index(db,
                               max_indexed_mz=1500.0,
@@ -149,10 +151,11 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
                     annotation.spectral_usage = spectral_usage
 
                     # annotation intensity: the intensity of the precursor peak in the MS1 spectrum
-                    annotation.intensity = spec.intensities[np.argmin(np.abs(np.array(spec.mzs) - matched.get('precursor_mz')))]
+                    annotation.intensity = spec.intensities[
+                        np.argmin(np.abs(np.array(spec.mzs) - matched.get('precursor_mz')))]
 
                     # Fill in the database info from the matched spectrum
-                    annotation.db_id = matched.get('id')
+                    annotation.db_id = matched.get('db#')
                     annotation.name = matched.get('name')
                     annotation.precursor_mz = matched.get('precursor_mz')
                     annotation.precursor_type = matched.get('precursor_type')
@@ -240,11 +243,12 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
                 'file_name': spec.file_name,
                 'rt': round(spec.rt, 2) if spec.rt else None,
                 'intensity': round(annotation.intensity, 0) if annotation.intensity else None,
-                'score': round(annotation.score, 4),
+                'name': annotation.name,
+                'precursor_mz': round(annotation.precursor_mz, 4),
+                'matched_score': round(annotation.score, 4),
                 'matched_peak': annotation.matched_peak,
                 'spectral_usage': round(annotation.spectral_usage, 4) if annotation.spectral_usage else None,
                 'db_id': annotation.db_id,
-                'name': annotation.name,
                 'precursor_type': annotation.precursor_type,
                 'formula': annotation.formula,
                 'inchikey': annotation.inchikey,
@@ -258,5 +262,7 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
 
 
 if __name__ == "__main__":
-    # prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.01)
-    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.msp', mz_tol=0.01)
+    # prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
+    #                 mz_tol=0.01, sqrt_transform=True)
+    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.msp',
+                    mz_tol=0.01, sqrt_transform=True)

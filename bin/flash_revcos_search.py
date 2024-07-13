@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Union, List
 
 import numpy as np
-from numba import njit
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -1479,55 +1478,40 @@ def _check_centroid(peaks: np.ndarray, ms2_da: float = -1, ms2_ppm: float = -1) 
 
 # test
 if __name__ == "__main__":
-    from json import loads
-    from requests import get
 
+    # cosine between two vectors
+    def cosine_similarity(v1, v2):
+        return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
-    def usi_to_spec(usi, cutoff=0.01):
-        # get spectrum from USI
-        url = 'https://metabolomics-usi.gnps2.org/json/?usi1=' + usi
-        response = get(url)
-        json_data = loads(response.text)
-        ms2_mz = np.array(json_data['peaks'])[:, 0]
-        ms2_int = np.array(json_data['peaks'])[:, 1]
+    print(cosine_similarity(np.array([1, 1, 1]), np.array([1, 2, 4])))
 
-        # normalize intensity
-        ms2_int = ms2_int / max(ms2_int) * 100
-        ms2_mz = ms2_mz[ms2_int > cutoff * 100]
-        ms2_int = ms2_int[ms2_int > cutoff * 100]
-        transformed_ms2_int = np.sqrt(ms2_int) * 10
-
-        return ms2_mz.tolist(), ms2_int.tolist(), transformed_ms2_int.tolist(), json_data['precursor_mz']
-
-
-    # load spectrum
-    mz1, int1, t_int1, premz1 = usi_to_spec('mzspec:GNPS:GNPS-LIBRARY:accession:CCMSLIB00010217274', cutoff=0.0)
-    mz2, int2, t_int2, premz2 = usi_to_spec('mzspec:GNPS:GNPS-LIBRARY:accession:CCMSLIB00003137939',
-                                            cutoff=0.0)  # cholic acid
-    mz3, int3, t_int3, premz3 = usi_to_spec('mzspec:GNPS:GNPS-LIBRARY:accession:CCMSLIB00006681685',
-                                            cutoff=0.0)  # histidine
+    print(cosine_similarity(np.sqrt(np.array([1, 1, 1])), np.sqrt(np.array([1, 2, 4]))))
 
     # load spectral library
-    spectral_library = [
-        {
-            "id": "CCMSLIB00003137939",
-            "precursor_mz": premz2,
-            "peaks": [[mz2[i], int2[i]] for i in range(len(mz2))],
-            "metadata": "cholic acid"
-        },
-        {
-            "id": "CCMSLIB00006681685",
-            "precursor_mz": premz3,
-            "peaks": [[mz3[i], int3[i]] for i in range(len(mz3))],
-            "metadata": "histidine"
-        }]
+    spectral_library = [{
+        "id": "Demo spectrum 1",
+        "precursor_mz": 150.0,
+        "peaks": [[100.0, 1.0], [101.0, 1.0], [103.0, 1.0]]
+    }, {
+        "id": "Demo spectrum 2",
+        "precursor_mz": 200.0,
+        "peaks": np.array([[100.0, 1.0], [101.0, 1.0], [102.0, 1.0]], dtype=np.float32),
+        "metadata": "ABC"
+    }, {
+        "id": "Demo spectrum 3",
+        "precursor_mz": 250.0,
+        "peaks": np.array([[200.0, 1.0], [201.0, 1.0], [202.0, 1.0]], dtype=np.float32),
+        "XXX": "YYY",
+    }, {
+        "precursor_mz": 350.0,
+        "peaks": [[100.0, 1.0], [101.0, 1.0], [302.0, 1.0]]}]
 
     ms2_tol = 0.05
     # revcos search
     revcos_search = FlashRevcosSearch(max_ms2_tolerance_in_da=ms2_tol * 1.05,
                                       mz_index_step=0.0001,
                                       low_memory=False,
-                                      sqrt_transform=False)
+                                      sqrt_transform=True)
     revcos_search.build_index(spectral_library,
                               max_indexed_mz=1500,
                               precursor_ions_removal_da=None,
@@ -1537,8 +1521,8 @@ if __name__ == "__main__":
                               clean_spectra=True)
 
     revcos_result = revcos_search.search(
-        precursor_mz=premz1,
-        peaks=[[mz1[i], int1[i]] for i in range(len(mz1))],
+        precursor_mz=400.0,
+        peaks=[[200.0, 1.0], [201.0, 2.0], [202.0, 4.0], [203.0, 3.0], [303.0, 10.0]],
         ms1_tolerance_in_da=0.02,
         ms2_tolerance_in_da=ms2_tol,
         method="open",  # "identity", "open", "neutral_loss", "hybrid", "all", or list of the above

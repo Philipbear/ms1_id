@@ -6,10 +6,11 @@ The first run of this script might be slower due to Numba's compilation time,
 but subsequent runs should be much faster.
 """
 
-import numpy as np
 import os
-from scipy.sparse import csr_matrix, save_npz
+
+import numpy as np
 from numba import njit, prange
+from scipy.sparse import csr_matrix, save_npz
 
 
 @njit
