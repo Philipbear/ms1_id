@@ -262,7 +262,7 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
 
 
 if __name__ == "__main__":
-    # prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
-    #                 mz_tol=0.01, sqrt_transform=True)
-    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.msp',
+    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
                     mz_tol=0.01, sqrt_transform=True)
+    # prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.msp',
+    #                 mz_tol=0.01, sqrt_transform=True)

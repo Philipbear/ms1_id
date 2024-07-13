@@ -5,7 +5,6 @@ import os
 import pickle
 from collections import defaultdict
 
-import hdbscan
 import numpy as np
 from numba import njit
 
@@ -35,15 +34,14 @@ def retrieve_pseudo_ms1_spectra(config):
 
 
 def generate_pseudo_ms1(msdata, ppc_matrix, peak_cor_rt_tol=0.1,
-                        method='louvain', min_ppc_threshold=0.6,
+                        min_ppc=0.7, resolution=1.5,
                         save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for a single file
     :param msdata: MSData object
     :param ppc_matrix: sparse matrix of PPC scores
     :param peak_cor_rt_tol: peak correlation retention time tolerance
-    :param method: clustering method (louvain or hdbscan)
-    :param min_ppc_threshold: minimum PPC threshold for overlapping communities
+    :param min_ppc: minimum PPC threshold for overlapping communities
     :param resolution: resolution parameter for Louvain method
         (Lower resolution values (< 1.0) tend to result in fewer, larger communities.)
     :param save: whether to save the pseudo MS1 spectra
@@ -52,12 +50,7 @@ def generate_pseudo_ms1(msdata, ppc_matrix, peak_cor_rt_tol=0.1,
     """
     roi_pairs = _gen_ppc_for_rois(msdata, ppc_matrix, rt_tol=peak_cor_rt_tol)
 
-    if method == 'louvain':
-        cluster_rois = _perform_louvain_for_roi_pairs(roi_pairs, min_ppc_threshold=min_ppc_threshold)
-    elif method == 'hdbscan':
-        cluster_rois = _perform_hdbscan_for_roi_pairs(roi_pairs)
-    else:
-        raise ValueError("Invalid clustering method")
+    cluster_rois = _perform_louvain_for_roi_pairs(roi_pairs, min_ppc=min_ppc, resolution=resolution)
 
     pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
 
@@ -77,7 +70,6 @@ def _gen_ppc_for_rois(msdata, ppc_matrix, rt_tol=0.1):
     """
     Generate PPC scores for ROI pairs
     """
-
     rois = msdata.rois
     rois.sort(key=lambda x: x.id)
 
@@ -89,91 +81,95 @@ def _gen_ppc_for_rois(msdata, ppc_matrix, rt_tol=0.1):
 
     valid_pairs = find_valid_pairs(ids, rts, rt_tol)
 
-    roi_pairs = [RoiPair(ids[i], ids[j]) for i, j in valid_pairs]
-
-    # Assign PPC scores to RoiPair objects using the mapping
-    for rp in roi_pairs:
-        i, j = roi_id_to_index[rp.id_1], roi_id_to_index[rp.id_2]
-        rp.ppc = ppc_matrix[i, j]
+    roi_pairs = []
+    for i, j in valid_pairs:
+        roi_a = rois[i]
+        roi_b = rois[j]
+        ppc = ppc_matrix[roi_id_to_index[roi_a.id], roi_id_to_index[roi_b.id]]
+        roi_pairs.append(RoiPair(roi_a, roi_b, ppc))
 
     return roi_pairs
 
 
-def _perform_louvain_for_roi_pairs(roi_pairs, min_ppc_threshold=0.6, min_cluster_size=6):
+def refine_clusters_by_rt(cluster_rois, roi_dict, peak_cor_rt_tol):
+    """
+    Refine clusters by ensuring the RT range in each cluster is within peak_cor_rt_tol
+
+    :param cluster_rois: dictionary of cluster labels and ROI IDs
+    :param roi_dict: dictionary of ROI ID to ROI object
+    :param peak_cor_rt_tol: maximum allowed RT difference within a cluster
+    :return: refined dictionary of cluster labels and ROI IDs
+    """
+    refined_clusters = {}
+
+    for cluster_label, roi_ids in cluster_rois.items():
+        if len(roi_ids) < 2:
+            refined_clusters[cluster_label] = roi_ids
+            continue
+
+        # Sort ROIs by retention time
+        sorted_rois = sorted(roi_ids, key=lambda roi_id: roi_dict[roi_id].rt)
+
+        # Find the median RT
+        median_rt = np.median([roi_dict[roi_id].rt for roi_id in sorted_rois])
+
+        # Initialize the refined cluster with ROIs within tolerance of the median RT
+        refined_cluster = []
+        for roi_id in sorted_rois:
+            if abs(roi_dict[roi_id].rt - median_rt) <= peak_cor_rt_tol / 2:
+                refined_cluster.append(roi_id)
+
+        # If we have at least 2 ROIs in the refined cluster, add it to refined_clusters
+        if len(refined_cluster) >= 2:
+            refined_clusters[cluster_label] = set(refined_cluster)
+
+    print(f"Cluster refinement summary:")
+    print(f"  Original number of clusters: {len(cluster_rois)}")
+    print(f"  Total ROIs in original clusters: {sum(len(cluster) for cluster in cluster_rois.values())}")
+    print(f"  Refined number of clusters: {len(refined_clusters)}")
+    print(f"  Total ROIs in refined clusters: {sum(len(cluster) for cluster in refined_clusters.values())}")
+
+    return refined_clusters
+
+
+def _perform_louvain_for_roi_pairs(roi_pairs, min_ppc=0.7, resolution=1.0, min_cluster_size=6, peak_cor_rt_tol=0.1):
     """
     Cluster ROIs allowing for overlap based on high PPC scores
     :param roi_pairs: list of RoiPair objects
-    :param min_ppc_threshold: min threshold for considering a PPC score as high
+    :param min_ppc: min PPC score for clustering
+    :param resolution: resolution parameter for Louvain clustering (default 1.0)
     :param min_cluster_size: minimum number of ROIs in a cluster
+    :param peak_cor_rt_tol: peak correlation retention time tolerance
     :return: dictionary of cluster labels and ROI IDs
     """
     # Create a graph with edges for high PPC scores only
     G = nx.Graph()
     for rp in roi_pairs:
-        if rp.ppc >= min_ppc_threshold:
-            G.add_edge(rp.id_1, rp.id_2, weight=rp.ppc)
+        if rp.ppc >= min_ppc:
+            G.add_edge(rp.roi_1.id, rp.roi_2.id, weight=rp.ppc)
 
     # Perform Louvain clustering
-    partition = nx.community.louvain_communities(G, weight='weight')
+    partition = nx.community.louvain_communities(G, weight='weight', resolution=resolution)
 
     # Convert partition to cluster dictionary and filter small clusters
     cluster_rois = {i: set(cluster) for i, cluster in enumerate(partition) if len(cluster) >= min_cluster_size}
 
-    # Print summary
-    total_rois = sum(len(cluster) for cluster in cluster_rois.values())
-    avg_cluster_size = total_rois / len(cluster_rois) if cluster_rois else 0
+    # Create a dictionary of ROI objects
+    roi_dict = {}
+    for rp in roi_pairs:
+        roi_dict[rp.roi_1.id] = rp.roi_1
+        roi_dict[rp.roi_2.id] = rp.roi_2
 
-    print(f"Louvain clustering summary:")
-    print(f"  Number of clusters: {len(cluster_rois)}")
-    print(f"  Total ROIs in clusters: {total_rois}")
+    # Refine clusters based on RT
+    refined_cluster_rois = refine_clusters_by_rt(cluster_rois, roi_dict, peak_cor_rt_tol)
+
+    # Print summary
+    total_rois = sum(len(cluster) for cluster in refined_cluster_rois.values())
+    avg_cluster_size = total_rois / len(refined_cluster_rois) if refined_cluster_rois else 0
+
     print(f"  Average cluster size: {avg_cluster_size:.2f}")
 
-    return cluster_rois
-
-
-def _perform_hdbscan_for_roi_pairs(roi_pairs, min_cluster_size=5, min_samples=None):
-    """
-    Perform HDBSCAN clustering on RoiPair objects
-    :param roi_pairs: list of RoiPair objects
-    :param min_cluster_size: minimum cluster size for HDBSCAN
-    :param min_samples: minimum number of samples for HDBSCAN
-    :return: cluster ROIs
-    """
-    unique_ids = list(set([rp.id_1 for rp in roi_pairs] + [rp.id_2 for rp in roi_pairs]))
-    id_to_index = {id_: index for index, id_ in enumerate(unique_ids)}
-    index_to_id = {index: id_ for id_, index in id_to_index.items()}
-    num_rois = len(unique_ids)
-
-    similarity_matrix = np.zeros((num_rois, num_rois))
-    for rp in roi_pairs:
-        index_1, index_2 = id_to_index[rp.id_1], id_to_index[rp.id_2]
-        similarity_matrix[index_1, index_2] = similarity_matrix[index_2, index_1] = rp.ppc
-
-    distance_matrix = 1 - similarity_matrix
-
-    # Perform HDBSCAN clustering
-    clusterer = hdbscan.HDBSCAN(metric='precomputed',
-                                min_cluster_size=min_cluster_size,
-                                min_samples=min_samples)
-    clusterer.fit(distance_matrix)
-
-    # Use probabilities as a proxy for soft clustering
-    cluster_rois = defaultdict(set)
-    for index, (label, prob) in enumerate(zip(clusterer.labels_, clusterer.probabilities_)):
-        roi_id = index_to_id[index]
-        if label != -1:
-            cluster_rois[label].add(roi_id)
-        # else:
-        #     # Assign to the cluster with highest probability among neighboring points
-        #     neighbor_indices = np.where(distance_matrix[index] < np.median(distance_matrix[index]))[0]
-        #     neighbor_labels = clusterer.labels_[neighbor_indices]
-        #     if len(neighbor_labels) > 0 and not np.all(neighbor_labels == -1):
-        #         valid_labels = neighbor_labels[neighbor_labels != -1]
-        #         if len(valid_labels) > 0:
-        #             most_common_label = np.argmax(np.bincount(valid_labels))
-        #             cluster_rois[most_common_label].add(roi_id)
-
-    return cluster_rois
+    return refined_cluster_rois
 
 
 def _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois):

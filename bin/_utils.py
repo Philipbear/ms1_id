@@ -39,8 +39,14 @@ class SpecAnnotation:
 
 
 class RoiPair:
-    def __init__(self, id_1, id_2, ):
-        self.id_1 = min(id_1, id_2)  # smaller id first
-        self.id_2 = max(id_1, id_2)  # larger id second
-        self.id = f"{self.id_1}_{self.id_2}"  # combined id
-        self.ppc = None  # peak peak correlation
+    def __init__(self, roi_a, roi_b, ppc):
+
+        # compare id
+        if roi_a.id < roi_b.id:
+            self.roi_1 = roi_a
+            self.roi_2 = roi_b
+        else:
+            self.roi_1 = roi_b
+            self.roi_2 = roi_a
+
+        self.ppc = ppc  # peak-peak correlation

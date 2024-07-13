@@ -30,8 +30,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                   run_rt_correction=True, run_normalization=False,
                   mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.05, pseudo_ms1_method='louvain',
-                  min_ppc_threshold=0.6,
+                  peak_cor_rt_tol=0.05, min_ppc_threshold=0.6,
                   ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
                   ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05):
     """
@@ -52,7 +51,6 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     :param align_rt_tol: alignment RT tolerance
     :param alignment_drop_by_fill_pct_ratio: alignment drop by fill percentage ratio
     :param peak_cor_rt_tol: peak correlation RT tolerance
-    :param pseudo_ms1_method: pseudo MS1 method: 'louvain' or 'hdbscan'
     :param min_ppc_threshold: minimum peak-peak correlation threshold
     :param ms1id_score_cutoff: ms1 ID score cutoff
     :param ms1id_min_matched_peak: ms1 ID min matched peak
@@ -96,8 +94,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
             print("Processing files from " + str(i) + " to " + str(i + batch_size))
         p = multiprocessing.Pool(workers)
         p.starmap(feature_detection,
-                  [(f, config, peak_cor_rt_tol, pseudo_ms1_method,
-                    min_ppc_threshold) for f in raw_file_names[i:i + batch_size]])
+                  [(f, config, peak_cor_rt_tol, min_ppc_threshold) for f in raw_file_names[i:i + batch_size]])
         p.close()
         p.join()
 
@@ -248,8 +245,8 @@ def init_config(path=None, msms_library_path=None,
     return config
 
 
-def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1, pseudo_ms1_method='louvain',
-                      min_ppc_threshold=0.6,
+def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1,
+                      min_ppc=0.6,
                       cal_g_score=True, cal_a_score=True,
                       anno_isotope=True, anno_adduct=True, anno_in_source_fragment=False,
                       annotation=False, ms2_library_path=None, cut_roi=True):
@@ -301,8 +298,7 @@ def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1, pseudo_ms1_me
         ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, save=False)
 
         # generate pseudo ms1 spec, for ms1_id
-        generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol, method=pseudo_ms1_method,
-                            min_ppc_threshold=min_ppc_threshold, save=True)
+        generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol, min_ppc=min_ppc, save=True)
 
         # output single file to a txt file
         d.output_single_file()
@@ -318,7 +314,7 @@ def main_workflow_single(file_path,
                          msms_library_path,
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
-                         peak_cor_rt_tol=0.1, pseudo_ms1_method='louvain', min_ppc_threshold=0.6,
+                         peak_cor_rt_tol=0.1, min_ppc=0.6,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
                          ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          plot_bpc=False):
@@ -370,8 +366,7 @@ def main_workflow_single(file_path,
         # generate pseudo ms1 spec, for ms1_id
         print('Generating pseudo MS1 spectra...')
         pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
-                                                 method=pseudo_ms1_method,
-                                                 min_ppc_threshold=min_ppc_threshold)
+                                                 min_ppc=min_ppc)
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
@@ -480,8 +475,8 @@ if __name__ == "__main__":
     #               run_rt_correction=True, run_normalization=True,
     #               mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
     #               align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-    #               peak_cor_rt_tol=0.05, pseudo_ms1_method='louvain',
-    #               min_ppc_threshold=0.9,
+    #               peak_cor_rt_tol=0.05,
+    #               min_ppc=0.9,
     #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
     #               ms1id_min_prec_rel_int_in_ms1=0.01, ms1id_max_prec_rel_int_in_other_ms2=0.05)
 
@@ -489,9 +484,9 @@ if __name__ == "__main__":
                          msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                         mass_detect_int_tol=30000,  # default is 10000 for Orbitrap and 500 for TOF
-                         peak_cor_rt_tol=0.05, pseudo_ms1_method='louvain',  # 'louvain' or 'hdbscan'
-                         min_ppc_threshold=0.9,
+                         mass_detect_int_tol=10000,  # default is 10000 for Orbitrap and 500 for TOF
+                         peak_cor_rt_tol=0.05,
+                         min_ppc=0.8,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
                          ms1id_min_prec_rel_int_in_ms1=0.01,
                          ms1id_max_prec_rel_int_in_other_ms2=0.05,
