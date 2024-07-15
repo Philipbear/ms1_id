@@ -221,11 +221,12 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
     return ms1_spec_ls
 
 
-def write_ms1_id_results(ms1_spec_ls, out_path):
+def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
     """
     Output the annotated ms1 spectra
     :param ms1_spec_ls: a list of PseudoMS1-like object
-    :param out_path: output path
+    :param save: bool, whether to save the results
+    :param out_dir: output folder
     :return: None
     """
 
@@ -258,11 +259,16 @@ def write_ms1_id_results(ms1_spec_ls, out_path):
             })
 
     out_df = pd.DataFrame(out_list)
-    out_df.to_csv(out_path, index=False, sep='\t')
+
+    if save:
+        out_path = os.path.join(out_dir, 'ms1_id_results.tsv')
+        out_df.to_csv(out_path, index=False, sep='\t')
+
+    return out_df
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
-                    mz_tol=0.01, sqrt_transform=True)
-    # prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.msp',
+    # prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
     #                 mz_tol=0.01, sqrt_transform=True)
+    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.msp',
+                    mz_tol=0.01, sqrt_transform=True)

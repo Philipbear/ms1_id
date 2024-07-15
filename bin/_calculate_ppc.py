@@ -9,7 +9,7 @@ but subsequent runs should be much faster.
 import os
 
 import numpy as np
-from numba import njit, prange
+from numba import njit
 from scipy.sparse import csr_matrix, save_npz
 
 
@@ -44,7 +44,7 @@ def peak_peak_correlation_numba(scan_idx1, int_seq1, scan_idx2, int_seq2):
     return numerator / denominator if denominator != 0 else 1.0
 
 
-@njit(parallel=True)
+@njit
 def calc_ppc_matrix_numba(roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi_lengths, rt_tol):
     n_rois = len(roi_ids)
     rows = np.zeros(n_rois * n_rois, dtype=np.int32)
@@ -52,7 +52,7 @@ def calc_ppc_matrix_numba(roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi
     data = np.zeros(n_rois * n_rois, dtype=np.float64)  # Change to float64
     counter = 0
 
-    for i in prange(n_rois):
+    for i in range(n_rois):
         start_i = np.sum(roi_lengths[:i])
         end_i = start_i + roi_lengths[i]
         for j in range(i + 1, n_rois):
@@ -72,6 +72,10 @@ def calc_ppc_matrix_numba(roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi
 
 
 def calc_all_ppc(d, rt_tol=0.1, save=True, path=None):
+    """
+    Calculate peak-peak correlation matrix for all ROIs in the dataset
+    """
+
     rois = sorted(d.rois, key=lambda x: x.id)
     n_rois = len(rois)
 
