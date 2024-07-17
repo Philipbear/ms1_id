@@ -1,5 +1,6 @@
 import pickle
 
+
 def load_msms_db(path):
     """
     A function to load the MS/MS database in MSP format or pickle format.
