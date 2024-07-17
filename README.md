@@ -14,6 +14,6 @@ use masscube workflow, add feature correlation, do rev cos search against librar
 - MS imaging
 
 ## data
-- GNPS: ALL_GNPS_NO_PROPOGATED.msp, downloaded on July 12, 2024
+- GNPS: ALL_GNPS_NO_PROPOGATED.msp, downloaded on July 17, 2024
 - MassBank (https://github.com/MassBank/MassBank-data/releases, MassBank_NIST, 2024.6 release), 120184 spectra
 - NIST20
