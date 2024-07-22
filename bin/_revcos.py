@@ -269,5 +269,5 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
-                    mz_tol=0.02, sqrt_transform=True)
+    prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02, sqrt_transform=True)
+    prepare_ms2_lib(ms2db='../data/nist20.msp', mz_tol=0.02, sqrt_transform=True)
