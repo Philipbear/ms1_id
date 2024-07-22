@@ -9,6 +9,9 @@ import networkx as nx
 
 from _utils import PseudoMS1
 
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+
 
 def retrieve_pseudo_ms1_spectra(config):
     """
@@ -31,12 +34,15 @@ def retrieve_pseudo_ms1_spectra(config):
     return pseudo_ms1_spectra
 
 
-def generate_pseudo_ms1(msdata, ppc_matrix, peak_cor_rt_tol=0.05, min_ppc=0.8, min_cluster_size=6,
+def generate_pseudo_ms1(msdata, ppc_matrix,
+                        peak_cor_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
+                        min_cluster_size=6,
                         min_overlap_ppc=0.95, save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for a single file
     :param msdata: MSData object
     :param ppc_matrix: sparse matrix of PPC scores
+    :param roi_min_length: minimum length of ROIs to consider for clustering
     :param peak_cor_rt_tol: RT tolerance for clustering
     :param min_ppc: minimum PPC score for clustering
     :param min_overlap_ppc: minimum PPC score for allowing overlaps
@@ -50,13 +56,17 @@ def generate_pseudo_ms1(msdata, ppc_matrix, peak_cor_rt_tol=0.05, min_ppc=0.8, m
     #                                             min_ppc, min_overlap_ppc, min_cluster_size)
 
     # Cluster ROIs using Louvain algorithm
-    cluster_rois = _perform_louvain_clustering(msdata, ppc_matrix,
+    cluster_rois = _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=roi_min_length,
                                                min_ppc=min_ppc, peak_cor_rt_tol=peak_cor_rt_tol,
                                                resolution=1.0, min_cluster_size=min_cluster_size,
                                                seed=123)
 
+    plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix)
+
     # generate pseudo MS1 spectra
     pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
+
+    plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_length=roi_min_length)
 
     if save:
         save_pseudo_ms1_spectra(pseudo_ms1_spectra, msdata, save_dir)
@@ -241,24 +251,28 @@ def _refine_clusters_by_rt_window(cluster_rois, msdata, peak_cor_rt_tol, min_clu
     return refined_clusters
 
 
-def _perform_louvain_clustering(msdata, ppc_matrix,
+def _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=3,
                                 min_ppc=0.8, peak_cor_rt_tol=0.05, min_cluster_size=6,
                                 resolution=1.0, seed=123):
     """
     Cluster ROIs using Louvain algorithm based on high PPC scores
     :param msdata: MSData object containing ROIs
     :param ppc_matrix: sparse matrix of PPC scores
+    :param roi_min_length: minimum length of ROIs to consider for clustering
     :param min_ppc: min PPC score for clustering
+    :param peak_cor_rt_tol: maximum allowed RT difference within a cluster
     :param resolution: resolution parameter for Louvain clustering, lower values result in fewer clusters
     :param min_cluster_size: minimum number of ROIs in a cluster
     :param seed: random seed
     :return: dictionary of cluster labels and ROI IDs
     """
-    # Create a graph with edges for high PPC scores only
+    # Create a graph with edges for high PPC scores only, checking ROI length on-the-fly
     G = nx.Graph()
     rows, cols = ppc_matrix.nonzero()
     for row, col in zip(rows, cols):
-        if row < col and ppc_matrix[row, col] >= min_ppc:
+        if (row < col and ppc_matrix[row, col] >= min_ppc and msdata.rois[row].length >= roi_min_length
+                and msdata.rois[col].length >= roi_min_length and not msdata.rois[row].is_isotope and
+                not msdata.rois[col].is_isotope):
             G.add_edge(msdata.rois[row].id, msdata.rois[col].id, weight=ppc_matrix[row, col])
 
     # Perform Louvain clustering
@@ -285,3 +299,98 @@ def _perform_louvain_clustering(msdata, ppc_matrix,
     print(f"  Average cluster size: {sum(len(cluster) for cluster in cluster_rois.values()) / len(cluster_rois):.2f}")
 
     return cluster_rois
+
+
+def plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix, min_ppc=0.8, max_nodes=100):
+    """
+    Plot Louvain clustering network results.
+
+    :param msdata: MSData object containing ROIs
+    :param cluster_rois: Dictionary of cluster labels and ROI IDs
+    :param ppc_matrix: Sparse matrix of PPC scores
+    :param min_ppc: Minimum PPC score to include in the plot
+    :param max_nodes: Maximum number of nodes to plot (to avoid overcrowding)
+    """
+    G = nx.Graph()
+
+    # Create a dictionary mapping ROI IDs to their m/z values
+    roi_mz_dict = {roi.id: roi.mz for roi in msdata.rois}
+
+    # Add nodes and edges
+    for cluster, roi_ids in cluster_rois.items():
+        for roi_id in roi_ids:
+            G.add_node(roi_id, mz=roi_mz_dict[roi_id])
+
+    rows, cols = ppc_matrix.nonzero()
+    for row, col in zip(rows, cols):
+        if row < col and ppc_matrix[row, col] >= min_ppc:
+            roi_a_id, roi_b_id = msdata.rois[row].id, msdata.rois[col].id
+            G.add_edge(roi_a_id, roi_b_id, weight=ppc_matrix[row, col])
+
+    # Limit the number of nodes to avoid overcrowding
+    if len(G) > max_nodes:
+        G = nx.Graph(G.subgraph(list(G.nodes)[:max_nodes]))
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=(12, 8))
+    pos = nx.spring_layout(G)
+
+    # Draw nodes
+    nx.draw_networkx_nodes(G, pos, node_size=300, node_color='lightblue', ax=ax)
+
+    # Draw edges with color based on weight
+    edges = G.edges()
+    weights = [G[u][v]['weight'] for u, v in edges]
+
+    # Create a lighter color map
+    cmap = plt.cm.get_cmap('Blues')
+    lighter_cmap = mcolors.LinearSegmentedColormap.from_list("", ["white", cmap(0.7)])
+    norm = mcolors.Normalize(vmin=min_ppc, vmax=1.0)
+
+    nx.draw_networkx_edges(G, pos, edge_color=weights, edge_cmap=lighter_cmap, edge_vmin=min_ppc, edge_vmax=1.0, ax=ax,
+                           width=0.5)
+
+    # Add m/z labels to nodes
+    nx.draw_networkx_labels(G, pos, {node: f"{G.nodes[node]['mz']:.2f}" for node in G.nodes()}, font_size=5.5, ax=ax)
+
+    ax.set_title("Louvain Clustering Network")
+    ax.axis('off')
+
+    # Add a colorbar
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, ax=ax)
+    cbar.set_label('PPC Score')
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_length=3):
+    """
+    Plot RT-m/z scatter plot of all ROIs and lines parallel to RT axis for pseudo MS1 spectra.
+
+    :param msdata: MSData object containing ROIs
+    :param pseudo_ms1_spectra: List of PseudoMS1 objects
+    :param roi_min_length: Minimum length of ROIs to plot
+    """
+    plt.figure(figsize=(12, 8))
+
+    # Plot all ROIs
+    rt_values = [roi.rt for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope]
+    mz_values = [roi.mz for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope]
+    plt.scatter(rt_values, mz_values, alpha=0.5, s=5, label='ROIs')
+
+    # Plot lines parallel to RT axis for pseudo MS1 spectra
+    for pseudo_ms1 in pseudo_ms1_spectra:
+        rt = pseudo_ms1.rt
+        mz_min, mz_max = min(pseudo_ms1.mzs), max(pseudo_ms1.mzs)
+        plt.vlines(x=rt, ymin=mz_min, ymax=mz_max, color='r', alpha=0.3, linestyle='--')
+
+    plt.xlabel('Retention Time')
+    plt.ylabel('m/z')
+    plt.xlim(3.0, 3.15)
+    plt.title('RT-m/z Scatter Plot with Pseudo MS1 Spectra')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()

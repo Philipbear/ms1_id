@@ -19,7 +19,8 @@ class PseudoMS1:
 
 
 class SpecAnnotation:
-    def __init__(self, score, matched_peak):
+    def __init__(self, idx, score, matched_peak):
+        self.search_eng_matched_id = idx  # index of the matched spec in the search engine
         self.score = score
         self.matched_peak = matched_peak
         self.spectral_usage = None

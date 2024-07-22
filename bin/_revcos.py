@@ -9,7 +9,7 @@ from _utils import SpecAnnotation
 from flash_revcos_search import FlashRevcosSearch
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.01, sqrt_transform=True):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -73,7 +73,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_int_in
                                          min_prec_rel_int_in_ms1=min_prec_rel_int_in_ms1,
                                          score_cutoff=score_cutoff, min_matched_peak=min_matched_peak)
 
-    # refine the results
+    # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
                                         max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
 
@@ -125,6 +125,8 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
             for idx in v:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
                 precursor_mz = matched.get('precursor_mz')
+
+                # ensure precursor_mz min_prec_rel_int_in_ms1 in the MS1 spectrum
                 if precursor_mz is not None:
                     # Find the closest m/z in the spectrum to the precursor m/z
                     closest_mz_idx = np.argmin(np.abs(np.array(spec.mzs) - precursor_mz))
@@ -146,7 +148,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
                     matched = {k.lower(): q for k, q in matched_spectrum.items()}
 
                     # Create a SpecAnnotation object for the match
-                    annotation = SpecAnnotation(matched_score, matched_peaks)
+                    annotation = SpecAnnotation(matched_index, matched_score, matched_peaks)
 
                     annotation.spectral_usage = spectral_usage
 
@@ -155,7 +157,6 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
                         np.argmin(np.abs(np.array(spec.mzs) - matched.get('precursor_mz')))]
 
                     # Fill in the database info from the matched spectrum
-                    annotation.db_id = matched.get('db#')
                     annotation.name = matched.get('name')
                     annotation.precursor_mz = matched.get('precursor_mz')
                     annotation.precursor_type = matched.get('precursor_type')
@@ -249,7 +250,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
                 'matched_score': round(annotation.score, 4),
                 'matched_peak': annotation.matched_peak,
                 'spectral_usage': round(annotation.spectral_usage, 4) if annotation.spectral_usage else None,
-                'db_id': annotation.db_id,
+                # 'search_eng_matched_id': annotation.search_eng_matched_id,
                 'precursor_type': annotation.precursor_type,
                 'formula': annotation.formula,
                 'inchikey': annotation.inchikey,
@@ -268,7 +269,5 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
 
 
 if __name__ == "__main__":
-    # prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
-    #                 mz_tol=0.01, sqrt_transform=True)
-    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.msp',
-                    mz_tol=0.01, sqrt_transform=True)
+    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.msp',
+                    mz_tol=0.02, sqrt_transform=True)

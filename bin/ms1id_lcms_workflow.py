@@ -30,7 +30,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                   run_rt_correction=True, run_normalization=False,
                   mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.05, min_ppc=0.6,
+                  peak_cor_rt_tol=0.05, min_ppc=0.6, roi_min_length=3,
                   ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
                   ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05):
     """
@@ -94,7 +94,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
             print("Processing files from " + str(i) + " to " + str(i + batch_size))
         p = multiprocessing.Pool(workers)
         p.starmap(feature_detection,
-                  [(f, config, peak_cor_rt_tol, min_ppc) for f in raw_file_names[i:i + batch_size]])
+                  [(f, config, peak_cor_rt_tol, min_ppc, roi_min_length) for f in raw_file_names[i:i + batch_size]])
         p.close()
         p.join()
 
@@ -247,7 +247,7 @@ def init_config(path=None, msms_library_path=None,
 
 
 def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1,
-                      min_ppc=0.6,
+                      min_ppc=0.6, roi_min_length=3,
                       cal_g_score=True, cal_a_score=True,
                       anno_isotope=True, anno_adduct=True, anno_in_source_fragment=False,
                       annotation=False, ms2_library_path=None, cut_roi=True):
@@ -296,10 +296,11 @@ def feature_detection(file_name, params=None, peak_cor_rt_tol=0.1,
             annotate_adduct(d, mz_tol=0.01, rt_tol=peak_cor_rt_tol)
 
         # calc peak-peak correlations for feature groups and output
-        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, save=False)
+        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, save=False)
 
         # generate pseudo ms1 spec, for ms1_id
-        generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol, min_ppc=min_ppc, save=True)
+        generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol, min_ppc=min_ppc,
+                            roi_min_length=roi_min_length, save=True)
 
         # output single file to a txt file
         d.output_single_file()
@@ -315,8 +316,8 @@ def main_workflow_single(file_path,
                          msms_library_path,
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
-                         peak_cor_rt_tol=0.1, min_ppc=0.6,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                         peak_cor_rt_tol=0.1, min_ppc=0.6, roi_min_length=3,
+                         ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
                          ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          plot_bpc=False):
     """
@@ -362,12 +363,12 @@ def main_workflow_single(file_path,
 
         # calc peak-peak correlations for feature groups and output
         print('Calculating peak-peak correlations...')
-        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, save=False)
+        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, save=False)
 
         # generate pseudo ms1 spec, for ms1_id
         print('Generating pseudo MS1 spectra...')
         pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
-                                                 min_ppc=min_ppc)
+                                                 min_ppc=min_ppc, roi_min_length=roi_min_length, save=False)
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
@@ -377,7 +378,7 @@ def main_workflow_single(file_path,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
         # write out ms1 id results
-        write_ms1_id_results(pseudo_ms1_spectra, save=True, output_dir=config.single_file_dir)
+        write_ms1_id_results(pseudo_ms1_spectra, save=True, out_dir=os.path.dirname(file_path))
 
     # annotate MS2 spectra
     if ms2_id and config.msms_library is not None:
@@ -475,19 +476,19 @@ if __name__ == "__main__":
     #               run_rt_correction=True, run_normalization=True,
     #               mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=30000,
     #               align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-    #               peak_cor_rt_tol=0.05,
-    #               min_ppc=0.8,
-    #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+    #               peak_cor_rt_tol=0.025,
+    #               min_ppc=0.9, roi_min_length=3,
+    #               ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
     #               ms1id_min_prec_rel_int_in_ms1=0.01, ms1id_max_prec_rel_int_in_other_ms2=0.05)
 
     main_workflow_single(file_path='/Users/shipei/Documents/test_data/mzXML/std/Standards_p_1ugmL_glycocholic.mzXML',
                          msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/MassBank_NIST.pkl',
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                         mass_detect_int_tol=30000,  # default is 10000 for Orbitrap and 500 for TOF
-                         peak_cor_rt_tol=0.05,
-                         min_ppc=0.8,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                         mass_detect_int_tol=10000,  # default is 10000 for Orbitrap and 500 for TOF
+                         peak_cor_rt_tol=0.005,
+                         min_ppc=0.9, roi_min_length=3,
+                         ms1id_score_cutoff=0.6, ms1id_min_matched_peak=5,
                          ms1id_min_prec_rel_int_in_ms1=0.01,
                          ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          plot_bpc=False)
