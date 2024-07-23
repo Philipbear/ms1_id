@@ -208,9 +208,9 @@ def init_config(path=None, msms_library_path=None,
     # Feature detection
     config.mz_tol_ms1 = mz_tol_ms1  # m/z tolerance for MS1, default is 0.01
     config.mz_tol_ms2 = mz_tol_ms2  # m/z tolerance for MS2, default is 0.015
-    # config.int_tol = 30000  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments, integer
+    # config.int_tol = 30000  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments
     config.roi_gap = 30  # Gap within a feature, default is 30 (i.e. 30 consecutive scans without signal), integer
-    config.ppr = 0.7  # Peak peak correlation threshold for feature grouping, default is 0.7
+    config.ppr = 0.7  # Peak-peak correlation threshold for feature grouping, default is 0.7
 
     # Parameters for feature alignment
     config.align_mz_tol = align_mz_tol  # m/z tolerance for MS1, default is 0.01
@@ -469,32 +469,32 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
 
 
 if __name__ == "__main__":
-    # main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/std_mix_MSV000083297',
-    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
-    #               sample_dir='data',
-    #               ms1_id=True, ms2_id=False,
-    #               batch_size=100, cpu_ratio=0.8,
-    #               run_rt_correction=True, run_normalization=False,
-    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-    #               mass_detect_int_tol=10000,
-    #               align_mz_tol=0.01, align_rt_tol=0.15,
-    #               alignment_drop_by_fill_pct_ratio=0.1,
-    #               peak_cor_rt_tol=0.02, peak_group_rt_tol=0.05,
-    #               min_ppc=0.8, roi_min_length=3,
-    #               ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-    #               ms1id_min_prec_rel_int_in_ms1=0.01,
-    #               ms1id_max_prec_rel_int_in_other_ms2=0.05,
-    #               ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6)
+    main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/std_mix_MSV000083297',
+                  msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
+                  sample_dir='data',
+                  ms1_id=True, ms2_id=False,
+                  batch_size=100, cpu_ratio=0.8,
+                  run_rt_correction=True, run_normalization=False,
+                  mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+                  mass_detect_int_tol=10000,
+                  align_mz_tol=0.01, align_rt_tol=0.15,
+                  alignment_drop_by_fill_pct_ratio=0.1,
+                  peak_cor_rt_tol=0.02, peak_group_rt_tol=0.05,
+                  min_ppc=0.8, roi_min_length=3,
+                  ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+                  ms1id_min_prec_rel_int_in_ms1=0.01,
+                  ms1id_max_prec_rel_int_in_other_ms2=0.05,
+                  ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6)
 
-    main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
-                         msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
-                         ms1_id=True, ms2_id=True,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                         mass_detect_int_tol=10000,
-                         peak_cor_rt_tol=0.02, peak_group_rt_tol=0.05,
-                         min_ppc=0.9, roi_min_length=3,
-                         ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                         ms1id_min_prec_rel_int_in_ms1=0.01,
-                         ms1id_max_prec_rel_int_in_other_ms2=0.05,
-                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
-                         plot_bpc=False)
+    # main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
+    #                      msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
+    #                      ms1_id=True, ms2_id=True,
+    #                      mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+    #                      mass_detect_int_tol=10000,
+    #                      peak_cor_rt_tol=0.02, peak_group_rt_tol=0.05,
+    #                      min_ppc=0.9, roi_min_length=3,
+    #                      ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+    #                      ms1id_min_prec_rel_int_in_ms1=0.01,
+    #                      ms1id_max_prec_rel_int_in_other_ms2=0.05,
+    #                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
+    #                      plot_bpc=False)

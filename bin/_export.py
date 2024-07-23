@@ -159,7 +159,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
     df['similarity'] = df['similarity'].apply(lambda x: round(x, 4))
 
     # refine ms1 id results with feature table. for each feature, choose the most confident annotation
-    ms1_spec_ls = _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config)
+    ms1_annotation_ls = _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config)
 
     # add ms1 id results
     df['MS1_annotation'] = None
@@ -169,6 +169,16 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
     df['MS1_precursor_type'] = None
     df['MS1_inchikey'] = None
 
+    # add ms1 id results to the feature table
+    for aligned_ms1_annotation in ms1_annotation_ls:
+        idx = aligned_ms1_annotation.df_idx
+        annotation = aligned_ms1_annotation.selected_annotation
+        df.loc[idx, 'MS1_annotation'] = annotation.name
+        df.loc[idx, 'MS1_formula'] = annotation.formula
+        df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
+        df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
+        df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
+        df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
 
     df.to_csv(output_path, index=False, sep="\t")
 
@@ -184,8 +194,8 @@ def _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config):
     # only reserve annotated pseudo MS1 spectra
     ms1_spec_ls = [spec for spec in pseudo_ms1_spectra if spec.annotated]
 
-    all_df_idx_ls = []
-    aligned_ms1_annotation_ls = []
+    all_df_idx_ls = []  # list of indices in the feature table that have been matched
+    aligned_ms1_annotation_ls = []  # list of AlignedMS1Annotation objects
 
     for spec in ms1_spec_ls:
         if not spec.annotation_ls:
@@ -213,11 +223,13 @@ def _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config):
                 aligned_ms1_annotation.annotation_ls.append(annotation)
                 aligned_ms1_annotation_ls.append(aligned_ms1_annotation)
 
+    # find the one with the highest similarity score
+    for aligned_ms1_annotation in aligned_ms1_annotation_ls:
+        if len(aligned_ms1_annotation.annotation_ls) > 1:
+            aligned_ms1_annotation.selected_annotation = max(aligned_ms1_annotation.annotation_ls,
+                                                             key=lambda x: x.score)
+        else:
+            aligned_ms1_annotation.selected_annotation = aligned_ms1_annotation.annotation_ls[0]
 
-            #######
-            # find the one with the highest similarity score
-
-
-
-    return ms1_spec_ls
+    return aligned_ms1_annotation_ls
 
