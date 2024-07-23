@@ -36,7 +36,7 @@ def retrieve_pseudo_ms1_spectra(config):
 
 def generate_pseudo_ms1(msdata, ppc_matrix,
                         peak_group_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
-                        min_cluster_size=6, resolution=0.5,
+                        min_cluster_size=6, resolution=0.05,
                         min_overlap_ppc=0.95, save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for a single file
@@ -380,7 +380,7 @@ def plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_lengt
     # Plot all ROIs
     rt_values = [roi.rt for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope]
     mz_values = [roi.mz for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope]
-    plt.scatter(rt_values, mz_values, alpha=0.5, s=5, label='ROIs')
+    plt.scatter(rt_values, mz_values, alpha=0.5, s=5, label='Metabolic features')
 
     # Plot lines parallel to RT axis for pseudo MS1 spectra
     for pseudo_ms1 in pseudo_ms1_spectra:
@@ -391,7 +391,7 @@ def plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_lengt
     plt.xlabel('Retention Time (min)')
     plt.ylabel('m/z')
 
-    plt.title('RT-m/z Scatter Plot with Pseudo MS1 Spectra')
+    plt.title('Metabolic feature scatter plot with pseudo MS1 spectra')
     plt.legend()
     plt.tight_layout()
     plt.show()
