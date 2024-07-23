@@ -36,7 +36,7 @@ def retrieve_pseudo_ms1_spectra(config):
 
 def generate_pseudo_ms1(msdata, ppc_matrix,
                         peak_group_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
-                        min_cluster_size=6,
+                        min_cluster_size=6, resolution=0.5,
                         min_overlap_ppc=0.95, save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for a single file
@@ -47,6 +47,7 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
     :param min_ppc: minimum PPC score for clustering
     :param min_overlap_ppc: minimum PPC score for allowing overlaps
     :param min_cluster_size: minimum number of ROIs in a cluster
+    :param resolution: resolution parameter for Louvain clustering
     :param save: whether to save the pseudo MS1 spectra
     :param save_dir: directory to save the pseudo MS1 spectra
     """
@@ -58,10 +59,10 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
     # Cluster ROIs using Louvain algorithm
     cluster_rois = _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=roi_min_length,
                                                min_ppc=min_ppc, peak_group_rt_tol=peak_group_rt_tol,
-                                               resolution=0.5, min_cluster_size=min_cluster_size,
+                                               resolution=resolution, min_cluster_size=min_cluster_size,
                                                seed=123)
 
-    plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix)
+    # plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix)
 
     # generate pseudo MS1 spectra
     pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
@@ -387,8 +388,9 @@ def plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_lengt
         mz_min, mz_max = min(pseudo_ms1.mzs), max(pseudo_ms1.mzs)
         plt.vlines(x=rt, ymin=mz_min, ymax=mz_max, color='r', alpha=0.3, linestyle='--')
 
-    plt.xlabel('Retention Time')
+    plt.xlabel('Retention Time (min)')
     plt.ylabel('m/z')
+
     plt.title('RT-m/z Scatter Plot with Pseudo MS1 Spectra')
     plt.legend()
     plt.tight_layout()

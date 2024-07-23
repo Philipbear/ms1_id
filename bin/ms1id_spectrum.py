@@ -36,9 +36,9 @@ def annotate_ms1_id(ms1_spectra,
     return ms1_id_annotation(ms1_spec_ls=ms1_spectra,
                              ms2_library=msms_library_path,
                              mz_tol=mz_tol,
-                             min_prec_rel_int_in_ms1=min_prec_rel_int_in_ms1,
                              score_cutoff=score_cutoff,
                              min_matched_peak=min_matched_peak,
+                             min_prec_rel_int_in_ms1=min_prec_rel_int_in_ms1,
                              max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
 
 

@@ -99,6 +99,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=
     df['MS1_formula'] = None
     df['MS1_similarity'] = None
     df['MS1_matched_peak'] = None
+    df['MS1_spectral_usage'] = None
     df['MS1_precursor_type'] = None
     df['MS1_inchikey'] = None
 
@@ -110,13 +111,21 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=
                 this_rt = spec.rt
                 for annotation in spec.annotation_ls:
                     this_precmz = annotation.precursor_mz
-                    # find row indices in the dataframe that match the precursor m/z, and has smallest RT difference
-                    _df = df[((df['m/z'] - this_precmz).abs() <= msdata.params.mz_tol_ms1)
-                             & ((df['RT'] - this_rt).abs() <= 1)]
-                    if len(_df) == 0:
+                    # Create a boolean mask for the conditions
+                    mask = ((df['m/z'] - this_precmz).abs() <= msdata.params.mz_tol_ms1) & (
+                                (df['RT'] - this_rt).abs() <= 1)
+
+                    if not mask.any():
                         continue
-                    # find the row with the smallest RT difference
-                    idx = _df.sort_values(lambda x: abs(x['RT'] - this_rt)).index[0]
+
+                    # Use loc to create a view of the dataframe
+                    _df = df.loc[mask].copy()  # Create an explicit copy
+
+                    # Calculate RT difference
+                    _df.loc[:, 'RT_diff'] = abs(_df['RT'] - this_rt)
+
+                    # Find the row with the smallest RT difference
+                    idx = _df['RT_diff'].idxmin()
 
                     # if the annotation is better than the previous one, update the row
                     if df.loc[idx, 'MS1_similarity'] is None or annotation.score > df.loc[idx, 'MS1_similarity']:
@@ -124,6 +133,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=
                         df.loc[idx, 'MS1_formula'] = annotation.formula
                         df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
                         df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
+                        df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
                         df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
                         df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
 
@@ -166,6 +176,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
     df['MS1_formula'] = None
     df['MS1_similarity'] = None
     df['MS1_matched_peak'] = None
+    df['MS1_spectral_usage'] = None
     df['MS1_precursor_type'] = None
     df['MS1_inchikey'] = None
 
@@ -177,6 +188,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
         df.loc[idx, 'MS1_formula'] = annotation.formula
         df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
         df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
+        df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
         df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
         df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
 
@@ -198,18 +210,23 @@ def _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config):
     aligned_ms1_annotation_ls = []  # list of AlignedMS1Annotation objects
 
     for spec in ms1_spec_ls:
-        if not spec.annotation_ls:
-            continue
-
-        # find the corresponding feature in the feature table
+        this_rt = spec.rt
         for annotation in spec.annotation_ls:
-            # find the row in the feature table that matches the precursor m/z
-            _df = df[(df['m/z'] - annotation.precursor_mz).abs() <= config.align_mz_tol &
-                     (df['RT'] - spec.rt).abs() <= 1]
-            if len(_df) == 0:
+            this_precmz = annotation.precursor_mz
+            # Create a boolean mask for the conditions
+            mask = ((df['m/z'] - this_precmz).abs() <= config.align_mz_tol) & ((df['RT'] - this_rt).abs() <= 1)
+
+            if not mask.any():
                 continue
-            # find the row with the smallest RT difference
-            idx = _df.sort_values(lambda x: abs(x['RT'] - spec.rt)).index[0]
+
+            # Use loc to create a view of the dataframe
+            _df = df.loc[mask].copy()  # Create an explicit copy
+
+            # Calculate RT difference
+            _df.loc[:, 'RT_diff'] = abs(_df['RT'] - this_rt)
+
+            # Find the row with the smallest RT difference
+            idx = _df['RT_diff'].idxmin()
 
             if idx in all_df_idx_ls:
                 aligned_ms1_annotation_idx = all_df_idx_ls.index(idx)
