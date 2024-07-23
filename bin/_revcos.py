@@ -28,6 +28,12 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
                 a['precursor_mz'] = float(a.pop(similar_key[0]))
             except:
                 a['precursor_mz'] = 0.0
+    else:
+        for a in db:
+            try:
+                a['precursor_mz'] = float(a['precursor_mz'])
+            except:
+                a['precursor_mz'] = 0.0
 
     print('initializing search engine')
     search_engine = FlashRevcosSearch(max_ms2_tolerance_in_da=mz_tol * 1.05,
@@ -80,7 +86,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_int_in
     return ms1_spec_ls
 
 
-def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_int_in_ms1=0.01,
+def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.02, min_prec_rel_int_in_ms1=0.01,
                            score_cutoff=0.8, min_matched_peak=6):
     """
     Perform ms1 annotation
@@ -92,6 +98,8 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
     :param min_matched_peak: for rev cos
     :return: PseudoMS1-like object
     """
+
+    mz_tol = max(mz_tol, 0.02)  # indexed library mz_tol is 0.02
 
     # Load the data
     with open(ms2_library, 'rb') as file:
@@ -107,7 +115,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.01, min_prec_rel_i
             ms1_tolerance_in_da=0.02,
             ms2_tolerance_in_da=mz_tol,
             method="open",
-            precursor_ions_removal_da=None,
+            precursor_ions_removal_da=1.6,
             noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.2,
             max_peak_num=None
@@ -222,52 +230,5 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
     return ms1_spec_ls
 
 
-def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
-    """
-    Output the annotated ms1 spectra
-    :param ms1_spec_ls: a list of PseudoMS1-like object
-    :param save: bool, whether to save the results
-    :param out_dir: output folder
-    :return: None
-    """
-
-    # only write out spectra with annotations
-    ms1_spec_ls = [spec for spec in ms1_spec_ls if spec.annotated]
-
-    out_list = []
-    for spec in ms1_spec_ls:
-
-        pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
-
-        for annotation in spec.annotation_ls:
-            # pseudo_ms1_str: mz1 int1; mz2 int2; ...
-            out_list.append({
-                'file_name': spec.file_name,
-                'rt': round(spec.rt, 2) if spec.rt else None,
-                'intensity': round(annotation.intensity, 0) if annotation.intensity else None,
-                'name': annotation.name,
-                'precursor_mz': round(annotation.precursor_mz, 4),
-                'matched_score': round(annotation.score, 4),
-                'matched_peak': annotation.matched_peak,
-                'spectral_usage': round(annotation.spectral_usage, 4) if annotation.spectral_usage else None,
-                # 'search_eng_matched_id': annotation.search_eng_matched_id,
-                'precursor_type': annotation.precursor_type,
-                'formula': annotation.formula,
-                'inchikey': annotation.inchikey,
-                'instrument_type': annotation.instrument_type,
-                'collision_energy': annotation.collision_energy,
-                # 'pseudo_ms1': pseudo_ms1_str
-            })
-
-    out_df = pd.DataFrame(out_list)
-
-    if save:
-        out_path = os.path.join(out_dir, 'ms1_id_results.tsv')
-        out_df.to_csv(out_path, index=False, sep='\t')
-
-    return out_df
-
-
 if __name__ == "__main__":
     prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02, sqrt_transform=True)
-    prepare_ms2_lib(ms2db='../data/nist20.msp', mz_tol=0.02, sqrt_transform=True)

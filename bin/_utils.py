@@ -39,6 +39,17 @@ class SpecAnnotation:
         return f"name {self.name}, score {self.score}, matched_peak {self.matched_peak}, db_id {self.db_id}"
 
 
+class AlignedMS1Annotation:
+    """
+    for exporting aligned feature table with MS1 IDs
+    store all possible MS1 IDs for a feature
+    """
+    def __init__(self, idx):
+        self.df_idx = idx  # index of the matched feature in the feature table
+        self.annotation_ls = []  # list of SpecAnnotation objects
+        self.selected_annotation = None
+
+
 class RoiPair:
     def __init__(self, roi_a, roi_b, ppc):
 

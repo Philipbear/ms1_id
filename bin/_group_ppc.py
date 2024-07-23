@@ -35,7 +35,7 @@ def retrieve_pseudo_ms1_spectra(config):
 
 
 def generate_pseudo_ms1(msdata, ppc_matrix,
-                        peak_cor_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
+                        peak_group_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
                         min_cluster_size=6,
                         min_overlap_ppc=0.95, save=False, save_dir=None):
     """
@@ -43,7 +43,7 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
     :param msdata: MSData object
     :param ppc_matrix: sparse matrix of PPC scores
     :param roi_min_length: minimum length of ROIs to consider for clustering
-    :param peak_cor_rt_tol: RT tolerance for clustering
+    :param peak_group_rt_tol: RT tolerance for clustering
     :param min_ppc: minimum PPC score for clustering
     :param min_overlap_ppc: minimum PPC score for allowing overlaps
     :param min_cluster_size: minimum number of ROIs in a cluster
@@ -57,8 +57,8 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
 
     # Cluster ROIs using Louvain algorithm
     cluster_rois = _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=roi_min_length,
-                                               min_ppc=min_ppc, peak_cor_rt_tol=peak_cor_rt_tol,
-                                               resolution=1.0, min_cluster_size=min_cluster_size,
+                                               min_ppc=min_ppc, peak_group_rt_tol=peak_group_rt_tol,
+                                               resolution=0.5, min_cluster_size=min_cluster_size,
                                                seed=123)
 
     plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix)
@@ -211,13 +211,13 @@ def save_pseudo_ms1_spectra(pseudo_ms1_spectra, msdata, save_dir):
         pickle.dump(pseudo_ms1_spectra, f)
 
 
-def _refine_clusters_by_rt_window(cluster_rois, msdata, peak_cor_rt_tol, min_cluster_size):
+def _refine_clusters_by_rt_window(cluster_rois, msdata, peak_group_rt_tol, min_cluster_size):
     """
     Refine clusters by finding the optimal RT window that preserves the most data points within the given RT tolerance.
 
     :param cluster_rois: dictionary of cluster labels and ROI IDs
     :param msdata: MSData object containing ROIs
-    :param peak_cor_rt_tol: maximum allowed RT difference within a cluster
+    :param peak_group_rt_tol: maximum allowed RT difference within a cluster
     :return: refined dictionary of cluster labels and ROI IDs
     """
     refined_clusters = {}
@@ -234,7 +234,7 @@ def _refine_clusters_by_rt_window(cluster_rois, msdata, peak_cor_rt_tol, min_clu
         best_start_index = 0
         for start_index in range(len(rts)):
             end_index = start_index
-            while end_index < len(rts) and rts[end_index] - rts[start_index] <= peak_cor_rt_tol:
+            while end_index < len(rts) and rts[end_index] - rts[start_index] <= peak_group_rt_tol:
                 end_index += 1
             count = end_index - start_index
             if count > max_count:
@@ -252,15 +252,15 @@ def _refine_clusters_by_rt_window(cluster_rois, msdata, peak_cor_rt_tol, min_clu
 
 
 def _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=3,
-                                min_ppc=0.8, peak_cor_rt_tol=0.05, min_cluster_size=6,
-                                resolution=1.0, seed=123):
+                                min_ppc=0.8, peak_group_rt_tol=0.05, min_cluster_size=6,
+                                resolution=0.5, seed=123):
     """
     Cluster ROIs using Louvain algorithm based on high PPC scores
     :param msdata: MSData object containing ROIs
     :param ppc_matrix: sparse matrix of PPC scores
     :param roi_min_length: minimum length of ROIs to consider for clustering
     :param min_ppc: min PPC score for clustering
-    :param peak_cor_rt_tol: maximum allowed RT difference within a cluster
+    :param peak_group_rt_tol: maximum allowed RT difference within a cluster
     :param resolution: resolution parameter for Louvain clustering, lower values result in fewer clusters
     :param min_cluster_size: minimum number of ROIs in a cluster
     :param seed: random seed
@@ -288,7 +288,7 @@ def _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=3,
     print(f"  Smallest cluster size: {min(len(cluster) for cluster in cluster_rois.values())}")
     print(f"  Average cluster size: {sum(len(cluster) for cluster in cluster_rois.values()) / len(cluster_rois):.2f}")
 
-    cluster_rois = _refine_clusters_by_rt_window(cluster_rois, msdata, peak_cor_rt_tol=peak_cor_rt_tol,
+    cluster_rois = _refine_clusters_by_rt_window(cluster_rois, msdata, peak_group_rt_tol=peak_group_rt_tol,
                                                  min_cluster_size=min_cluster_size)
 
     print(f"Final clustering summary:")
@@ -389,7 +389,6 @@ def plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_lengt
 
     plt.xlabel('Retention Time')
     plt.ylabel('m/z')
-    plt.xlim(3.0, 3.15)
     plt.title('RT-m/z Scatter Plot with Pseudo MS1 Spectra')
     plt.legend()
     plt.tight_layout()
