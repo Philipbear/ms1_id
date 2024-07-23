@@ -34,7 +34,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                   peak_cor_rt_tol=0.015, peak_group_rt_tol=0.05,
                   min_ppc=0.6, roi_min_length=3,
                   ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                  ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05,
+                  ms1id_min_prec_int_in_ms1=50000, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                   ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
     """
     Main workflow for MS1_ID.
@@ -54,11 +54,15 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     :param align_rt_tol: alignment RT tolerance
     :param alignment_drop_by_fill_pct_ratio: alignment drop by fill percentage ratio
     :param peak_cor_rt_tol: peak correlation RT tolerance
+    :param peak_group_rt_tol: peak grouping RT tolerance
     :param min_ppc: minimum peak-peak correlation threshold
+    :param roi_min_length: minimum ROI length for feature grouping
     :param ms1id_score_cutoff: ms1 ID score cutoff
     :param ms1id_min_matched_peak: ms1 ID min matched peak
-    :param ms1id_min_prec_rel_int_in_ms1: ms1 ID, min precursor relative intensity in MS1
+    :param ms1id_min_prec_int_in_ms1: ms1 ID, min precursor intensity in MS1
     :param ms1id_max_prec_rel_int_in_other_ms2: ms1 ID, max precursor relative intensity in other MS2
+    :param ms2id_score_cutoff: ms2 ID score cutoff
+    :param ms2id_min_matched_peak: ms2 ID min matched peak
     :return:
     """
 
@@ -111,7 +115,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
 
         # perform rev cos search
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
-                                               min_prec_rel_int_in_ms1=ms1id_min_prec_rel_int_in_ms1,
+                                               min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
@@ -317,7 +321,7 @@ def main_workflow_single(file_path,
                          peak_cor_rt_tol=0.015, peak_group_rt_tol=0.05,
                          min_ppc=0.6, roi_min_length=3,
                          ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                         ms1id_min_prec_rel_int_in_ms1=0.05, ms1id_max_prec_rel_int_in_other_ms2=0.05,
+                         ms1id_min_prec_int_in_ms1=50000, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6,
                          plot_bpc=False):
     """
@@ -374,7 +378,7 @@ def main_workflow_single(file_path,
         # perform rev cos search
         print('Performing MS1 ID annotation...')
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
-                                               min_prec_rel_int_in_ms1=ms1id_min_prec_rel_int_in_ms1,
+                                               min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
@@ -482,7 +486,7 @@ if __name__ == "__main__":
     #               peak_cor_rt_tol=0.025, peak_group_rt_tol=0.05,
     #               min_ppc=0.8, roi_min_length=3,
     #               ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-    #               ms1id_min_prec_rel_int_in_ms1=0.01,
+    #               ms1id_min_prec_int_in_ms1=50000,
     #               ms1id_max_prec_rel_int_in_other_ms2=0.05,
     #               ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6)
 
@@ -494,7 +498,7 @@ if __name__ == "__main__":
                          peak_cor_rt_tol=0.025, peak_group_rt_tol=0.05,
                          min_ppc=0.8, roi_min_length=3,
                          ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                         ms1id_min_prec_rel_int_in_ms1=0.01,
+                         ms1id_min_prec_int_in_ms1=50000,
                          ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
                          plot_bpc=False)

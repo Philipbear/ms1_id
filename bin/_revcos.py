@@ -62,14 +62,14 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
-                      min_prec_int_in_ms1=0.01,
+                      min_prec_int_in_ms1=1000,
                       max_prec_rel_int_in_other_ms2=0.05):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
     :param ms2_library: path to the pickle file, indexed library
     :param mz_tol: mz tolerance in Da, for rev cos matching
-    :param min_prec_int_in_ms1: float, minimum required precursor intensity in MS1 spectrum
+    :param min_prec_int_in_ms1: minimum required precursor intensity in MS1 spectrum
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
     :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
@@ -95,7 +95,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.02, min_prec_int_i
     :param ms1_spec_ls: a list of PseudoMS1-like object
     :param ms2_library: path to the pickle file, indexed library
     :param mz_tol: mz tolerance in Da, for rev cos matching
-    :param min_prec_int_in_ms1: float, minimum precursor intensity in MS1 spectrum
+    :param min_prec_int_in_ms1: minimum precursor intensity in MS1 spectrum
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
     :return: PseudoMS1-like object

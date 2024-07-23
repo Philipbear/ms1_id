@@ -19,16 +19,16 @@ def annotate_ms1_id(ms1_spectra,
                     mz_tol=0.01,
                     score_cutoff=0.8,
                     min_matched_peak=6,
-                    min_prec_rel_int_in_ms1=0.01,
+                    min_prec_int_in_ms1=1000,
                     max_prec_rel_int_in_other_ms2=0.05):
     """
     Perform ms1 annotation
     :param ms1_spectra: a list of PseudoMS1-like object
     :param msms_library_path: path to the msms library
     :param mz_tol: float, mz tolerance
-    :param min_prec_rel_int_in_ms1: float, minimum relative intensity in the precursor ion
     :param score_cutoff: float, score cutoff
     :param min_matched_peak: int, minimum matched peak
+    :param min_prec_int_in_ms1: minimum precursor intensity in MS1 spectrum
     :param max_prec_rel_int_in_other_ms2: float, maximum relative intensity in the precursor ion
     :return: annotated ms1_spectra
     """
@@ -38,7 +38,7 @@ def annotate_ms1_id(ms1_spectra,
                              mz_tol=mz_tol,
                              score_cutoff=score_cutoff,
                              min_matched_peak=min_matched_peak,
-                             min_prec_rel_int_in_ms1=min_prec_rel_int_in_ms1,
+                             min_prec_int_in_ms1=min_prec_int_in_ms1,
                              max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
 
 
@@ -58,7 +58,7 @@ if __name__ == "__main__":
                                             mz_tol=0.01,
                                             score_cutoff=0.8,
                                             min_matched_peak=6,
-                                            min_prec_rel_int_in_ms1=0.01,
+                                            min_prec_int_in_ms1=0,
                                             max_prec_rel_int_in_other_ms2=0.05)
 
     # print the results
