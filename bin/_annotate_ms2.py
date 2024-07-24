@@ -45,11 +45,10 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
                 peaks=peaks,
                 ms1_tolerance_in_da=parameters.mz_tol_ms1,
                 ms2_tolerance_in_da=ms2_tol,
-                method="identity",  # "identity", "open", "neutral_loss", "hybrid", "all", or list of the above
-                precursor_ions_removal_da=None,
-                noise_threshold=0.0,
-                min_ms2_difference_in_da=ms2_tol * 2.2,
-                max_peak_num=None
+                method="identity",
+                precursor_ions_removal_da=0.5,
+                noise_threshold=0.001,
+                min_ms2_difference_in_da=ms2_tol * 2.02
             )
             score_arr, matched_peak_arr, spec_usage_arr = cos_result['identity_search']
 

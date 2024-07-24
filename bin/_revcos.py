@@ -6,7 +6,7 @@ import pandas as pd
 from ms_entropy import read_one_spectrum
 
 from _utils import SpecAnnotation
-from flash_revcos_search import FlashRevcosSearch
+from flash_cos import FlashCos
 
 
 def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
@@ -36,18 +36,16 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
                 a['precursor_mz'] = 0.0
 
     print('initializing search engine')
-    search_engine = FlashRevcosSearch(max_ms2_tolerance_in_da=mz_tol * 1.05,
-                                      mz_index_step=0.0001,
-                                      low_memory=False,
-                                      path_data=None,
-                                      sqrt_transform=sqrt_transform)
+    search_engine = FlashCos(max_ms2_tolerance_in_da=mz_tol * 1.005,
+                             mz_index_step=0.0001,
+                             path_data=None,
+                             sqrt_transform=sqrt_transform)
     print('building index')
     search_engine.build_index(db,
-                              max_indexed_mz=1500.0,
-                              precursor_ions_removal_da=None,
-                              noise_threshold=0.0,
-                              min_ms2_difference_in_da=mz_tol * 2.2,
-                              max_peak_num=-1,
+                              max_indexed_mz=2000,
+                              precursor_ions_removal_da=0.5,
+                              noise_threshold=0.001,
+                              min_ms2_difference_in_da=mz_tol * 2.02,
                               clean_spectra=True)
 
     new_path = os.path.splitext(ms2db)[0] + '.pkl'
@@ -78,122 +76,13 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
 
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching_new(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
-                                         min_prec_int_in_ms1=min_prec_int_in_ms1,
-                                         score_cutoff=score_cutoff, min_matched_peak=min_matched_peak)
+                                             min_prec_int_in_ms1=min_prec_int_in_ms1,
+                                             score_cutoff=score_cutoff, min_matched_peak=min_matched_peak)
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
                                         max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
 
-    return ms1_spec_ls
-
-
-def ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=0.02, min_prec_int_in_ms1=1000,
-                           score_cutoff=0.8, min_matched_peak=6):
-    """
-    Perform ms1 annotation
-    :param ms1_spec_ls: a list of PseudoMS1-like object
-    :param ms2_library: path to the pickle file, indexed library
-    :param mz_tol: mz tolerance in Da, for rev cos matching
-    :param min_prec_int_in_ms1: minimum precursor intensity in MS1 spectrum
-    :param score_cutoff: for rev cos
-    :param min_matched_peak: for rev cos
-    :return: PseudoMS1-like object
-    """
-
-    mz_tol = max(mz_tol, 0.02)  # indexed library mz_tol is 0.02
-
-    # Load the data
-    with open(ms2_library, 'rb') as file:
-        search_eng = pickle.load(file)
-
-    for spec in ms1_spec_ls:
-        if len(spec.mzs) == 0:
-            continue
-
-        matching_result = search_eng.search(
-            precursor_mz=0.0,
-            peaks=[[mz, intensity] for mz, intensity in zip(spec.mzs, spec.intensities)],
-            ms1_tolerance_in_da=0.02,
-            ms2_tolerance_in_da=mz_tol,
-            method="open",
-            precursor_ions_removal_da=None,
-            noise_threshold=0.0,
-            min_ms2_difference_in_da=mz_tol * 2.2,
-            max_peak_num=None
-        )
-
-        score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
-
-        # filter by matching cutoffs
-        v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
-
-        if len(v) > 0:
-            # Filter matches based on precursor relative intensity in MS1
-            valid_matches = []
-            max_intensity = max(spec.intensities)
-            for idx in v:
-                matched = {k.lower(): v for k, v in search_eng[idx].items()}
-                precursor_mz = matched.get('precursor_mz')
-
-                # ensure precursor_mz min_prec_rel_int_in_ms1 in the MS1 spectrum
-                if precursor_mz is not None:
-                    # Find the closest m/z in the spectrum to the precursor m/z
-                    closest_mz_idx = np.argmin(np.abs(np.array(spec.mzs) - precursor_mz))
-                    if abs(spec.mzs[closest_mz_idx] - precursor_mz) <= mz_tol:
-                        prec_intensity = spec.intensities[closest_mz_idx]
-                        if prec_intensity >= min_prec_int_in_ms1:
-                            valid_matches.append(idx)
-            v = np.array(valid_matches)
-
-            if len(v) > 0:
-                for matched_index in v:
-                    # Get the details of each match
-                    matched_score = score_arr[matched_index]
-                    matched_peaks = matched_peak_arr[matched_index]
-                    spectral_usage = spec_usage_arr[matched_index]
-
-                    # Get the corresponding spectrum from the search engine's database
-                    matched_spectrum = search_eng[matched_index]
-                    matched = {k.lower(): q for k, q in matched_spectrum.items()}
-
-                    # Create a SpecAnnotation object for the match
-                    annotation = SpecAnnotation(matched_index, matched_score, matched_peaks)
-
-                    annotation.spectral_usage = spectral_usage
-
-                    # annotation intensity: the intensity of the precursor peak in the MS1 spectrum
-                    annotation.intensity = spec.intensities[
-                        np.argmin(np.abs(np.array(spec.mzs) - matched.get('precursor_mz')))]
-
-                    # Fill in the database info from the matched spectrum
-                    annotation.name = matched.get('name', None)
-                    annotation.precursor_mz = matched.get('precursor_mz')
-
-                    precursor_type = matched.get('precursor_type', None)
-                    if not precursor_type:
-                        precursor_type = matched.get('precursortype', None)
-                    annotation.precursor_type = precursor_type
-
-                    annotation.formula = matched.get('formula', None)
-                    annotation.inchikey = matched.get('inchikey', None)
-                    annotation.instrument_type = matched.get('instrument_type', None)
-                    annotation.collision_energy = matched.get('collision_energy', None)
-                    annotation.peaks = matched.get('peaks', None)
-
-                    # Add the annotation to the spectrum
-                    spec.annotated = True
-                    spec.annotation_ls.append(annotation)
-
-                # sort the annotations by precursor m/z in descending order
-                spec.annotation_ls = sorted(spec.annotation_ls, key=lambda x: x.precursor_mz, reverse=True)
-
-            else:
-                spec.annotated = False
-        else:
-            spec.annotated = False
-
-    # After the loop, ms1_spec_ls will have updated annotations
     return ms1_spec_ls
 
 
@@ -218,21 +107,27 @@ def ms1_id_revcos_matching_new(ms1_spec_ls: List, ms2_library: str, mz_tol: floa
         search_eng = pickle.load(file)
 
     for spec in ms1_spec_ls:
-        if len(spec.mzs) == 0:
+        if len(spec.mzs) < min_matched_peak:
+            spec.annotated = False
             continue
 
+        # Sort mzs and intensities in ascending order of mz
+        sorted_indices = np.argsort(spec.mzs)
+        sorted_mzs = np.array(spec.mzs)[sorted_indices]
+        sorted_intensities = np.array(spec.intensities)[sorted_indices]
+
         all_matches = []
-        for prec_mz in spec.mzs:
+        for prec_mz in sorted_mzs[min_matched_peak - 1:]:
+
             matching_result = search_eng.search(
                 precursor_mz=prec_mz,
-                peaks=[[mz, intensity] for mz, intensity in zip(spec.mzs, spec.intensities)],
+                peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
                 ms1_tolerance_in_da=mz_tol,
                 ms2_tolerance_in_da=mz_tol,
                 method="identity",
-                precursor_ions_removal_da=-mz_tol,  # reserve mzs up to prec_mz + mz_tol
-                noise_threshold=0.0,
-                min_ms2_difference_in_da=mz_tol * 2.2,
-                max_peak_num=None
+                precursor_ions_removal_da=0.5,  # reserve mzs up to prec_mz + mz_tol
+                noise_threshold=0.001,
+                min_ms2_difference_in_da=mz_tol * 2.02
             )
 
             score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
@@ -250,9 +145,9 @@ def ms1_id_revcos_matching_new(ms1_spec_ls: List, ms2_library: str, mz_tol: floa
             precursor_mz = matched.get('precursor_mz')
 
             if precursor_mz is not None:
-                closest_mz_idx = np.argmin(np.abs(np.array(spec.mzs) - precursor_mz))
-                if abs(spec.mzs[closest_mz_idx] - precursor_mz) <= mz_tol:
-                    prec_intensity = spec.intensities[closest_mz_idx]
+                closest_mz_idx = np.argmin(np.abs(sorted_mzs - precursor_mz))
+                if abs(sorted_mzs[closest_mz_idx] - precursor_mz) <= mz_tol:
+                    prec_intensity = sorted_intensities[closest_mz_idx]
                     if prec_intensity >= min_prec_int_in_ms1:
                         valid_matches.append((idx, score, matched_peaks, spectral_usage, prec_mz))
 
@@ -264,10 +159,10 @@ def ms1_id_revcos_matching_new(ms1_spec_ls: List, ms2_library: str, mz_tol: floa
 
                 annotation = SpecAnnotation(idx, score, matched_peaks)
                 annotation.spectral_usage = spectral_usage
-                annotation.intensity = spec.intensities[np.argmin(np.abs(np.array(spec.mzs) - prec_mz))]
+                annotation.intensity = sorted_intensities[np.argmin(np.abs(sorted_mzs - prec_mz))]
 
                 annotation.name = matched.get('name', None)
-                annotation.precursor_mz = matched.get('precursor_mz', None)
+                annotation.precursor_mz = matched.get('precursor_mz')
 
                 precursor_type = matched.get('precursor_type', None)
                 if not precursor_type:
