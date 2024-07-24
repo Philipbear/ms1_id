@@ -64,15 +64,20 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
                     matched_peak = matched_peak_arr[idx]
 
         if matched:
-            f.annotation = matched['name']
+            f.annotation = matched.get('name', None)
             f.search_mode = 'identity_search'
             f.similarity = highest_similarity
             f.matched_peak_number = matched_peak
-            f.smiles = matched['smiles'] if 'smiles' in matched else None
-            f.inchikey = matched['inchikey'] if 'inchikey' in matched else None
+            f.smiles = matched.get('smiles', None)
+            f.inchikey = matched.get('inchikey', None)
             f.matched_ms2 = _convert_peaks_to_string(matched['peaks'])
-            f.formula = matched['formula'] if 'formula' in matched else None
-            f.adduct_type = matched['precursor_type']
+            f.formula = matched.get('formula', None)
+
+            precursor_type = matched.get('precursor_type')
+            if not precursor_type:
+                precursor_type = matched.get('precursortype')
+            f.adduct_type = precursor_type
+
             f.best_ms2 = _convert_peaks_to_string(best_ms2)
 
     return features
@@ -124,14 +129,14 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
                 if score_arr[idx] > ms2id_score_cutoff:
                     matched = search_eng[np.argmax(score_arr)]
                     matched = {k.lower(): v for k, v in matched.items()}
-                    f.annotation = matched['name']
+                    f.annotation = matched.get('name', None)
                     f.similarity = score_arr[idx]
                     f.matched_peak_number = matched_peak_arr[idx]
-                    f.smiles = matched['smiles'] if 'smiles' in matched else None
-                    f.inchikey = matched['inchikey'] if 'inchikey' in matched else None
-                    f.matched_precursor_mz = matched['precursor_mz']
-                    f.matched_peaks = matched['peaks']
-                    f.formula = matched['formula'] if 'formula' in matched else None
+                    f.smiles = matched.get('smiles', None)
+                    f.inchikey = matched.get('inchikey', None)
+                    f.matched_precursor_mz = matched.get('precursor_mz', None)
+                    f.matched_peaks = matched.get('peaks', None)
+                    f.formula = matched.get('formula', None)
 
 
 def _extract_peaks_from_string(ms2):

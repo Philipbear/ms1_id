@@ -5,6 +5,7 @@ create a workflow for MS1_ID using masscube backend.
 import multiprocessing
 import os
 import pickle
+from tqdm import tqdm
 
 from masscube.alignment import feature_alignment, gap_filling
 from masscube.feature_grouping import annotate_isotope
@@ -18,7 +19,7 @@ from _annotate_adduct import annotate_adduct
 from _calculate_ppc import calc_all_ppc
 from _group_ppc import generate_pseudo_ms1, retrieve_pseudo_ms1_spectra
 from _revcos import ms1_id_annotation
-from _export import write_ms1_id_results, write_single_file, write_feature_table
+from _export import write_single_file, write_feature_table
 
 # default parameters
 orbitrap_mass_detect_int_tol = 10000
@@ -31,10 +32,10 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                   run_rt_correction=True, run_normalization=False,
                   mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.015, peak_group_rt_tol=0.05,
+                  peak_cor_rt_tol=0.015,
                   min_ppc=0.6, roi_min_length=3,
                   ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                  ms1id_min_prec_int_in_ms1=50000, ms1id_max_prec_rel_int_in_other_ms2=0.05,
+                  ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                   ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
     """
     Main workflow for MS1_ID.
@@ -54,7 +55,6 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     :param align_rt_tol: alignment RT tolerance
     :param alignment_drop_by_fill_pct_ratio: alignment drop by fill percentage ratio
     :param peak_cor_rt_tol: peak correlation RT tolerance
-    :param peak_group_rt_tol: peak grouping RT tolerance
     :param min_ppc: minimum peak-peak correlation threshold
     :param roi_min_length: minimum ROI length for feature grouping
     :param ms1id_score_cutoff: ms1 ID score cutoff
@@ -92,6 +92,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
 
     # process files by multiprocessing, each batch contains 100 files by default (tunable in batch_size)
     print("Processing individual files for feature detection, evaluation, and grouping...")
+
     workers = int(multiprocessing.cpu_count() * cpu_ratio)
     print("\tA total of {} CPU cores are detected, {} cores are used.".format(multiprocessing.cpu_count(), workers))
     for i in range(0, len(raw_file_names), batch_size):
@@ -101,8 +102,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
             print("Processing files from " + str(i) + " to " + str(i + batch_size))
         p = multiprocessing.Pool(workers)
         p.starmap(feature_detection,
-                  [(f, config, peak_cor_rt_tol, peak_group_rt_tol,
-                    min_ppc, roi_min_length) for f in raw_file_names[i:i + batch_size]])
+                  [(f, config, peak_cor_rt_tol, min_ppc, roi_min_length,
+                    ms1id_min_matched_peak) for f in raw_file_names[i:i + batch_size]])
         p.close()
         p.join()
 
@@ -248,68 +249,64 @@ def init_config(path=None, msms_library_path=None,
     return config
 
 
-def feature_detection(file_name, params=None, peak_cor_rt_tol=0.01, peak_group_rt_tol=0.05,
-                      min_ppc=0.8, roi_min_length=3,
+def feature_detection(file_name, params=None, peak_cor_rt_tol=0.01,
+                      min_ppc=0.8, roi_min_length=3, ms1id_min_matched_peak=6,
                       cal_g_score=True, cal_a_score=True,
                       anno_isotope=True, anno_adduct=True, anno_in_source_fragment=False,
-                      annotation=False, ms2_library_path=None, cut_roi=True):
+                      ms2_library_path=None, cut_roi=True):
     """
     Untargeted feature detection from a single file (.mzML or .mzXML).
 
     Returns: An MSData object containing the processed data.
     """
 
-    try:
-        # create a MSData object
-        d = MSData()
+    # create a MSData object
+    d = MSData()
 
-        # set parameters
-        ms_type, ion_mode, centroid = find_ms_info(file_name)
-        if not centroid:
-            print("File: " + file_name + " is not centroided and skipped.")
-            return None
-
-        # if params is None, use the default parameters
-        if params is None:
-            params = Params()
-            params.set_default(ms_type, ion_mode)
-
-        if ms2_library_path is not None:
-            params.msms_library = ms2_library_path
-
-        # read raw data
-        d.read_raw_data(file_name, params)
-
-        # detect region of interests (ROIs)
-        d.find_rois()
-
-        # cut ROIs
-        if cut_roi:
-            d.cut_rois()
-
-        # label short ROIs, find the best MS2, and sort ROIs by m/z
-        d.summarize_roi(cal_g_score=cal_g_score, cal_a_score=cal_a_score)
-
-        if anno_isotope:
-            annotate_isotope(d, mz_tol=0.015, rt_tol=peak_cor_rt_tol)
-        # if anno_in_source_fragment:
-        #     annotate_in_source_fragment(d)
-        if anno_adduct:
-            annotate_adduct(d, mz_tol=0.01, rt_tol=peak_cor_rt_tol)
-
-        # calc peak-peak correlations for feature groups and output
-        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, save=False)
-
-        # generate pseudo ms1 spec, for ms1_id
-        generate_pseudo_ms1(d, ppc_matrix, peak_group_rt_tol=peak_group_rt_tol, min_ppc=min_ppc,
-                            roi_min_length=roi_min_length, save=True)
-
-        # output single file to a txt file
-        d.output_single_file()
-
-    except Exception as e:
-        print("Error: " + str(e))
+    # set parameters
+    ms_type, ion_mode, centroid = find_ms_info(file_name)
+    if not centroid:
+        print("File: " + file_name + " is not centroided and skipped.")
         return None
+
+    # if params is None, use the default parameters
+    if params is None:
+        params = Params()
+        params.set_default(ms_type, ion_mode)
+
+    if ms2_library_path is not None:
+        params.msms_library = ms2_library_path
+
+    # read raw data
+    d.read_raw_data(file_name, params)
+
+    # detect region of interests (ROIs)
+    d.find_rois()
+
+    # cut ROIs
+    if cut_roi:
+        d.cut_rois()
+
+    # label short ROIs, find the best MS2, and sort ROIs by m/z
+    d.summarize_roi(cal_g_score=cal_g_score, cal_a_score=cal_a_score)
+
+    if anno_isotope:
+        annotate_isotope(d, mz_tol=0.015, rt_tol=peak_cor_rt_tol)
+    # if anno_in_source_fragment:
+    #     annotate_in_source_fragment(d)
+    if anno_adduct:
+        annotate_adduct(d, mz_tol=0.01, rt_tol=peak_cor_rt_tol)
+
+    # calc peak-peak correlations for feature groups and output
+    ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, save=False)
+
+    # generate pseudo ms1 spec, for ms1_id
+    generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol, min_ppc=min_ppc,
+                        roi_min_length=roi_min_length, min_cluster_size=ms1id_min_matched_peak,
+                        save=True)
+
+    # output single file to a txt file
+    d.output_single_file()
 
     return d
 
@@ -318,10 +315,10 @@ def main_workflow_single(file_path,
                          msms_library_path,
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
-                         peak_cor_rt_tol=0.015, peak_group_rt_tol=0.05,
+                         peak_cor_rt_tol=0.015,
                          min_ppc=0.6, roi_min_length=3,
                          ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                         ms1id_min_prec_int_in_ms1=50000, ms1id_max_prec_rel_int_in_other_ms2=0.05,
+                         ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.05,
                          ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6,
                          plot_bpc=False):
     """
@@ -372,8 +369,10 @@ def main_workflow_single(file_path,
 
         # generate pseudo ms1 spec, for ms1_id
         print('Generating pseudo MS1 spectra...')
-        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix, peak_group_rt_tol=peak_group_rt_tol,
-                                                 min_ppc=min_ppc, roi_min_length=roi_min_length, save=False)
+        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
+                                                 min_ppc=min_ppc, roi_min_length=roi_min_length,
+                                                 min_cluster_size=ms1id_min_matched_peak,
+                                                 save=False)
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
@@ -473,35 +472,41 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
 
 
 if __name__ == "__main__":
-    # main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/std_mix_MSV000083297',
-    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
-    #               sample_dir='data',
-    #               ms1_id=True, ms2_id=False,
-    #               batch_size=100, cpu_ratio=0.8,
-    #               run_rt_correction=True, run_normalization=False,
-    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-    #               mass_detect_int_tol=10000,
-    #               align_mz_tol=0.01, align_rt_tol=0.15,
-    #               alignment_drop_by_fill_pct_ratio=0.1,
-    #               peak_cor_rt_tol=0.025, peak_group_rt_tol=0.05,
-    #               min_ppc=0.8, roi_min_length=3,
-    #               ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-    #               ms1id_min_prec_int_in_ms1=50000,
-    #               ms1id_max_prec_rel_int_in_other_ms2=0.05,
-    #               ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6)
+    import time
+    start = time.time()
 
-    main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
-                         msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
-                         ms1_id=True, ms2_id=True,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                         mass_detect_int_tol=5000,
-                         peak_cor_rt_tol=0.025, peak_group_rt_tol=0.05,
-                         min_ppc=0.8, roi_min_length=3,
-                         ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                         ms1id_min_prec_int_in_ms1=50000,
-                         ms1id_max_prec_rel_int_in_other_ms2=0.05,
-                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
-                         plot_bpc=False)
+    main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1',
+                  msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
+                  sample_dir='data',
+                  ms1_id=True, ms2_id=True,
+                  batch_size=100, cpu_ratio=0.9,
+                  run_rt_correction=True, run_normalization=False,
+                  mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+                  mass_detect_int_tol=30000,
+                  align_mz_tol=0.01, align_rt_tol=0.15,
+                  alignment_drop_by_fill_pct_ratio=0.1,
+                  peak_cor_rt_tol=0.025,
+                  min_ppc=0.9, roi_min_length=4,
+                  ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+                  ms1id_min_prec_int_in_ms1=1e5,
+                  ms1id_max_prec_rel_int_in_other_ms2=0.05,
+                  ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6)
+
+    # main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
+    #                      msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
+    #                      ms1_id=True, ms2_id=True,
+    #                      mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+    #                      mass_detect_int_tol=30000,
+    #                      peak_cor_rt_tol=0.025,
+    #                      min_ppc=0.9, roi_min_length=4,
+    #                      ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+    #                      ms1id_min_prec_int_in_ms1=1e5,
+    #                      ms1id_max_prec_rel_int_in_other_ms2=0.05,
+    #                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
+    #                      plot_bpc=False)
 
     # GNPS: /Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl
     # NIST: /Users/shipei/Documents/projects/ms1_id/data/nist20.pkl
+
+    end = time.time()
+    print("Time elapsed: ", end - start)

@@ -3,14 +3,13 @@ This is to get all features with high PPCs, generate pseudo MS1 for a single fil
 """
 import os
 import pickle
-from collections import defaultdict
 
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
 import networkx as nx
+import numpy as np
 
 from _utils import PseudoMS1
-
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 
 
 def retrieve_pseudo_ms1_spectra(config):
@@ -35,37 +34,32 @@ def retrieve_pseudo_ms1_spectra(config):
 
 
 def generate_pseudo_ms1(msdata, ppc_matrix,
-                        peak_group_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
+                        peak_cor_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
                         min_cluster_size=6, resolution=0.05,
-                        min_overlap_ppc=0.95, save=False, save_dir=None):
+                        save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for a single file
     :param msdata: MSData object
     :param ppc_matrix: sparse matrix of PPC scores
     :param roi_min_length: minimum length of ROIs to consider for clustering
-    :param peak_group_rt_tol: RT tolerance for clustering
+    :param peak_cor_rt_tol: RT tolerance for clustering
     :param min_ppc: minimum PPC score for clustering
-    :param min_overlap_ppc: minimum PPC score for allowing overlaps
     :param min_cluster_size: minimum number of ROIs in a cluster
     :param resolution: resolution parameter for Louvain clustering
     :param save: whether to save the pseudo MS1 spectra
     :param save_dir: directory to save the pseudo MS1 spectra
     """
 
-    # Cluster ROIs based on PPC matrix, using sliding RT window
-    # cluster_rois = cluster_rois_from_ppc_matrix(msdata.rois, ppc_matrix, peak_cor_rt_tol,
-    #                                             min_ppc, min_overlap_ppc, min_cluster_size)
-
     # Cluster ROIs using Louvain algorithm
-    cluster_rois = _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=roi_min_length,
-                                               min_ppc=min_ppc, peak_group_rt_tol=peak_group_rt_tol,
-                                               resolution=resolution, min_cluster_size=min_cluster_size,
-                                               seed=123)
-
+    # cluster_rois = _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=roi_min_length,
+    #                                            min_ppc=min_ppc, peak_group_rt_tol=peak_group_rt_tol,
+    #                                            resolution=resolution, min_cluster_size=min_cluster_size,
+    #                                            seed=123)
     # plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix)
+    # pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
 
-    # generate pseudo MS1 spectra
-    pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
+    pseudo_ms1_spectra = _perform_clustering(msdata, ppc_matrix, min_ppc=min_ppc, peak_cor_rt_tol=peak_cor_rt_tol,
+                                             min_cluster_size=min_cluster_size, roi_min_length=roi_min_length)
 
     plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_length=roi_min_length)
 
@@ -75,106 +69,80 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
     return pseudo_ms1_spectra
 
 
-def cluster_rois_from_ppc_matrix(rois, ppc_matrix, peak_cor_rt_tol=0.05, min_ppc=0.8, min_overlap_ppc=0.95,
-                                 min_cluster_size=6):
+def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8, peak_cor_rt_tol=0.05,
+                        min_cluster_size=6, roi_min_length=3):
     """
-    Cluster ROIs based on PPC matrix and RT tolerance
+    Perform clustering on ROIs based on PPC scores and m/z values.
+
+    :param msdata: MSData object containing ROIs
+    :param ppc_matrix: scipy.sparse.csr_matrix of PPC scores
+    :param min_ppc: Minimum PPC score to consider for clustering
+    :param peak_cor_rt_tol: RT tolerance for clustering
+    :param min_cluster_size: Minimum number of ROIs in a cluster
+    :param roi_min_length: Minimum length of ROIs to consider for clustering
+    :return: List of PseudoMS1 objects
     """
-    # Create a mapping of ROI IDs to their objects and sort them by RT
-    roi_dict = {roi.id: roi for roi in rois}
-    sorted_roi_ids = sorted(roi_dict.keys(), key=lambda id: roi_dict[id].rt)
+    # Filter ROIs based on minimum length and isotope status
+    valid_rois = [roi for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope]
 
-    # Create a graph of ROI connections and collect ROIs with connections
-    roi_graph = defaultdict(list)
-    connected_rois = set()
-    rows, cols = ppc_matrix.nonzero()
-    for row, col in zip(rows, cols):
-        if row < col and ppc_matrix[row, col] >= min_ppc:
-            roi_a_id, roi_b_id = sorted_roi_ids[row], sorted_roi_ids[col]
-            ppc = ppc_matrix[row, col]
-            roi_graph[roi_a_id].append((roi_b_id, ppc))
-            roi_graph[roi_b_id].append((roi_a_id, ppc))
-            connected_rois.add(roi_a_id)
-            connected_rois.add(roi_b_id)
+    # Sort ROIs by m/z values
+    sorted_rois = sorted(valid_rois, key=lambda roi: roi.mz)
 
-    # Initial clustering based on sliding RT window
-    initial_clusters = []
-    window_start = 0
-    while window_start < len(sorted_roi_ids):
-        window_end = window_start
-        start_rt = roi_dict[sorted_roi_ids[window_start]].rt
-        current_cluster = []
+    # Create a new PPC matrix with only valid ROIs
+    valid_indices = [msdata.rois.index(roi) for roi in valid_rois]
+    new_ppc_matrix = ppc_matrix[valid_indices][:, valid_indices]
 
-        while window_end < len(sorted_roi_ids) and \
-                roi_dict[sorted_roi_ids[window_end]].rt - start_rt <= 2 * peak_cor_rt_tol:
-            if sorted_roi_ids[window_end] in connected_rois:
-                current_cluster.append(sorted_roi_ids[window_end])
-            window_end += 1
+    pseudo_ms1_spectra = []
 
-        if len(current_cluster) >= min_cluster_size:
-            initial_clusters.append(current_cluster)
+    for i, roi in enumerate(sorted_rois):
+        # Find all ROIs with PPC scores above the threshold
+        cluster_indices = new_ppc_matrix[i].nonzero()[1]
+        cluster_scores = new_ppc_matrix[i, cluster_indices].toarray().flatten()
+        cluster_indices = cluster_indices[cluster_scores >= min_ppc]
 
-        # Move the window forward by peak_cor_rt_tol
-        while window_start < len(sorted_roi_ids) and \
-                roi_dict[sorted_roi_ids[window_start]].rt - start_rt <= peak_cor_rt_tol:
-            window_start += 1
+        if len(cluster_indices) >= min_cluster_size:
+            # Form a pseudo MS1 spectrum
+            cluster_rois = [sorted_rois[idx] for idx in cluster_indices]
+            mz_ls = [roi.mz for roi in cluster_rois]
+            int_ls = [roi.peak_height for roi in cluster_rois]
+            roi_ids = [roi.id for roi in cluster_rois]
+            avg_rt = np.mean([roi.rt for roi in cluster_rois])
 
-    # Find strongly connected components within initial clusters
-    final_clusters = []
-    for cluster in initial_clusters:
-        components = find_connected_components(cluster, roi_graph)
-        final_clusters.extend(comp for comp in components if len(comp) >= min_cluster_size)
+            pseudo_ms1 = PseudoMS1(mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt)
+            pseudo_ms1_spectra.append(pseudo_ms1)
 
-    if final_clusters:
-        print(f"Clustering summary (before overlap):")
-        print(f"  Number of final clusters: {len(final_clusters)}")
-        print(f"  Total ROIs in final clusters: {sum(len(cluster) for cluster in final_clusters)}")
-        print(f"  Largest final cluster size: {max(len(cluster) for cluster in final_clusters)}")
-        print(f"  Smallest final cluster size: {min(len(cluster) for cluster in final_clusters)}")
-        print(
-            f"  Average final cluster size: {sum(len(cluster) for cluster in final_clusters) / len(final_clusters):.2f}")
-    #
-    # # Allow overlaps for ROIs with strong connections to multiple clusters
-    # for roi_id in set.union(*final_clusters):
-    #     for cluster in final_clusters:
-    #         if roi_id not in cluster:
-    #             if any(neighbor[1] >= min_overlap_ppc for neighbor in roi_graph[roi_id] if neighbor[0] in cluster):
-    #                 cluster.add(roi_id)
-    #
-    # if final_clusters:
-    #     print(f"Final clustering summary (after overlap):")
-    #     print(f"  Number of final clusters: {len(final_clusters)}")
-    #     print(f"  Total ROIs in final clusters: {sum(len(cluster) for cluster in final_clusters)}")
-    #     print(f"  Largest final cluster size: {max(len(cluster) for cluster in final_clusters)}")
-    #     print(f"  Smallest final cluster size: {min(len(cluster) for cluster in final_clusters)}")
-    #     print(
-    #         f"  Average final cluster size: {sum(len(cluster) for cluster in final_clusters) / len(final_clusters):.2f}")
+    # Sort pseudo MS1 spectra by RT
+    pseudo_ms1_spectra.sort(key=lambda x: x.rt)
 
-    # Convert to dictionary format
-    cluster_rois = {i: cluster for i, cluster in enumerate(final_clusters)}
+    # First pass: store subset information
+    subset_info = {i: set() for i in range(len(pseudo_ms1_spectra))}
+    for i, spec1 in enumerate(pseudo_ms1_spectra):
+        set1 = set(spec1.roi_ids)
+        for j, spec2 in enumerate(pseudo_ms1_spectra[i + 1:], start=i + 1):
+            if abs(spec1.rt - spec2.rt) > peak_cor_rt_tol:
+                break
 
-    return cluster_rois
+            set2 = set(spec2.roi_ids)
 
+            if set1 == set2:
+                subset_info[i].add(j)
+                subset_info[j].add(i)
+            elif set1.issubset(set2):
+                subset_info[i].add(j)
+            elif set2.issubset(set1):
+                subset_info[j].add(i)
 
-def find_connected_components(roi_ids, roi_graph):
-    """Find strongly connected components within a set of ROIs using depth-first search."""
-    components = []
-    visited = set()
+    # Second pass: determine spectra to keep
+    spectra_to_keep = set(range(len(pseudo_ms1_spectra)))
+    for i in range(len(pseudo_ms1_spectra)):
+        if i in spectra_to_keep:
+            # Remove all subsets of this spectrum
+            spectra_to_keep -= subset_info[i]
 
-    def dfs(roi_id, current_component):
-        visited.add(roi_id)
-        current_component.add(roi_id)
-        for neighbor, _ in roi_graph[roi_id]:
-            if neighbor in roi_ids and neighbor not in visited:
-                dfs(neighbor, current_component)
+    # Create the final list of non-redundant spectra
+    non_redundant_spectra = [pseudo_ms1_spectra[i] for i in sorted(spectra_to_keep)]
 
-    for roi_id in roi_ids:
-        if roi_id not in visited:
-            current_component = set()
-            dfs(roi_id, current_component)
-            components.append(current_component)
-
-    return components
+    return non_redundant_spectra
 
 
 def _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois):
