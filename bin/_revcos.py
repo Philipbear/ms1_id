@@ -226,9 +226,9 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
 
 
 if __name__ == "__main__":
-    # prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02, sqrt_transform=True)
+    prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02, sqrt_transform=True)
 
-    with open('../data/ALL_GNPS_NO_PROPOGATED.pkl', 'rb') as file:
-        search_eng = pickle.load(file)
-
-    print(search_eng)
+    # with open('../data/ALL_GNPS_NO_PROPOGATED.pkl', 'rb') as file:
+    #     search_eng = pickle.load(file)
+    #
+    # print(search_eng)
