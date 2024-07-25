@@ -48,7 +48,8 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
                 method="identity",
                 precursor_ions_removal_da=0.5,
                 noise_threshold=0.001,
-                min_ms2_difference_in_da=ms2_tol * 2.02
+                min_ms2_difference_in_da=ms2_tol * 2.02,
+                reverse=False
             )
             score_arr, matched_peak_arr, spec_usage_arr = cos_result['identity_search']
 

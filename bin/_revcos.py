@@ -127,7 +127,8 @@ def ms1_id_revcos_matching_new(ms1_spec_ls: List, ms2_library: str, mz_tol: floa
                 method="identity",
                 precursor_ions_removal_da=0.5,  # reserve mzs up to prec_mz + mz_tol
                 noise_threshold=0.001,
-                min_ms2_difference_in_da=mz_tol * 2.02
+                min_ms2_difference_in_da=mz_tol * 2.02,
+                reverse=True
             )
 
             score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
