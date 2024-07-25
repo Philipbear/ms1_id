@@ -505,17 +505,18 @@ class FlashEntropyCore:
                 w = np.ones(n_cols)
 
                 # Normalize each column (spectrum) and calculate entropy
-                match_table_q_norm = match_table_q / np.sum(match_table_q, axis=0)
-                tmp_entropy = -np.sum(match_table_q_norm * np.log(match_table_q_norm), axis=0)
+                match_table_q_norm = match_table_q / (np.sum(match_table_q, axis=0) + 1e-6)
+                tmp_entropy = -np.sum(match_table_q_norm * np.log(match_table_q_norm + 1e-6), axis=0)
 
-                # Find columns where entropy is less than 3
-                low_entropy_cols = np.where(tmp_entropy < 3)[0]
+                # Find columns where entropy is less than 3 and col sum is not zero
+                low_entropy_cols = np.where((tmp_entropy < 3) & (np.sum(match_table_q, axis=0) > 0))[0]
 
                 # Calculate weighting factors for low entropy columns
                 w[low_entropy_cols] = 0.25 * (tmp_entropy[low_entropy_cols] + 1)
 
                 # Apply the weighting factors
                 match_table_q_corrected = np.power(match_table_q_norm, w)
+                match_table_q_corrected = match_table_q_corrected / (np.sum(match_table_q_corrected, axis=0) + 1e-6)
 
                 # calculate similarity
                 similarity_arr = 0.5 * np.sum(_entropy_helper(match_table_q_corrected + match_table_r) -
@@ -561,17 +562,18 @@ class FlashEntropyCore:
                 w = np.ones(n_cols)
 
                 # Normalize each column (spectrum) and calculate entropy
-                match_table_q_norm = match_table_q / np.sum(match_table_q, axis=0)
-                tmp_entropy = -np.sum(match_table_q_norm * np.log(match_table_q_norm), axis=0)
+                match_table_q_norm = match_table_q / (np.sum(match_table_q, axis=0) + 1e-6)
+                tmp_entropy = -np.sum(match_table_q_norm * np.log(match_table_q_norm + 1e-6), axis=0)
 
-                # Find columns where entropy is less than 3
-                low_entropy_cols = np.where(tmp_entropy < 3)[0]
+                # Find columns where entropy is less than 3 and col sum is not zero
+                low_entropy_cols = np.where((tmp_entropy < 3) & (np.sum(match_table_q, axis=0) > 0))[0]
 
                 # Calculate weighting factors for low entropy columns
                 w[low_entropy_cols] = 0.25 * (tmp_entropy[low_entropy_cols] + 1)
 
                 # Apply the weighting factors
                 match_table_q_corrected = np.power(match_table_q_norm, w)
+                match_table_q_corrected = match_table_q_corrected / (np.sum(match_table_q_corrected, axis=0) + 1e-6)
 
                 # calculate similarity
                 part_similarity = 0.5 * np.sum(_entropy_helper(match_table_q_corrected + match_table_r) -
@@ -723,7 +725,6 @@ class FlashEntropyCore:
             peaks[:, 1] = np.sqrt(peaks[:, 1])
 
         if reverse:
-            ############################
             # reverse matching
             # Number of rows and columns in the table
             n_rows, n_cols = match_table_q_all.shape
@@ -732,23 +733,23 @@ class FlashEntropyCore:
             w = np.ones(n_cols)
 
             # Normalize each column (spectrum) and calculate entropy
-            match_table_q_norm = match_table_q_all / np.sum(match_table_q_all, axis=0)
-            tmp_entropy = -np.sum(match_table_q_norm * np.log(match_table_q_norm), axis=0)
+            match_table_q_norm = match_table_q_all / (np.sum(match_table_q_all, axis=0) + 1e-6)
+            tmp_entropy = -np.sum(match_table_q_norm * np.log(match_table_q_norm + 1e-6), axis=0)
 
-            # Find columns where entropy is less than 3
-            low_entropy_cols = np.where(tmp_entropy < 3)[0]
+            # Find columns where entropy is less than 3 and col sum is not zero
+            low_entropy_cols = np.where((tmp_entropy < 3) & (np.sum(match_table_q_all, axis=0) > 0))[0]
 
             # Calculate weighting factors for low entropy columns
             w[low_entropy_cols] = 0.25 * (tmp_entropy[low_entropy_cols] + 1)
 
             # Apply the weighting factors
             match_table_q_corrected = np.power(match_table_q_norm, w)
+            match_table_q_corrected = match_table_q_corrected / (np.sum(match_table_q_corrected, axis=0) + 1e-6)
 
             # calculate similarity
             similarity_arr = 0.5 * np.sum(_entropy_helper(match_table_q_corrected + match_table_r_all) -
                                           _entropy_helper(match_table_q_corrected) - _entropy_helper(match_table_r_all),
                                           axis=0)
-
         else:
             ############################
             # normal matching
@@ -1093,7 +1094,7 @@ if __name__ == "__main__":
         precursor_ions_removal_da=0.5,
         noise_threshold=0.0,
         min_ms2_difference_in_da=ms2_tol * 2.2,
-        reverse=True
+        reverse=False
     )
 
     # matched_peak_arr, spec_usage_arr, entropy_arr, entropy_arr_rev = search_result['open_search']
