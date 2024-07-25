@@ -225,7 +225,7 @@ def init_config(path=None, msms_library_path=None,
 
     # Parameters for feature annotation
     config.msms_library = msms_library_path  # Path to the MS/MS library (.msp or .pickle), character string
-    config.ppr = 0.7  # Peak-peak correlation threshold for feature grouping, default is 0.7
+    config.ppr = 0.8  # Peak-peak correlation threshold for feature grouping, default is 0.7
     config.ms2_sim_tol = 0.7  # MS2 similarity tolerance, default is 0.7
 
     # Parameters for normalization
@@ -438,7 +438,7 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
     config.mz_tol_ms2 = mz_tol_ms2  # m/z tolerance for MS2, default is 0.015
     # config.int_tol = 30000  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments, integer
     config.roi_gap = 30  # Gap within a feature, default is 30 (i.e. 30 consecutive scans without signal), integer
-    config.ppr = 0.7  # Peak peak correlation threshold for feature grouping, default is 0.7
+    config.ppr = 0.8  # Peak-peak correlation threshold for feature grouping, default is 0.7
 
     # Parameters for feature alignment
     config.align_mz_tol = 0.01  # m/z tolerance for MS1, default is 0.01
@@ -475,36 +475,37 @@ if __name__ == "__main__":
     import time
     start = time.time()
 
-    main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1',
-                  msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
-                  sample_dir='data',
-                  ms1_id=True, ms2_id=True,
-                  batch_size=100, cpu_ratio=0.9,
-                  run_rt_correction=True, run_normalization=False,
-                  mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                  mass_detect_int_tol=10000,
-                  align_mz_tol=0.01, align_rt_tol=0.15,
-                  alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.025,
-                  min_ppc=0.9, roi_min_length=4,
-                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=5,
-                  ms1id_min_prec_int_in_ms1=5e4,
-                  ms1id_max_prec_rel_int_in_other_ms2=0.05,
-                  ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6)
+    # main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1',
+    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
+    #               sample_dir='data',
+    #               ms1_id=True, ms2_id=True,
+    #               batch_size=100, cpu_ratio=0.9,
+    #               run_rt_correction=True, run_normalization=False,
+    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+    #               mass_detect_int_tol=10000,
+    #               align_mz_tol=0.01, align_rt_tol=0.15,
+    #               alignment_drop_by_fill_pct_ratio=0.1,
+    #               peak_cor_rt_tol=0.025,
+    #               min_ppc=0.8, roi_min_length=4,
+    #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=5,
+    #               ms1id_min_prec_int_in_ms1=5e4,
+    #               ms1id_max_prec_rel_int_in_other_ms2=0.05,
+    #               ms2id_score_cutoff=0.7, ms2id_min_matched_peak=5)
 
-    # main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
-    #                      msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl',
-    #                      ms1_id=True, ms2_id=True,
-    #                      mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-    #                      mass_detect_int_tol=30000,
-    #                      peak_cor_rt_tol=0.025,
-    #                      min_ppc=0.9, roi_min_length=4,
-    #                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=5,
-    #                      ms1id_min_prec_int_in_ms1=1e5,
-    #                      ms1id_max_prec_rel_int_in_other_ms2=0.05,
-    #                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
-    #                      plot_bpc=False)
+    main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
+                         msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
+                         ms1_id=True, ms2_id=True,
+                         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+                         mass_detect_int_tol=30000,
+                         peak_cor_rt_tol=0.025,
+                         min_ppc=0.8, roi_min_length=4,
+                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=5,
+                         ms1id_min_prec_int_in_ms1=5e4,
+                         ms1id_max_prec_rel_int_in_other_ms2=0.05,
+                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
+                         plot_bpc=False)
 
+    # GNPS+NIST: /Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl
     # GNPS: /Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl
     # NIST: /Users/shipei/Documents/projects/ms1_id/data/nist20.pkl
 

@@ -116,10 +116,10 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
                 ms1_tolerance_in_da=d.params.mz_tol_ms1,
                 ms2_tolerance_in_da=ms2_tol,
                 method="identity",
-                precursor_ions_removal_da=None,
-                noise_threshold=0.0,
+                precursor_ions_removal_da=0.5,
+                noise_threshold=0.001,
                 min_ms2_difference_in_da=ms2_tol * 2.2,
-                max_peak_num=None
+                reverse=False
             )
             score_arr, matched_peak_arr, spec_usage_arr = cos_result['identity_search']
 
