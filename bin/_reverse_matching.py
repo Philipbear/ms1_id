@@ -5,7 +5,6 @@ import numpy as np
 from ms_entropy import read_one_spectrum
 
 from _utils import SpecAnnotation
-from flash_cos import FlashCos
 from flash_entropy import FlashEntropy
 
 
