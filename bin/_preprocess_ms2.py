@@ -14,7 +14,6 @@ def preprocess_ms2(peaks, prec_mz,
                    top6_every_50da=False,
                    sn_estimate=False,
                    peak_transform=None,
-                   apply_entropy_weight=False,
                    peak_norm=None) -> np.ndarray:
     """
     Main function to preprocess MS2 spectra.
@@ -62,9 +61,6 @@ def preprocess_ms2(peaks, prec_mz,
 
     peak_transform : str, optional
         The peak transformation method. Defaults to None, which will skip the peak transformation. The available methods are: 'sqrt', 'log'.
-
-    apply_entropy_weight : bool, optional
-        Whether to apply entropy weight to the intensity. Defaults to False.
 
     peak_norm : str, optional
         The peak normalization method. The available methods are: 'sum', 'sum_sq'.
@@ -121,14 +117,6 @@ def preprocess_ms2(peaks, prec_mz,
             # first normalize the intensity to max = 100
             peaks[:, 1] = peaks[:, 1] / np.max(peaks[:, 1]) * 100
             peaks[:, 1] = np.log(peaks[:, 1] + 1)
-
-    # (Optional) 7. apply entropy weight to the intensity.
-    if apply_entropy_weight:
-        peaks[:, 1] = peaks[:, 1] / np.sum(peaks[:, 1])
-        entropy = -np.sum(peaks[:, 1] * np.log(peaks[:, 1]))
-        if entropy < 3:
-            w = 0.25 * (entropy + 1)
-            peaks[:, 1] = np.power(peaks[:, 1], w)
 
     # Step 7. Normalize the intensity.
     if peak_norm is not None:

@@ -12,10 +12,10 @@ def ms1id_single_file(file_path, library_path):
         mass_detect_int_tol=30000,
         peak_cor_rt_tol=0.025,
         min_ppc=0.9, roi_min_length=4,
-        ms1id_score_cutoff=0.7, ms1id_min_matched_peak=0,
+        ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
         ms1id_min_prec_int_in_ms1=1e5,
         ms1id_max_prec_rel_int_in_other_ms2=0.01,
-        ms2id_score_cutoff=0.7, ms2id_min_matched_peak=0,
+        ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
         plot_bpc=False)
 
 

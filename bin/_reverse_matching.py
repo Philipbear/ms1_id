@@ -5,10 +5,10 @@ import numpy as np
 from ms_entropy import read_one_spectrum
 
 from _utils import SpecAnnotation
-from flash_entropy import FlashEntropy
+from flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=False):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -35,9 +35,9 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=False):
                 a['precursor_mz'] = 0.0
 
     print('initializing search engine')
-    search_engine = FlashEntropy(max_ms2_tolerance_in_da=mz_tol * 1.005,
-                                 mz_index_step=0.0001,
-                                 sqrt_transform=sqrt_transform)
+    search_engine = FlashCos(max_ms2_tolerance_in_da=mz_tol * 1.005,
+                             mz_index_step=0.0001,
+                             sqrt_transform=sqrt_transform)
     print('building index')
     search_engine.build_index(db,
                               max_indexed_mz=2000,
@@ -73,9 +73,9 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     """
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching_new(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
-                                             min_prec_int_in_ms1=min_prec_int_in_ms1,
-                                             score_cutoff=score_cutoff, min_matched_peak=min_matched_peak)
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
+                                         min_prec_int_in_ms1=min_prec_int_in_ms1,
+                                         score_cutoff=score_cutoff, min_matched_peak=min_matched_peak)
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
@@ -84,9 +84,9 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     return ms1_spec_ls
 
 
-def ms1_id_revcos_matching_new(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
-                               min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.8,
-                               min_matched_peak: int = 6) -> List:
+def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
+                           min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.8,
+                           min_matched_peak: int = 6) -> List:
     """
     Perform MS1 annotation using identity search for each precursor m/z.
 
@@ -225,9 +225,9 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='../data/gnps_nist20.msp', mz_tol=0.02, sqrt_transform=False)
-    prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02, sqrt_transform=False)
-    prepare_ms2_lib(ms2db='../data/nist20.msp', mz_tol=0.02, sqrt_transform=False)
+    prepare_ms2_lib(ms2db='../data/gnps_nist20.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../data/nist20.msp', mz_tol=0.02)
 
     # with open('../data/ALL_GNPS_NO_PROPOGATED.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)
