@@ -35,9 +35,13 @@ def ms1id_single_file_batch(file_dir, library_path):
 
 if __name__ == '__main__':
 
-    ms1id_single_file_batch(file_dir='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1/data',
-                            library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl')
+    # ms1id_single_file_batch(file_dir='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1/data',
+    #                         library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl')
 
-    # ms1id_single_file(
-    #     file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
-    #     library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl')
+    ms1id_single_file(
+        file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
+        library_path='/Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl')
+
+    # GNPS+NIST: /Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl
+    # GNPS: /Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl
+    # NIST: /Users/shipei/Documents/projects/ms1_id/data/nist20.pkl
