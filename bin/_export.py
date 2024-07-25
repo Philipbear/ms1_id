@@ -102,6 +102,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=
     df['MS1_spectral_usage'] = None
     df['MS1_precursor_type'] = None
     df['MS1_inchikey'] = None
+    df['MS1_collision_energy'] = None
 
     if pseudo_ms1_spectra is not None:
         ms1_spec_ls = [spec for spec in pseudo_ms1_spectra if spec.annotated]
@@ -136,6 +137,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=
                         df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
                         df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
                         df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
+                        df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
 
     # save the dataframe to csv file
     if user_defined_output_path:
@@ -179,6 +181,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
     df['MS1_spectral_usage'] = None
     df['MS1_precursor_type'] = None
     df['MS1_inchikey'] = None
+    df['MS1_collision_energy'] = None
 
     # add ms1 id results to the feature table
     for aligned_ms1_annotation in ms1_annotation_ls:
@@ -191,6 +194,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
         df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
         df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
         df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
+        df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
 
     df.to_csv(output_path, index=False, sep="\t")
 

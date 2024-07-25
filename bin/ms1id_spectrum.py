@@ -1,4 +1,4 @@
-from _revcos import prepare_ms2_lib, ms1_id_annotation
+from _reverse_matching import prepare_ms2_lib, ms1_id_annotation
 from _utils import Spectrum
 
 

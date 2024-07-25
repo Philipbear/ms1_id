@@ -2,14 +2,14 @@ import os
 import pickle
 from typing import List
 import numpy as np
-import pandas as pd
 from ms_entropy import read_one_spectrum
 
 from _utils import SpecAnnotation
 from flash_cos import FlashCos
+from flash_entropy import FlashEntropy
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=False):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -36,10 +36,9 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
                 a['precursor_mz'] = 0.0
 
     print('initializing search engine')
-    search_engine = FlashCos(max_ms2_tolerance_in_da=mz_tol * 1.005,
-                             mz_index_step=0.0001,
-                             path_data=None,
-                             sqrt_transform=sqrt_transform)
+    search_engine = FlashEntropy(max_ms2_tolerance_in_da=mz_tol * 1.005,
+                                 mz_index_step=0.0001,
+                                 sqrt_transform=sqrt_transform)
     print('building index')
     search_engine.build_index(db,
                               max_indexed_mz=2000,
@@ -227,8 +226,9 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02, sqrt_transform=True)
-    prepare_ms2_lib(ms2db='../data/nist20.msp', mz_tol=0.02, sqrt_transform=True)
+    prepare_ms2_lib(ms2db='../data/gnps_nist20.msp', mz_tol=0.02, sqrt_transform=False)
+    prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02, sqrt_transform=False)
+    prepare_ms2_lib(ms2db='../data/nist20.msp', mz_tol=0.02, sqrt_transform=False)
 
     # with open('../data/ALL_GNPS_NO_PROPOGATED.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)

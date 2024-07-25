@@ -40,7 +40,7 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
         best_ms2 = parsed_ms2[0]
         for peaks in parsed_ms2:
 
-            cos_result = search_eng.search(
+            search_result = search_eng.search(
                 precursor_mz=f.mz,
                 peaks=peaks,
                 ms1_tolerance_in_da=parameters.mz_tol_ms1,
@@ -51,7 +51,7 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
                 min_ms2_difference_in_da=ms2_tol * 2.02,
                 reverse=False
             )
-            score_arr, matched_peak_arr, spec_usage_arr = cos_result['identity_search']
+            score_arr, matched_peak_arr, spec_usage_arr = search_result['identity_search']
 
             idx = np.where(matched_peak_arr >= ms2id_min_matched_peak)[0]
             if len(idx) > 0:
@@ -110,7 +110,7 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
 
         if f.best_ms2 is not None:
 
-            cos_result = search_eng.search(
+            search_result = search_eng.search(
                 precursor_mz=f.mz,
                 peaks=f.best_ms2.peaks,
                 ms1_tolerance_in_da=d.params.mz_tol_ms1,
@@ -121,7 +121,7 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
                 min_ms2_difference_in_da=ms2_tol * 2.2,
                 reverse=False
             )
-            score_arr, matched_peak_arr, spec_usage_arr = cos_result['identity_search']
+            score_arr, matched_peak_arr, spec_usage_arr = search_result['identity_search']
 
             idx = np.where(matched_peak_arr >= ms2id_min_matched_peak)[0]
             if len(idx) > 0:
