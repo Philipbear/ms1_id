@@ -498,11 +498,8 @@ class FlashEntropyCore:
             ############################
             if reverse:
                 # reverse matching
-                # Number of rows and columns in the table
-                n_rows, n_cols = match_table_q.shape
-
                 # Initialize a vector of ones for the weighting factors
-                w = np.ones(n_cols)
+                w = np.ones(match_table_q.shape[1])
 
                 # Normalize each column (spectrum) and calculate entropy
                 match_table_q_norm = match_table_q / (np.sum(match_table_q, axis=0) + 1e-6)
@@ -555,11 +552,8 @@ class FlashEntropyCore:
             ############################
             if reverse:
                 # reverse matching
-                # Number of rows and columns in the table
-                n_rows, n_cols = match_table_q.shape
-
                 # Initialize a vector of ones for the weighting factors
-                w = np.ones(n_cols)
+                w = np.ones(match_table_q.shape[1])
 
                 # Normalize each column (spectrum) and calculate entropy
                 match_table_q_norm = match_table_q / (np.sum(match_table_q, axis=0) + 1e-6)
@@ -726,11 +720,8 @@ class FlashEntropyCore:
 
         if reverse:
             # reverse matching
-            # Number of rows and columns in the table
-            n_rows, n_cols = match_table_q_all.shape
-
             # Initialize a vector of ones for the weighting factors
-            w = np.ones(n_cols)
+            w = np.ones(match_table_q_all.shape[1])
 
             # Normalize each column (spectrum) and calculate entropy
             match_table_q_norm = match_table_q_all / (np.sum(match_table_q_all, axis=0) + 1e-6)
