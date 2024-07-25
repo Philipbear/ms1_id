@@ -1030,8 +1030,3 @@ if __name__ == "__main__":
     # score_arr, matched_peak_arr, spec_usage_arr = search_result['open_search']
 
     print(search_result)
-
-    # # Get the metadata of library spectrum
-    # # NOTE: library spectra are resorted during 'build index', need to get the metadata by the index.
-    # for i in range(len(search_eng)):
-    #     print(search_eng[i])
