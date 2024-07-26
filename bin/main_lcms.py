@@ -13,7 +13,7 @@ def ms1id_single_file(file_path, library_path):
         msms_library_path=library_path,
         ms1_id=True, ms2_id=True,
         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-        mass_detect_int_tol=30000,
+        mass_detect_int_tol=20000,
         peak_cor_rt_tol=0.025,
         min_ppc=0.9, roi_min_length=4,
         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,

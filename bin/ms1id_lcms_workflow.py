@@ -475,35 +475,35 @@ if __name__ == "__main__":
     import time
     start = time.time()
 
-    main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1',
-                  msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
-                  sample_dir='data',
-                  ms1_id=True, ms2_id=True,
-                  batch_size=100, cpu_ratio=0.9,
-                  run_rt_correction=True, run_normalization=False,
-                  mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                  mass_detect_int_tol=10000,
-                  align_mz_tol=0.01, align_rt_tol=0.15,
-                  alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.025,
-                  min_ppc=0.9, roi_min_length=4,
-                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                  ms1id_min_prec_int_in_ms1=1e5,
-                  ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                  ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
+    # main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1',
+    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
+    #               sample_dir='data',
+    #               ms1_id=True, ms2_id=True,
+    #               batch_size=100, cpu_ratio=0.9,
+    #               run_rt_correction=True, run_normalization=False,
+    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+    #               mass_detect_int_tol=10000,
+    #               align_mz_tol=0.01, align_rt_tol=0.15,
+    #               alignment_drop_by_fill_pct_ratio=0.1,
+    #               peak_cor_rt_tol=0.025,
+    #               min_ppc=0.9, roi_min_length=4,
+    #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+    #               ms1id_min_prec_int_in_ms1=1e5,
+    #               ms1id_max_prec_rel_int_in_other_ms2=0.01,
+    #               ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
-    # main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
-    #                      msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
-    #                      ms1_id=True, ms2_id=True,
-    #                      mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-    #                      mass_detect_int_tol=30000,
-    #                      peak_cor_rt_tol=0.025,
-    #                      min_ppc=0.9, roi_min_length=4,
-    #                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-    #                      ms1id_min_prec_int_in_ms1=1e5,
-    #                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
-    #                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
-    #                      plot_bpc=False)
+    main_workflow_single(file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
+                         msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
+                         ms1_id=True, ms2_id=False,
+                         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
+                         mass_detect_int_tol=10000,
+                         peak_cor_rt_tol=0.025,
+                         min_ppc=0.9, roi_min_length=4,
+                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                         ms1id_min_prec_int_in_ms1=1e5,
+                         ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
+                         plot_bpc=False)
 
     # GNPS+NIST: /Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl
     # GNPS: /Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl

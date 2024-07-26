@@ -125,7 +125,7 @@ def ms1_id_revcos_matching_identity_search(ms1_spec_ls: List, ms2_library: str, 
                 ms2_tolerance_in_da=mz_tol,
                 method="identity",
                 precursor_ions_removal_da=0.5,  # reserve mzs up to prec_mz + mz_tol
-                noise_threshold=0.001,
+                noise_threshold=0.0,
                 min_ms2_difference_in_da=mz_tol * 2.02,
                 reverse=True
             )
@@ -222,9 +222,9 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
             ms2_tolerance_in_da=mz_tol,
             method="open",
             precursor_ions_removal_da=0.5,
-            noise_threshold=0.001,
+            noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.02,
-            max_peak_num=None
+            reverse=True
         )
 
         score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
