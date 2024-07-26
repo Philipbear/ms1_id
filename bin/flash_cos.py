@@ -95,7 +95,6 @@ class FlashCosCore:
         if len(peaks) == 0:
             return (np.zeros(self.total_spectra_num, dtype=np.float32),
                     np.zeros(self.total_spectra_num, dtype=np.uint32),
-                    np.zeros(self.total_spectra_num, dtype=np.float32),
                     np.zeros(self.total_spectra_num, dtype=np.float32))
 
         # Check peaks
