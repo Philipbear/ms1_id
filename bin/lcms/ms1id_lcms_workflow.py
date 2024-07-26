@@ -493,8 +493,8 @@ if __name__ == "__main__":
     #               ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
     main_workflow_single(
-        file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
-        msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
+        file_path='/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
+        msms_library_path='/data/gnps_nist20.pkl',
         ms1_id=True, ms2_id=False,
         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
         mass_detect_int_tol=10000,

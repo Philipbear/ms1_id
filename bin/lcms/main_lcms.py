@@ -46,8 +46,8 @@ def ms1id_single_file_batch(file_dir, library_path, num_processes=None):
 
 if __name__ == '__main__':
 
-    ms1id_single_file_batch(file_dir='../data/nist_samples/data',
-                            library_path='../data/gnps_nist20.pkl')
+    ms1id_single_file_batch(file_dir='../../data/nist_samples/data',
+                            library_path='../../data/gnps_nist20.pkl')
 
     # ms1id_single_file(
     #     file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
