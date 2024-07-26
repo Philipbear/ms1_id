@@ -47,7 +47,7 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
                 ms2_tolerance_in_da=ms2_tol,
                 method="identity",
                 precursor_ions_removal_da=0.5,
-                noise_threshold=0.001,
+                noise_threshold=0.0,
                 min_ms2_difference_in_da=ms2_tol * 2.02,
                 reverse=False
             )
@@ -117,7 +117,7 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
                 ms2_tolerance_in_da=ms2_tol,
                 method="identity",
                 precursor_ions_removal_da=0.5,
-                noise_threshold=0.001,
+                noise_threshold=0.0,
                 min_ms2_difference_in_da=ms2_tol * 2.2,
                 reverse=False
             )
