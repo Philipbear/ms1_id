@@ -42,7 +42,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
     search_engine.build_index(db,
                               max_indexed_mz=2000,
                               precursor_ions_removal_da=0.5,
-                              noise_threshold=0.001,
+                              noise_threshold=0.0,
                               min_ms2_difference_in_da=mz_tol * 2.02,
                               clean_spectra=True)
 
