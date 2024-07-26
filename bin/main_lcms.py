@@ -13,13 +13,13 @@ def ms1id_single_file(file_path, library_path):
         msms_library_path=library_path,
         ms1_id=True, ms2_id=True,
         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-        mass_detect_int_tol=10000,
+        mass_detect_int_tol=30000,
         peak_cor_rt_tol=0.025,
         min_ppc=0.9, roi_min_length=4,
-        ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+        ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
         ms1id_min_prec_int_in_ms1=1e5,
         ms1id_max_prec_rel_int_in_other_ms2=0.01,
-        ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
+        ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
         plot_bpc=False)
 
 
@@ -46,7 +46,7 @@ def ms1id_single_file_batch(file_dir, library_path, num_processes=None):
 
 if __name__ == '__main__':
 
-    ms1id_single_file_batch(file_dir='../data/from_vincent/data',
+    ms1id_single_file_batch(file_dir='../data/nist_samples/data',
                             library_path='../data/gnps_nist20.pkl')
 
     # ms1id_single_file(
