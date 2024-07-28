@@ -24,6 +24,7 @@ class SpecAnnotation:
         self.score = score
         self.matched_peak = matched_peak
         self.spectral_usage = None
+        self.matched_spec = None  # the matched spectrum in the search engine
         self.intensity = None  # intensity of the precursor ion in PseudoMS1 spectrum
         self.db_id = None
         self.name = None

@@ -15,7 +15,7 @@ use masscube workflow, add feature correlation, do rev cos search against librar
 ## discussions
 - which compound classes are easier to have ISF, such that they can be annotated using MS1 (nist20)
 - rev cos match FDR
-- MS imaging
+- MS imaging can have better correlation approaches, ML (CNN, etc)
 
 ## data
 - GNPS: ALL_GNPS_NO_PROPOGATED.msp, downloaded on July 17, 2024

@@ -10,7 +10,7 @@ from scipy.sparse import csr_matrix, save_npz
 
 
 @njit
-def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.1):
+def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.6):
     x_non_zero_mask = intensities1 != 0
     y_non_zero_mask = intensities2 != 0
 
@@ -37,7 +37,7 @@ def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.1)
 
 
 @njit
-def calc_mz_correlation_matrix_numba(intensity_matrix, min_spec_overlap_ratio=0.1):
+def calc_mz_correlation_matrix_numba(intensity_matrix, min_spec_overlap_ratio=0.6):
     n_mzs = intensity_matrix.shape[0]
     rows = np.zeros(n_mzs * n_mzs, dtype=np.int32)
     cols = np.zeros(n_mzs * n_mzs, dtype=np.int32)
@@ -55,7 +55,7 @@ def calc_mz_correlation_matrix_numba(intensity_matrix, min_spec_overlap_ratio=0.
     return rows[:counter], cols[:counter], data[:counter]
 
 
-def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.1, save=True, path=None):
+def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, save=True, path=None):
     """
     Calculate m/z correlation matrix for MS imaging data
 

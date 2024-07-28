@@ -43,15 +43,26 @@ def ms1id_imaging_workflow(file_path, msms_library_path,
                                    max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2)
 
     print(f"Writing results for {file_name}")
-    write_ms1_id_results(pseudo_ms1, save=True, save_path=os.path.join(file_dir, f'{file_name}_ms1_id_results.tsv'))
+    write_ms1_id_results(pseudo_ms1, save=True, save_path=os.path.join(file_dir, f'{file_name}_annotations.tsv'))
 
     return
 
 
 if __name__ == '__main__':
-    ms1id_imaging_workflow(file_path='../../imaging/bottom_control_1.imzML',
-                           msms_library_path='../../data/gnps_nist20.pkl',
-                           mass_detect_int_tol=500.0, bin_size=0.01,
-                           min_spec_overlap_ratio=0.1, min_correlation=0.9, min_cluster_size=5,
+    ms1id_imaging_workflow(file_path='../../imaging/MTBLS313/Brain01_Bregma-3-88b_centroid.imzML',
+                           msms_library_path='../../data/gnps.pkl',
+                           mass_detect_int_tol=1000, bin_size=0.01,
+                           min_spec_overlap_ratio=0.5, min_correlation=0.8, min_cluster_size=5,
                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                           ms1id_min_prec_int_in_ms1=1500, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+                           ms1id_min_prec_int_in_ms1=1000, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+
+    # load
+    import numpy as np
+    import pickle
+    # mz_values = np.load('../../imaging/bottom_control_1_mz_values.npy')
+    # intensity_matrix = np.load('../../imaging/bottom_control_1_intensity_matrix.npy')
+    # pseudo_ms1 = pickle.load(open('../../imaging/bottom_control_1_pseudo_ms1.pkl', 'rb'))
+    # print('loaded')
+
+
+

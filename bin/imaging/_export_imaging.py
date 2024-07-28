@@ -16,11 +16,14 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_path=None):
 
     out_list = []
     for spec in ms1_spec_ls:
-
+        # pseudo_ms1_str: mz1 int1; mz2 int2; ...
         pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
-            # pseudo_ms1_str: mz1 int1; mz2 int2; ...
+            annotation_peaks = annotation.peaks
+            annotation_peaks = annotation_peaks[annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
+            matched_peak_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in annotation_peaks])
+
             out_list.append({
                 'name': annotation.name,
                 'precursor_mz': round(annotation.precursor_mz, 4),
@@ -33,13 +36,26 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_path=None):
                 'inchikey': annotation.inchikey,
                 'instrument_type': annotation.instrument_type,
                 'collision_energy': annotation.collision_energy,
-                # 'pseudo_ms1': pseudo_ms1_str
+                'pseudo_ms1': pseudo_ms1_str,
+                'matched_spectrum': matched_peak_str
             })
 
     out_df = pd.DataFrame(out_list)
 
     if save and save_path:
         out_df.to_csv(save_path, index=False, sep='\t')
+
+        # save a dereplicated version
+        # sort by score, then matched peak, then spectral_usage
+        out_df = out_df.sort_values(['matched_score', 'matched_peak', 'spectral_usage'],
+                                    ascending=[False, False, False])
+
+        # dereplicate by [inchikey, rounded precursor mz]
+        out_df['rounded_precursor_mz'] = out_df['precursor_mz'].round(2)
+        out_df = out_df.drop_duplicates(['inchikey', 'rounded_precursor_mz'], keep='first')
+        out_df.drop(columns=['rounded_precursor_mz'], inplace=True)
+
+        out_df.to_csv(save_path.replace('.tsv', '_derep.tsv'), index=False, sep='\t')
 
     return out_df
 

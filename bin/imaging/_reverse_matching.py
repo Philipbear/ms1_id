@@ -177,6 +177,8 @@ def ms1_id_revcos_matching_identity_search(ms1_spec_ls: List, ms2_library: str, 
                 annotation.instrument_type = matched.get('instrument_type', None)
                 annotation.collision_energy = matched.get('collision_energy', None)
                 annotation.peaks = matched.get('peaks', None)
+                annotation.db_id = matched.get('comment', None)
+                annotation.matched_spec = matched.get('peaks', None)
 
                 spec.annotation_ls.append(annotation)
 
@@ -271,6 +273,8 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
                 annotation.instrument_type = matched.get('instrument_type', None)
                 annotation.collision_energy = matched.get('collision_energy', None)
                 annotation.peaks = matched.get('peaks', None)
+                annotation.db_id = matched.get('comment', None)
+                annotation.matched_spec = matched.get('peaks', None)
 
                 spec.annotation_ls.append(annotation)
 
