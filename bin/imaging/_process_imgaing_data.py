@@ -5,12 +5,22 @@ import numpy as np
 import pyimzml.ImzMLParser as imzml
 
 
-def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=500.0,
+def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
                             mz_bin_size=0.005, save=False, save_dir=None):
     parser = imzml.ImzMLParser(imzml_file)
 
     mz_intensity_dict = defaultdict(lambda: defaultdict(float))
     coordinates = []
+
+    all_intensities = []
+    # First pass: collect all intensities if mass_detect_int_tol is None
+    if mass_detect_int_tol is None:
+        for idx, (x, y, z) in enumerate(parser.coordinates):
+            mz, intensity = parser.getspectrum(idx)
+            all_intensities.extend(intensity)
+
+        # Calculate minimum intensity value for mass detection
+        mass_detect_int_tol = np.min(all_intensities) * 3
 
     for idx, (x, y, z) in enumerate(parser.coordinates):
         mz, intensity = parser.getspectrum(idx)
@@ -56,7 +66,7 @@ def analyze_intensity_distribution(intensity_matrix):
     non_zero_intensities = all_intensities[all_intensities > 0]
 
     # Calculate percentiles
-    percentiles = [1, 2, 5, 50, 95, 98, 99]
+    percentiles = [1, 2, 5, 10, 20, 50, 80, 90, 95, 98, 99]
     intensity_percentiles = np.percentile(non_zero_intensities, percentiles)
 
     # Create a dictionary of percentiles and their corresponding intensity values
@@ -92,8 +102,71 @@ def print_intensity_stats(stats):
     print(f"Maximum intensity: {stats['max']:.2f}")
 
 
+def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95):
+
+    import matplotlib.pyplot as plt
+    # Flatten the intensity matrix to get all intensity values
+    all_intensities = intensity_matrix.flatten()
+
+    # Remove zero intensities
+    non_zero_intensities = all_intensities[all_intensities > 0]
+
+    # Calculate the cutoff value for the x-axis (90th percentile by default)
+    x_max = np.percentile(non_zero_intensities, percentile_cutoff)
+
+    # Create the histogram
+    plt.figure(figsize=(12, 6))
+
+    # Use range parameter to limit x-axis
+    counts, bins, _ = plt.hist(non_zero_intensities, bins=bins, range=(0, x_max), edgecolor='black')
+
+    plt.title(f'Histogram of Non-Zero Intensity Values (First {percentile_cutoff}%)')
+    plt.xlabel('Intensity')
+    plt.ylabel('Frequency')
+
+    # Add vertical lines for percentiles
+    percentiles = [1, 2, 5, 10, 20, 50, 80, 90, 95, 98, 99]
+    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'pink']
+    for percentile, color in zip(percentiles, colors):
+        value = np.percentile(non_zero_intensities, percentile)
+        if value <= x_max:
+            plt.axvline(value, color=color, linestyle='dashed', linewidth=1)
+            plt.text(value, plt.gca().get_ylim()[1], f'{percentile}th',
+                     rotation=90, va='top', ha='right', color=color)
+
+    # Add mean and median
+    mean = np.mean(non_zero_intensities)
+    median = np.median(non_zero_intensities)
+    if mean <= x_max:
+        plt.axvline(mean, color='orange', linestyle='solid', linewidth=2)
+        plt.text(mean, plt.gca().get_ylim()[1], 'Mean',
+                 rotation=90, va='top', ha='right', color='orange')
+    if median <= x_max:
+        plt.axvline(median, color='green', linestyle='solid', linewidth=2)
+        plt.text(median, plt.gca().get_ylim()[1], 'Median',
+                 rotation=90, va='top', ha='right', color='green')
+
+    # Add text box with statistics
+    stats_text = f"Total values: {len(all_intensities)}\n"
+    stats_text += f"Non-zero values: {len(non_zero_intensities)}\n"
+    stats_text += f"Mean: {mean:.2f}\n"
+    stats_text += f"Median: {median:.2f}\n"
+    stats_text += f"Max shown: {x_max:.2f}"
+    plt.text(0.95, 0.95, stats_text, transform=plt.gca().transAxes,
+             verticalalignment='top', horizontalalignment='right',
+             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
+    plt.tight_layout()
+    plt.show()
+
+
 if __name__ == '__main__':
-    imzml_file = '../../imaging/bottom_control_1.imzML'
-    mz_values, intensity_matrix, coordinates = process_ms_imaging_data(imzml_file, imzml_file.replace('.imzML', '.ibd'))
+    # imzml_file = '../../imaging/MTBLS313/Brain02_Bregma-3-88.imzML'
+    # mz_values, intensity_matrix, coordinates = process_ms_imaging_data(imzml_file,
+    #                                                                    imzml_file.replace('.imzML', '.ibd'),
+    #                                                                    mass_detect_int_tol=None)
+
+    intensity_matrix = np.load('../../imaging/MTBLS313/Brain02_Bregma-3-88/intensity_matrix.npy')
     intensity_stats = analyze_intensity_distribution(intensity_matrix)
     print_intensity_stats(intensity_stats)
+    create_intensity_histogram(intensity_matrix)

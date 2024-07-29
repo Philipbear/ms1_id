@@ -5,10 +5,10 @@ from functools import partial
 
 
 def ms1id_single_file(file_path, msms_library_path,
-                      mass_detect_int_tol=500, mz_bin_size=0.01,
+                      mass_detect_int_tol=None, mz_bin_size=0.01,
                       min_spec_overlap_ratio=0.5, min_correlation=0.8, min_cluster_size=6,
                       ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                      ms1id_min_prec_int_in_ms1=500, ms1id_max_prec_rel_int_in_other_ms2=0.05):
+                      ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05):
 
     ms1id_imaging_single_workflow(file_path=file_path,
                                   msms_library_path=msms_library_path,
@@ -22,10 +22,10 @@ def ms1id_single_file(file_path, msms_library_path,
 
 
 def ms1id_single_file_batch(file_dir, msms_library_path, parallel=True, num_processes=None,
-                            mass_detect_int_tol=500, mz_bin_size=0.01,
+                            mass_detect_int_tol=None, mz_bin_size=0.01,
                             min_spec_overlap_ratio=0.5, min_correlation=0.8, min_cluster_size=6,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                            ms1id_min_prec_int_in_ms1=500, ms1id_max_prec_rel_int_in_other_ms2=0.05):
+                            ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05):
     files = [f for f in os.listdir(file_dir) if f.endswith('.imzML')]
     files = [os.path.join(file_dir, f) for f in files]
 
@@ -67,10 +67,10 @@ if __name__ == '__main__':
     file_path = '../../imaging/MTBLS313/Brain02_Bregma-3-88.imzML'
     msms_library_path = '../../data/gnps_nist20.pkl'
     ms1id_single_file(file_path=file_path, msms_library_path=msms_library_path,
-                      mass_detect_int_tol=1000, mz_bin_size=0.01,
+                      mass_detect_int_tol=None, mz_bin_size=0.01,
                       min_spec_overlap_ratio=0.5, min_correlation=0.9, min_cluster_size=6,
                       ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                      ms1id_min_prec_int_in_ms1=1000, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+                      ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05)
 
     # ############################
     # # Batch workflow
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # ms1id_single_file_batch(file_dir=file_dir,
     #                         msms_library_path='../../data/gnps_nist20.pkl',
     #                         parallel=False, num_processes=None,
-    #                         mass_detect_int_tol=1000, mz_bin_size=0.01,
+    #                         mass_detect_int_tol=None, mz_bin_size=0.01,
     #                         min_spec_overlap_ratio=0.5, min_correlation=0.9, min_cluster_size=6,
     #                         ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-    #                         ms1id_min_prec_int_in_ms1=1000, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+    #                         ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05)

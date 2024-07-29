@@ -967,21 +967,7 @@ def _clean_search_result(temp_result):
     return temp_result
 
 
-# test
 if __name__ == "__main__":
-    # cosine between two vectors
-    def cosine_similarity(v1, v2):
-        return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
-
-
-    print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), np.array([100, 20, 4, 3, 10, 0])))
-    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 0, 0, 20])), np.sqrt(np.array([100, 20, 4, 3, 10, 0]))))
-    print(
-        cosine_similarity(np.log(np.array([100, 0.5, 20, 0, 0, 20]) + 1), np.log(np.array([100, 20, 4, 3, 10, 0]) + 1)))
-
-    print(cosine_similarity(np.array([100, 0.5, 20, 20]), np.array([100, 20, 4, 0])))
-    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 20])), np.sqrt(np.array([100, 20, 4, 0]))))
-    print(cosine_similarity(np.log(np.array([100, 0.5, 20, 20]) + 1), np.log(np.array([100, 20, 4, 0]) + 1)))
 
     # load spectral library
     spectral_library = [{
@@ -1006,7 +992,7 @@ if __name__ == "__main__":
     # search
     search_eng = FlashCos(max_ms2_tolerance_in_da=ms2_tol * 1.05,
                           mz_index_step=0.0001,
-                          sqrt_transform=False)
+                          sqrt_transform=True)
     search_eng.build_index(spectral_library,
                            max_indexed_mz=2000,
                            precursor_ions_removal_da=0.5,

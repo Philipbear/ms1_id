@@ -7,10 +7,10 @@ from _export_imaging import write_ms1_id_results
 
 
 def ms1id_imaging_single_workflow(file_path, msms_library_path,
-                                  mass_detect_int_tol=500.0, mz_bin_size=0.01,
+                                  mass_detect_int_tol=None, mz_bin_size=0.01,
                                   min_spec_overlap_ratio=0.1, min_correlation=0.8, min_cluster_size=6,
                                   ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                                  ms1id_min_prec_int_in_ms1=500, ms1id_max_prec_rel_int_in_other_ms2=0.05):
+                                  ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05):
     file_dir = os.path.dirname(file_path)
     file_name = os.path.basename(file_path).replace('.imzML', '')
 
@@ -55,8 +55,8 @@ if __name__ == '__main__':
     file_path = '../../imaging/MTBLS313/Brain01_Bregma-3-88b_centroid.imzML'
     ms1id_imaging_single_workflow(file_path=file_path,
                                   msms_library_path='../../data/gnps_nist20.pkl',
-                                  mass_detect_int_tol=1000, mz_bin_size=0.01,
+                                  mass_detect_int_tol=None, mz_bin_size=0.01,
                                   min_spec_overlap_ratio=0.5, min_correlation=0.9, min_cluster_size=5,
                                   ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                                  ms1id_min_prec_int_in_ms1=1000, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+                                  ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05)
 
