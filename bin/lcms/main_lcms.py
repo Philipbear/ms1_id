@@ -124,12 +124,12 @@ if __name__ == '__main__':
     #     file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
     #     library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl')
 
-    ms1id_single_file_batch(data_dir='../../data/from_vincent/data',
+    ms1id_single_file_batch(data_dir='../../data/test/data',
                             library_path='../../data/gnps_nist20.pkl',
                             parallel=True, num_processes=None,
                             ms1_id=True, ms2_id=True,
                             mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-                            mass_detect_int_tol=10000,
+                            mass_detect_int_tol=30000,
                             peak_cor_rt_tol=0.025,
                             min_ppc=0.9, roi_min_length=4,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
@@ -137,7 +137,7 @@ if __name__ == '__main__':
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3)
 
-    # ms1id_batch_workflow(project_dir='../../data/from_vincent',
+    # ms1id_batch_workflow(project_dir='../../data/test',
     #                      library_path='../../data/gnps_nist20.pkl',
     #                      sample_dir='data',
     #                      batch_size=100, cpu_ratio=0.9,
