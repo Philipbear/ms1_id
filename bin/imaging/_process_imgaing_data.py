@@ -136,23 +136,9 @@ def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95
             plt.text(value, plt.gca().get_ylim()[1], f'{percentile}th',
                      rotation=90, va='top', ha='right', color=color)
 
-    # Add mean and median
-    mean = np.mean(non_zero_intensities)
-    median = np.median(non_zero_intensities)
-    if mean <= x_max:
-        plt.axvline(mean, color='orange', linestyle='solid', linewidth=2)
-        plt.text(mean, plt.gca().get_ylim()[1], 'Mean',
-                 rotation=90, va='top', ha='right', color='orange')
-    if median <= x_max:
-        plt.axvline(median, color='green', linestyle='solid', linewidth=2)
-        plt.text(median, plt.gca().get_ylim()[1], 'Median',
-                 rotation=90, va='top', ha='right', color='green')
-
     # Add text box with statistics
     stats_text = f"Total values: {len(all_intensities)}\n"
     stats_text += f"Non-zero values: {len(non_zero_intensities)}\n"
-    stats_text += f"Mean: {mean:.2f}\n"
-    stats_text += f"Median: {median:.2f}\n"
     stats_text += f"Max shown: {x_max:.2f}"
     plt.text(0.95, 0.95, stats_text, transform=plt.gca().transAxes,
              verticalalignment='top', horizontalalignment='right',
