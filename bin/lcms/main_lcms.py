@@ -129,7 +129,7 @@ if __name__ == '__main__':
                             parallel=True, num_processes=None,
                             ms1_id=True, ms2_id=False,
                             mz_tol_ms1=0.015, mz_tol_ms2=0.02,
-                            mass_detect_int_tol=10000,
+                            mass_detect_int_tol=30000,
                             peak_cor_rt_tol=0.05,
                             min_ppc=0.8, roi_min_length=6,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
