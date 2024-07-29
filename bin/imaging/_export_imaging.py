@@ -2,12 +2,12 @@ import os
 import pandas as pd
 
 
-def write_ms1_id_results(ms1_spec_ls, save=True, save_path=None):
+def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
     """
     Output the annotated ms1 spectra
     :param ms1_spec_ls: a list of PseudoMS1-like object
     :param save: bool, whether to save the results
-    :param save_path: str, path to save the results
+    :param save_dir: str, path to save the results
     :return: None
     """
 
@@ -42,7 +42,8 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_path=None):
 
     out_df = pd.DataFrame(out_list)
 
-    if save and save_path:
+    if save and save_dir:
+        save_path = os.path.join(save_dir, 'ms1_id_annotations_all.tsv')
         out_df.to_csv(save_path, index=False, sep='\t')
 
         # save a dereplicated version
@@ -50,12 +51,12 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_path=None):
         out_df = out_df.sort_values(['matched_score', 'matched_peak', 'spectral_usage'],
                                     ascending=[False, False, False])
 
-        # dereplicate by [inchikey, rounded precursor mz]
-        out_df['rounded_precursor_mz'] = out_df['precursor_mz'].round(2)
+        # dereplicate by [inchikey, rounded precursor mz]  # rounded precursor mz indicating precursor type
+        out_df['rounded_precursor_mz'] = out_df['precursor_mz'].round(1)
         out_df = out_df.drop_duplicates(['inchikey', 'rounded_precursor_mz'], keep='first')
         out_df.drop(columns=['rounded_precursor_mz'], inplace=True)
 
-        out_df.to_csv(save_path.replace('.tsv', '_derep.tsv'), index=False, sep='\t')
+        out_df.to_csv(save_path.replace('_all.tsv', '_derep.tsv'), index=False, sep='\t')
 
     return out_df
 

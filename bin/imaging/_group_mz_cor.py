@@ -4,9 +4,10 @@ import numpy as np
 from _utils_imaging import PseudoMS1
 from scipy.sparse import csr_matrix
 
+
 def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
                         min_correlation=0.8, min_cluster_size=6,
-                        save=False, save_path=None):
+                        save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for imaging data
     """
@@ -15,8 +16,10 @@ def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
                                              min_correlation=min_correlation,
                                              min_cluster_size=min_cluster_size)
 
-    if save and save_path:
-        save_pseudo_ms1_spectra(pseudo_ms1_spectra, save_path)
+    if save and save_dir:
+        save_path = os.path.join(save_dir, 'pseudo_ms1_spectra.pkl')
+        with open(save_path, 'wb') as f:
+            pickle.dump(pseudo_ms1_spectra, f)
 
     return pseudo_ms1_spectra
 
@@ -79,8 +82,3 @@ def _remove_redundant_spectra(pseudo_ms1_spectra):
             non_redundant_spectra.append(spec1)
     return non_redundant_spectra
 
-
-def save_pseudo_ms1_spectra(pseudo_ms1_spectra, save_path):
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    with open(save_path, 'wb') as f:
-        pickle.dump(pseudo_ms1_spectra, f)

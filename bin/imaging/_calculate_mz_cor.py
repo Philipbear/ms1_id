@@ -55,7 +55,7 @@ def calc_mz_correlation_matrix_numba(intensity_matrix, min_spec_overlap_ratio=0.
     return rows[:counter], cols[:counter], data[:counter]
 
 
-def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, save=True, path=None):
+def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, save=True, save_dir=None):
     """
     Calculate m/z correlation matrix for MS imaging data
 
@@ -73,8 +73,9 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, save=
     corr_matrix = corr_matrix + corr_matrix.T
     corr_matrix.setdiag(1.0)
 
-    if save and path:
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+    if save and save_dir:
+
+        path = os.path.join(save_dir, 'mz_correlation_matrix.npz')
         save_npz(path, corr_matrix)
 
     return corr_matrix

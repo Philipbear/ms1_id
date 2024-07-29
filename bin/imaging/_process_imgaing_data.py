@@ -6,7 +6,7 @@ import pyimzml.ImzMLParser as imzml
 
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=500.0,
-                            bin_size=0.005, save=False):
+                            bin_size=0.005, save=False, save_dir=None):
     parser = imzml.ImzMLParser(imzml_file)
 
     mz_intensity_dict = defaultdict(lambda: defaultdict(float))
@@ -33,13 +33,11 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=500.0,
         for mz in mz_values
     ])
 
-    if save:
-        file_name = os.path.basename(imzml_file).replace('.imzML', '')
-        save_dir = os.path.dirname(imzml_file)
+    if save and save_dir is not None:
 
-        mz_values_path = os.path.join(save_dir, f'{file_name}_mz_values.npy')
-        intensity_matrix_path = os.path.join(save_dir, f'{file_name}_intensity_matrix.npy')
-        coordinates_path = os.path.join(save_dir, f'{file_name}_coordinates.pkl')
+        mz_values_path = os.path.join(save_dir, 'mz_values.npy')
+        intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
+        coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
 
         np.save(mz_values_path, mz_values)
         np.save(intensity_matrix_path, intensity_matrix)
