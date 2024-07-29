@@ -394,7 +394,7 @@ def main_workflow_single(file_path,
 
     # output single file to a txt file, in the same directory as the raw file
     out_path = os.path.splitext(file_path)[0] + ".tsv"
-    write_single_file(d, pseudo_ms1_spectra, out_path)
+    write_single_file(d, pseudo_ms1_spectra, ion_mode, out_path)
 
     return d
 
