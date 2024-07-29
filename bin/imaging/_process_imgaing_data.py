@@ -19,8 +19,10 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
             mz, intensity = parser.getspectrum(idx)
             all_intensities.extend(intensity)
 
-        # Calculate minimum intensity value for mass detection
-        mass_detect_int_tol = np.min(all_intensities) * 3
+        all_intensities = np.array(all_intensities)
+        non_zero_intensities = all_intensities[all_intensities > 0.0]
+        # Calculate intensity value for mass detection
+        mass_detect_int_tol = min(np.min(non_zero_intensities) * 3, np.percentile(non_zero_intensities, 5))
 
     for idx, (x, y, z) in enumerate(parser.coordinates):
         mz, intensity = parser.getspectrum(idx)
@@ -161,12 +163,12 @@ def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95
 
 
 if __name__ == '__main__':
-    # imzml_file = '../../imaging/MTBLS313/Brain02_Bregma-3-88.imzML'
-    # mz_values, intensity_matrix, coordinates = process_ms_imaging_data(imzml_file,
-    #                                                                    imzml_file.replace('.imzML', '.ibd'),
-    #                                                                    mass_detect_int_tol=None)
+    imzml_file = '../../imaging/MTBLS313/Brain01_Bregma1-42_01_centroid.imzML'
+    mz_values, intensity_matrix, coordinates = process_ms_imaging_data(imzml_file,
+                                                                       imzml_file.replace('.imzML', '.ibd'),
+                                                                       mass_detect_int_tol=None)
 
-    intensity_matrix = np.load('../../imaging/MTBLS313/Brain02_Bregma-3-88/intensity_matrix.npy')
+    # intensity_matrix = np.load('../../imaging/MTBLS313/Brain01_Bregma1-42_01_centroid/intensity_matrix.npy')
     intensity_stats = analyze_intensity_distribution(intensity_matrix)
     print_intensity_stats(intensity_stats)
-    create_intensity_histogram(intensity_matrix)
+    create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=99)

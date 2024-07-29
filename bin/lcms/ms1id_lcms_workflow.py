@@ -72,8 +72,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
                          align_mz_tol=align_mz_tol, align_rt_tol=align_rt_tol,
                          run_rt_correction=run_rt_correction, run_normalization=run_normalization)
 
-    with open(os.path.join(config.project_dir, "project.mc"), "wb") as f:
-        pickle.dump(config, f)
+    # with open(os.path.join(config.project_dir, "project.mc"), "wb") as f:
+    #     pickle.dump(config, f)
 
     raw_file_names = os.listdir(config.sample_dir)
     raw_file_names = [f for f in raw_file_names if f.lower().endswith(".mzml") or f.lower().endswith(".mzxml")]

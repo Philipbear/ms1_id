@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from _utils import SpecAnnotation, AlignedMS1Annotation
+from _utils import AlignedMS1Annotation
 
 
 def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
@@ -55,7 +55,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
     return out_df
 
 
-def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=None):
+def write_single_file(msdata, pseudo_ms1_spectra=None, save_path=None):
     """
     Function to generate a report for rois in csv format.
     """
@@ -80,22 +80,26 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=
                 roi.rt_seq[-1], roi.peak_area, roi.peak_height, roi.gaussian_similarity.__round__(2),
                 roi.noise_level.__round__(2), roi.asymmetry_factor.__round__(2), roi.charge_state, roi.is_isotope,
                 str(roi.isotope_id_seq)[1:-1], iso_dist,
-                roi.is_in_source_fragment, roi.isf_parent_roi_id, str(roi.isf_child_roi_id)[1:-1],
-                roi.adduct_type, roi.adduct_parent_roi_id, str(roi.adduct_child_roi_id)[1:-1],
+                # roi.is_in_source_fragment, roi.isf_parent_roi_id, str(roi.isf_child_roi_id)[1:-1],
+                roi.adduct_type,
+                # roi.adduct_parent_roi_id, str(roi.adduct_child_roi_id)[1:-1],
                 ]
 
         temp.extend([ms2, roi.annotation, roi.formula, roi.similarity, roi.matched_peak_number,
-                     roi.smiles, roi.inchikey])
+                     roi.inchikey])
 
         result.append(temp)
 
     # convert result to a pandas dataframe
     columns = ["ID", "m/z", "RT", "length", "RT_start", "RT_end", "peak_area", "peak_height",
                "Gaussian_similarity", "noise_level", "asymmetry_factor", "charge", "is_isotope",
-               "isotope_IDs", "isotopes", "is_in_source_fragment", "ISF_parent_ID",
-               "ISF_child_ID", "adduct", "adduct_base_ID", "adduct_other_ID"]
+               "isotope_IDs", "isotopes",
+               # "is_in_source_fragment", "ISF_parent_ID", "ISF_child_ID",
+               "adduct",
+               # "adduct_base_ID", "adduct_other_ID"
+               ]
 
-    columns.extend(["MS2", "annotation", "formula", "similarity", "matched_peak_number", "SMILES", "InChIKey"])
+    columns.extend(["MS2", "MS2_annotation", "MS2_formula", "MS2_similarity", "MS2_matched_peak", "MS2_inchikey"])
 
     df = pd.DataFrame(result, columns=columns)
 
@@ -145,14 +149,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, user_defined_output_path=
                         df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
 
     # save the dataframe to csv file
-    if user_defined_output_path:
-        path = user_defined_output_path
-    else:
-        path = os.path.join(msdata.params.single_file_dir)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        path = os.path.join(msdata.params.single_file_dir, msdata.file_name + ".tsv")
-    df.to_csv(path, index=False, sep="\t")
+    df.to_csv(save_path, index=False, sep="\t")
 
 
 def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
