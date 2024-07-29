@@ -507,7 +507,7 @@ if __name__ == "__main__":
         plot_bpc=False)
 
     # GNPS+NIST: /Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl
-    # GNPS: /Users/shipei/Documents/projects/ms1_id/data/ALL_GNPS_NO_PROPOGATED.pkl
+    # GNPS: /Users/shipei/Documents/projects/ms1_id/data/gnps.pkl
     # NIST: /Users/shipei/Documents/projects/ms1_id/data/nist20.pkl
 
     end = time.time()

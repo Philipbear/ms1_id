@@ -6,7 +6,7 @@ import pyimzml.ImzMLParser as imzml
 
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=500.0,
-                            bin_size=0.005, save=False, save_dir=None):
+                            mz_bin_size=0.005, save=False, save_dir=None):
     parser = imzml.ImzMLParser(imzml_file)
 
     mz_intensity_dict = defaultdict(lambda: defaultdict(float))
@@ -17,7 +17,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=500.0,
 
         # Filter intensities and bin m/z values in one step
         mask = intensity > mass_detect_int_tol
-        binned_mz = np.round(mz[mask] / bin_size) * bin_size
+        binned_mz = np.round(mz[mask] / mz_bin_size) * mz_bin_size
         filtered_intensity = intensity[mask]
 
         # Update mz_intensity_dict
