@@ -160,6 +160,11 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
         all_matches = []
         for idx in v:
             matched = {k.lower(): v for k, v in search_eng[idx].items()}
+
+            this_ion_mode = matched.get('ion_mode', '')
+            if ion_mode is not None and ion_mode != this_ion_mode:
+                continue
+
             precursor_mz = matched.get('precursor_mz')
 
             if precursor_mz is not None:

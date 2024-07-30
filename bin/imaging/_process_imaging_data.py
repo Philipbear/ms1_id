@@ -46,7 +46,6 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
     ])
 
     if save and save_dir is not None:
-
         mz_values_path = os.path.join(save_dir, 'mz_values.npy')
         intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
         coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
@@ -57,7 +56,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
         with open(coordinates_path, 'wb') as f:
             pickle.dump(coordinates, f)
 
-    return mz_values, intensity_matrix, coordinates
+    return mz_values, intensity_matrix, coordinates, parser.polarity
 
 
 def analyze_intensity_distribution(intensity_matrix):
@@ -105,7 +104,6 @@ def print_intensity_stats(stats):
 
 
 def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95):
-
     import matplotlib.pyplot as plt
     # Flatten the intensity matrix to get all intensity values
     all_intensities = intensity_matrix.flatten()
@@ -150,9 +148,9 @@ def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95
 
 if __name__ == '__main__':
     imzml_file = '../../imaging/MTBLS313/Brain01_Bregma1-42_01_centroid.imzML'
-    mz_values, intensity_matrix, coordinates = process_ms_imaging_data(imzml_file,
-                                                                       imzml_file.replace('.imzML', '.ibd'),
-                                                                       mass_detect_int_tol=None)
+    mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(imzml_file,
+                                                                                 imzml_file.replace('.imzML', '.ibd'),
+                                                                                 mass_detect_int_tol=None)
 
     # intensity_matrix = np.load('../../imaging/MTBLS313/Brain01_Bregma1-42_01_centroid/intensity_matrix.npy')
     intensity_stats = analyze_intensity_distribution(intensity_matrix)

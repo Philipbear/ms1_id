@@ -70,6 +70,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
+                      ion_mode=None,
                       refine_results=False,
                       min_prec_int_in_ms1=1000,
                       max_prec_rel_int_in_other_ms2=0.05,
@@ -82,6 +83,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     :param min_prec_int_in_ms1: minimum required precursor intensity in MS1 spectrum
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
+    :param ion_mode: str, ion mode. If None, all ion modes are considered
     :param refine_results: bool, whether to refine the results
     :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
     :return: PseudoMS1-like object
@@ -89,6 +91,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
 
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
+                                                     ion_mode=ion_mode,
                                                      min_prec_int_in_ms1=min_prec_int_in_ms1,
                                                      score_cutoff=score_cutoff,
                                                      min_matched_peak=min_matched_peak)
@@ -204,6 +207,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
 
 
 def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
+                                       ion_mode: str = None,
                                        min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.7,
                                        min_matched_peak: int = 3) -> List:
     """
@@ -212,6 +216,7 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
     :param ms1_spec_ls: a list of PseudoMS1-like objects
     :param ms2_library: path to the pickle file, indexed library
     :param mz_tol: m/z tolerance in Da, for open matching
+    :param ion_mode: str, ion mode
     :param min_prec_int_in_ms1: minimum precursor intensity in MS1 spectrum
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
@@ -253,6 +258,11 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
         all_matches = []
         for idx in v:
             matched = {k.lower(): v for k, v in search_eng[idx].items()}
+
+            this_ion_mode = matched.get('ion_mode', '')
+            if ion_mode is not None and ion_mode != this_ion_mode:
+                continue
+
             precursor_mz = matched.get('precursor_mz')
 
             if precursor_mz is not None:

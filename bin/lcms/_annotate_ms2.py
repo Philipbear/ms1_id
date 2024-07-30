@@ -4,7 +4,8 @@ import re
 import numpy as np
 
 
-def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, num=5):
+def feature_annotation(features, config,
+                       ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, num=5):
     """
     A function to annotate features based on their MS/MS spectra and a MS/MS database.
 
@@ -12,16 +13,16 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
     ----------
     features : list
         A list of features.
-    parameters : Params object
+    config : Params object
         The parameters for the workflow.
     num : int
         The number of top MS/MS spectra to search.
     """
 
     # load the MS/MS database
-    search_eng = pickle.load(open(parameters.msms_library, 'rb'))
+    search_eng = pickle.load(open(config.msms_library, 'rb'))
 
-    ms2_tol = max(parameters.mz_tol_ms2, 0.02)  # indexed library mz_tol is 0.02
+    ms2_tol = max(config.mz_tol_ms2, 0.02)  # indexed library mz_tol is 0.02
 
     for f in features:
         if len(f.ms2_seq) == 0:
@@ -33,17 +34,14 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
         # sort parsed ms2 by summed intensity
         parsed_ms2 = sorted(parsed_ms2, key=lambda x: np.sum(x[:, 1]), reverse=True)
         parsed_ms2 = parsed_ms2[:num]
-        matched = None
-        highest_similarity = 0
-        matched_peak = 0
-        f.best_ms2 = _convert_peaks_to_string(parsed_ms2[0])
-        best_ms2 = parsed_ms2[0]
-        for peaks in parsed_ms2:
 
+        all_valid_matches = []
+
+        for peaks in parsed_ms2:
             search_result = search_eng.search(
                 precursor_mz=f.mz,
                 peaks=peaks,
-                ms1_tolerance_in_da=parameters.mz_tol_ms1,
+                ms1_tolerance_in_da=config.mz_tol_ms1,
                 ms2_tolerance_in_da=ms2_tol,
                 method="identity",
                 precursor_ions_removal_da=0.5,
@@ -53,37 +51,43 @@ def feature_annotation(features, parameters, ms2id_score_cutoff=0.8, ms2id_min_m
             )
             score_arr, matched_peak_arr, spec_usage_arr = search_result['identity_search']
 
-            idx = np.where(matched_peak_arr >= ms2id_min_matched_peak)[0]
-            if len(idx) > 0:
-                idx = idx[np.argmax(score_arr[idx])]
-                if score_arr[idx] > ms2id_score_cutoff:
-                    matched = search_eng[np.argmax(score_arr)]
-                    matched = {k.lower(): v for k, v in matched.items()}
-                    best_ms2 = peaks
-                    highest_similarity = score_arr[idx]
-                    matched_peak = matched_peak_arr[idx]
+            # Find indices that pass all filters
+            valid_indices = np.where((matched_peak_arr >= ms2id_min_matched_peak) &
+                                     (score_arr >= ms2id_score_cutoff))[0]
 
-        if matched:
-            f.annotation = matched.get('name', None)
+            for idx in valid_indices:
+                potential_match = search_eng[idx]
+                potential_match = {k.lower(): v for k, v in potential_match.items()}
+
+                if potential_match.get('ion_mode', '') == config.ion_mode:
+                    all_valid_matches.append({
+                        'match': potential_match,
+                        'score': score_arr[idx],
+                        'matched_peak': matched_peak_arr[idx],
+                        'ms2': peaks
+                    })
+
+        # Select the match with the highest score
+        if all_valid_matches:
+            best_match = max(all_valid_matches, key=lambda x: x['score'])
+
+            f.annotation = best_match['match'].get('name', None)
             f.search_mode = 'identity_search'
-            f.similarity = highest_similarity
-            f.matched_peak_number = matched_peak
-            f.smiles = matched.get('smiles', None)
-            f.inchikey = matched.get('inchikey', None)
-            f.matched_ms2 = _convert_peaks_to_string(matched['peaks'])
-            f.formula = matched.get('formula', None)
-
-            precursor_type = matched.get('precursor_type')
-            if not precursor_type:
-                precursor_type = matched.get('precursortype')
-            f.adduct_type = precursor_type
-
-            f.best_ms2 = _convert_peaks_to_string(best_ms2)
+            f.similarity = best_match['score']
+            f.matched_peak_number = best_match['matched_peak']
+            f.smiles = best_match['match'].get('smiles', None)
+            f.inchikey = best_match['match'].get('inchikey', None)
+            f.matched_ms2 = _convert_peaks_to_string(best_match['match']['peaks'])
+            f.formula = best_match['match'].get('formula', None)
+            f.adduct_type = best_match['match'].get('precursor_type')
+            f.best_ms2 = _convert_peaks_to_string(best_match['ms2'])
+        else:
+            f.best_ms2 = _convert_peaks_to_string(parsed_ms2[0])
 
     return features
 
 
-def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
+def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, ion_mode='positive'):
     """
     A function to annotate rois based on their MS/MS spectra and a MS/MS database.
 
@@ -123,20 +127,35 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
             )
             score_arr, matched_peak_arr, spec_usage_arr = search_result['identity_search']
 
-            idx = np.where(matched_peak_arr >= ms2id_min_matched_peak)[0]
-            if len(idx) > 0:
-                idx = idx[np.argmax(score_arr[idx])]
-                if score_arr[idx] > ms2id_score_cutoff:
-                    matched = search_eng[np.argmax(score_arr)]
-                    matched = {k.lower(): v for k, v in matched.items()}
-                    f.annotation = matched.get('name', None)
-                    f.similarity = score_arr[idx]
-                    f.matched_peak_number = matched_peak_arr[idx]
-                    f.smiles = matched.get('smiles', None)
-                    f.inchikey = matched.get('inchikey', None)
-                    f.matched_precursor_mz = matched.get('precursor_mz', None)
-                    f.matched_peaks = matched.get('peaks', None)
-                    f.formula = matched.get('formula', None)
+            # Find indices that pass all filters
+            valid_indices = np.where((matched_peak_arr >= ms2id_min_matched_peak) &
+                                     (score_arr >= ms2id_score_cutoff))[0]
+
+            all_valid_matches = []
+
+            for idx in valid_indices:
+                potential_match = search_eng[idx]
+                potential_match = {k.lower(): v for k, v in potential_match.items()}
+
+                if potential_match.get('ion_mode', '') == ion_mode:
+                    all_valid_matches.append({
+                        'match': potential_match,
+                        'score': score_arr[idx],
+                        'matched_peak': matched_peak_arr[idx]
+                    })
+
+            # Select the match with the highest score
+            if all_valid_matches:
+                best_match = max(all_valid_matches, key=lambda x: x['score'])
+
+                f.annotation = best_match['match'].get('name', None)
+                f.similarity = best_match['score']
+                f.matched_peak_number = best_match['matched_peak']
+                f.smiles = best_match['match'].get('smiles', None)
+                f.inchikey = best_match['match'].get('inchikey', None)
+                f.matched_precursor_mz = best_match['match'].get('precursor_mz', None)
+                f.matched_peaks = best_match['match'].get('peaks', None)
+                f.formula = best_match['match'].get('formula', None)
 
 
 def _extract_peaks_from_string(ms2):

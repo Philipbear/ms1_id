@@ -115,6 +115,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
 
         # perform rev cos search
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
+                                               ion_mode=config.ion_mode,
                                                min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak,
@@ -377,6 +378,7 @@ def main_workflow_single(file_path,
         # perform rev cos search
         print('Performing MS1 ID annotation...')
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
+                                               ion_mode=ion_mode,
                                                min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
@@ -387,7 +389,8 @@ def main_workflow_single(file_path,
     # annotate MS2 spectra
     if ms2_id and config.msms_library is not None:
         print("Annotating MS2 spectra...")
-        annotate_rois(d, ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
+        annotate_rois(d, ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
+                      ion_mode=ion_mode)
 
     if plot_bpc:
         bpc_path = os.path.splitext(file_path)[0] + "_bpc.png"
