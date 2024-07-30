@@ -88,7 +88,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                 ]
 
         temp.extend([ms2, roi.annotation, roi.formula, roi.similarity, roi.matched_peak_number,
-                     roi.inchikey])
+                     roi.inchikey, roi.precursor_type, roi.collision_energy])
 
         result.append(temp)
 
@@ -101,7 +101,8 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                # "adduct_base_ID", "adduct_other_ID"
                ]
 
-    columns.extend(["MS2", "MS2_annotation", "MS2_formula", "MS2_similarity", "MS2_matched_peak", "MS2_inchikey"])
+    columns.extend(["MS2", "MS2_annotation", "MS2_formula", "MS2_similarity", "MS2_matched_peak",
+                    "MS2_inchikey", "MS2_precursor_type", "MS2_collision_energy"])
 
     df = pd.DataFrame(result, columns=columns)
 

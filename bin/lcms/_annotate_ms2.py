@@ -5,7 +5,9 @@ import numpy as np
 
 
 def feature_annotation(features, config,
-                       ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, num=5):
+                       ms2id_score_cutoff=0.8,
+                       ms2id_min_matched_peak=6,
+                       num=5):
     """
     A function to annotate features based on their MS/MS spectra and a MS/MS database.
 
@@ -81,6 +83,8 @@ def feature_annotation(features, config,
             f.formula = best_match['match'].get('formula', None)
             f.adduct_type = best_match['match'].get('precursor_type')
             f.best_ms2 = _convert_peaks_to_string(best_match['ms2'])
+            f.collision_energy = best_match['match'].get('collision_energy', None)
+            f.precursor_type = best_match['match'].get('precursor_type', None)
         else:
             f.best_ms2 = _convert_peaks_to_string(parsed_ms2[0])
 
@@ -111,6 +115,8 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, ion_mode=
         f.matched_precursor_mz = None
         f.matched_peaks = None
         f.formula = None
+        f.precursor_type = None
+        f.collision_energy = None
 
         if f.best_ms2 is not None:
 
@@ -156,6 +162,8 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, ion_mode=
                 f.matched_precursor_mz = best_match['match'].get('precursor_mz', None)
                 f.matched_peaks = best_match['match'].get('peaks', None)
                 f.formula = best_match['match'].get('formula', None)
+                f.precursor_type = best_match['match'].get('precursor_type', None)
+                f.collision_energy = best_match['match'].get('collision_energy', None)
 
 
 def _extract_peaks_from_string(ms2):

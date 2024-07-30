@@ -389,7 +389,8 @@ def main_workflow_single(file_path,
     # annotate MS2 spectra
     if ms2_id and config.msms_library is not None:
         print("Annotating MS2 spectra...")
-        annotate_rois(d, ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
+        annotate_rois(d, ms2id_score_cutoff=ms2id_score_cutoff,
+                      ms2id_min_matched_peak=ms2id_min_matched_peak,
                       ion_mode=ion_mode)
 
     if plot_bpc:
