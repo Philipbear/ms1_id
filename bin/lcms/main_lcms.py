@@ -57,6 +57,7 @@ def ms1id_single_file_batch(data_dir, library_path,
 
     # if some file results exist in out_dir, skip them
     if out_dir is not None:
+        os.makedirs(out_dir, exist_ok=True)
         files = [f for f in files if not os.path.exists(os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '_feature_table.tsv'))]
 
     if parallel:
