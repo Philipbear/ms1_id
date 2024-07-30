@@ -25,10 +25,23 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
         for k, v in replace_keys.items():
             if k in a:
                 a[v] = a.pop(k)
+
+        # convert precursor_mz to float
         try:
             a['precursor_mz'] = float(a['precursor_mz'])
         except:
             a['precursor_mz'] = 0.0
+
+        # ion_mode, harmonize
+        if 'ion_mode' in a:
+            a['ion_mode'] = a['ion_mode'].lower().strip()
+            if a['ion_mode'] in ['p', 'positive']:
+                a['ion_mode'] = 'positive'
+            elif a['ion_mode'] in ['n', 'negative']:
+                a['ion_mode'] = 'negative'
+            else:
+                a['ion_mode'] = 'unknown'
+
         db.append(a)
 
     print('Number of spectra in the database:', len(db))
@@ -93,103 +106,6 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
             pickle.dump(ms1_spec_ls, file)
 
     return ms1_spec_ls
-
-#
-# def ms1_id_revcos_matching_identity_search(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
-#                                            min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.8,
-#                                            min_matched_peak: int = 6) -> List:
-#     """
-#     Perform MS1 annotation using identity search for each precursor m/z.
-#
-#     :param ms1_spec_ls: a list of PseudoMS1-like objects
-#     :param ms2_library: path to the pickle file, indexed library
-#     :param mz_tol: m/z tolerance in Da, for identity matching
-#     :param min_prec_int_in_ms1: minimum precursor intensity in MS1 spectrum
-#     :param score_cutoff: minimum score for matching
-#     :param min_matched_peak: minimum number of matched peaks
-#     :return: List of updated PseudoMS1-like objects
-#     """
-#     mz_tol = max(mz_tol, 0.02)  # indexed library mz_tol is 0.02
-#
-#     # Load the data
-#     with open(ms2_library, 'rb') as file:
-#         search_eng = pickle.load(file)
-#
-#     for spec in ms1_spec_ls:
-#         if len(spec.mzs) < min_matched_peak:
-#             spec.annotated = False
-#             continue
-#
-#         # Sort mzs and intensities in ascending order of mz
-#         sorted_indices = np.argsort(spec.mzs)
-#         sorted_mzs = np.array(spec.mzs)[sorted_indices]
-#         sorted_intensities = np.array(spec.intensities)[sorted_indices]
-#
-#         all_matches = []
-#         for prec_mz in sorted_mzs[min_matched_peak - 1:]:
-#
-#             matching_result = search_eng.search(
-#                 precursor_mz=prec_mz,
-#                 peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
-#                 ms1_tolerance_in_da=mz_tol,
-#                 ms2_tolerance_in_da=mz_tol,
-#                 method="identity",
-#                 precursor_ions_removal_da=0.5,  # reserve mzs up to prec_mz + mz_tol
-#                 noise_threshold=0.0,
-#                 min_ms2_difference_in_da=mz_tol * 2.02,
-#                 reverse=True
-#             )
-#
-#             score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
-#
-#             # filter by matching cutoffs
-#             v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
-#
-#             for idx in v:
-#                 all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx], prec_mz))
-#
-#         # Filter matches based on precursor relative intensity in MS1
-#         valid_matches = []
-#         for idx, score, matched_peaks, spectral_usage, prec_mz in all_matches:
-#             matched = {k.lower(): v for k, v in search_eng[idx].items()}
-#             precursor_mz = matched.get('precursor_mz')
-#
-#             if precursor_mz is not None:
-#                 closest_mz_idx = np.argmin(np.abs(sorted_mzs - precursor_mz))
-#                 if abs(sorted_mzs[closest_mz_idx] - precursor_mz) <= mz_tol:
-#                     prec_intensity = sorted_intensities[closest_mz_idx]
-#                     if prec_intensity >= min_prec_int_in_ms1:
-#                         valid_matches.append((idx, score, matched_peaks, spectral_usage, prec_mz))
-#
-#         if valid_matches:
-#             spec.annotated = True
-#             spec.annotation_ls = []
-#             for idx, score, matched_peaks, spectral_usage, prec_mz in valid_matches:
-#                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
-#
-#                 annotation = SpecAnnotation(idx, score, matched_peaks)
-#                 annotation.spectral_usage = spectral_usage
-#                 annotation.intensity = sorted_intensities[np.argmin(np.abs(sorted_mzs - prec_mz))]
-#
-#                 annotation.name = matched.get('name', None)
-#                 annotation.precursor_mz = matched.get('precursor_mz')
-#                 annotation.precursor_type = matched.get('precursor_type', None)
-#                 annotation.formula = matched.get('formula', None)
-#                 annotation.inchikey = matched.get('inchikey', None)
-#                 annotation.instrument_type = matched.get('instrument_type', None)
-#                 annotation.collision_energy = matched.get('collision_energy', None)
-#                 annotation.peaks = matched.get('peaks', None)
-#                 annotation.db_id = matched.get('comment', None)
-#                 annotation.matched_spec = matched.get('peaks', None)
-#
-#                 spec.annotation_ls.append(annotation)
-#
-#             # sort the annotations by precursor m/z in descending order
-#             spec.annotation_ls = sorted(spec.annotation_ls, key=lambda x: x.precursor_mz, reverse=True)
-#         else:
-#             spec.annotated = False
-#
-#     return ms1_spec_ls
 
 
 def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
@@ -326,7 +242,7 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
+    # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
     # prepare_ms2_lib(ms2db='../../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02)
     # prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02)
 

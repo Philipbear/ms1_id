@@ -13,8 +13,11 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
     prepare ms2 db using MSP formatted database
     :return: a pickle file
     """
-    replace_keys = {'precursormz': 'precursor_mz', 'precursortype': 'precursor_type', 'ionmode': 'ion_mode',
-                    'instrumenttype': 'instrument_type', 'collisionenergy': 'collision_energy'}
+    replace_keys = {'precursormz': 'precursor_mz',
+                    'precursortype': 'precursor_type',
+                    'ionmode': 'ion_mode',
+                    # 'instrumenttype': 'instrument_type',
+                    'collisionenergy': 'collision_energy'}
 
     db = []
     for a in read_one_spectrum(ms2db):
@@ -22,10 +25,23 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
         for k, v in replace_keys.items():
             if k in a:
                 a[v] = a.pop(k)
+
+        # convert precursor_mz to float
         try:
             a['precursor_mz'] = float(a['precursor_mz'])
         except:
             a['precursor_mz'] = 0.0
+
+        # ion_mode, harmonize
+        if 'ion_mode' in a:
+            a['ion_mode'] = a['ion_mode'].lower().strip()
+            if a['ion_mode'] in ['p', 'positive']:
+                a['ion_mode'] = 'positive'
+            elif a['ion_mode'] in ['n', 'negative']:
+                a['ion_mode'] = 'negative'
+            else:
+                a['ion_mode'] = 'unknown'
+
         db.append(a)
 
     print('Number of spectra in the database:', len(db))
