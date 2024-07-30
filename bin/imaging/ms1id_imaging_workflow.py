@@ -41,7 +41,9 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path,
     pseudo_ms1 = ms1_id_annotation(pseudo_ms1, msms_library_path, mz_tol=ms1id_mz_tol,
                                    score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak,
                                    min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
-                                   max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2)
+                                   max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
+                                   save=True,
+                                   save_dir=result_folder)
 
     print(f"Writing results for {file_name}")
     write_ms1_id_results(pseudo_ms1, save=True, save_dir=result_folder)
@@ -52,11 +54,27 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path,
 if __name__ == '__main__':
     ############################
     # Single workflow
-    file_path = '../../imaging/MTBLS313/Brain01_Bregma-3-88b_centroid.imzML'
-    ms1id_imaging_single_workflow(file_path=file_path,
-                                  msms_library_path='../../data/gnps_nist20.pkl',
-                                  mass_detect_int_tol=None, mz_bin_size=0.01,
-                                  min_spec_overlap_ratio=0.5, min_correlation=0.9, min_cluster_size=5,
-                                  ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                                  ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+    # file_path = '../../imaging/MTBLS313/Brain01_Bregma-3-88b_centroid.imzML'
+    # ms1id_imaging_single_workflow(file_path=file_path,
+    #                               msms_library_path='../../data/gnps_nist20.pkl',
+    #                               mass_detect_int_tol=None, mz_bin_size=0.01,
+    #                               min_spec_overlap_ratio=0.5, min_correlation=0.9, min_cluster_size=5,
+    #                               ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+    #                               ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+
+    ############################
+    result_folder = '../../imaging/MTBLS313/Brain01_Bregma1-42_02_centroid'
+    import pickle
+    with open(os.path.join(result_folder, 'pseudo_ms1_spectra.pkl'), 'rb') as f:
+        pseudo_ms1 = pickle.load(f)
+
+    pseudo_ms1 = ms1_id_annotation(pseudo_ms1,
+                                   '../../data/gnps_nist20.pkl', mz_tol=0.01,
+                                   score_cutoff=0.7, min_matched_peak=4,
+                                   min_prec_int_in_ms1=0,
+                                   max_prec_rel_int_in_other_ms2=0.05,
+                                   save=True,
+                                   save_dir=result_folder)
+
+    write_ms1_id_results(pseudo_ms1, save=True, save_dir=result_folder)
 

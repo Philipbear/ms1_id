@@ -55,6 +55,10 @@ def ms1id_single_file_batch(data_dir, library_path,
     files = [f for f in os.listdir(data_dir) if f.endswith('.mzXML') or f.endswith('.mzML')]
     files = [os.path.join(data_dir, f) for f in files]
 
+    # if some file results exist in out_dir, skip them
+    if out_dir is not None:
+        files = [f for f in files if not os.path.exists(os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '_feature_table.tsv'))]
+
     if parallel:
         # If num_processes is not specified, use the number of CPU cores
         if num_processes is None:
@@ -131,6 +135,7 @@ if __name__ == '__main__':
     data_dirs = ['../../data/PR000677_data/c8_pos', '../../data/PR000677_data/c18_neg',
                  '../../data/PR000677_data/hilic_pos', '../../data/PR000677_data/hilic_neg']
     for data_dir in data_dirs:
+        out_dir = data_dir.replace('PR000677_data', 'PR000677_output')
         ms1id_single_file_batch(data_dir=data_dir,
                                 library_path='../../data/gnps_nist20.pkl',
                                 parallel=True, num_processes=None,
@@ -143,7 +148,7 @@ if __name__ == '__main__':
                                 ms1id_min_prec_int_in_ms1=1e5,
                                 ms1id_max_prec_rel_int_in_other_ms2=0.01,
                                 ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
-                                out_dir=data_dir.replace('PR000677_data', 'PR000677_output'))
+                                out_dir=out_dir)
 
     # ms1id_batch_workflow(project_dir='../../data/test',
     #                      library_path='../../data/gnps_nist20.pkl',

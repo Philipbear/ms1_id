@@ -13,26 +13,25 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
     prepare ms2 db using MSP formatted database
     :return: a pickle file
     """
+    replace_keys = {'precursormz': 'precursor_mz',
+                    'precursortype': 'precursor_type',
+                    'ionmode': 'ion_mode',
+                    # 'instrumenttype': 'instrument_type',
+                    'collisionenergy': 'collision_energy'}
 
     db = []
     for a in read_one_spectrum(ms2db):
+        # replace keys if exist
+        for k, v in replace_keys.items():
+            if k in a:
+                a[v] = a.pop(k)
+        try:
+            a['precursor_mz'] = float(a['precursor_mz'])
+        except:
+            a['precursor_mz'] = 0.0
         db.append(a)
 
     print('Number of spectra in the database:', len(db))
-
-    if 'precursor_mz' not in db[0].keys():
-        for a in db:
-            similar_key = [k for k in a.keys() if 'prec' in k and 'mz' in k]
-            try:
-                a['precursor_mz'] = float(a.pop(similar_key[0]))
-            except:
-                a['precursor_mz'] = 0.0
-    else:
-        for a in db:
-            try:
-                a['precursor_mz'] = float(a['precursor_mz'])
-            except:
-                a['precursor_mz'] = 0.0
 
     print('initializing search engine')
     search_engine = FlashCos(max_ms2_tolerance_in_da=mz_tol * 1.005,
@@ -58,8 +57,10 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
+                      ion_mode=None,
                       min_prec_int_in_ms1=1000,
-                      max_prec_rel_int_in_other_ms2=0.05):
+                      max_prec_rel_int_in_other_ms2=0.05,
+                      save=False, save_dir=None):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
@@ -68,12 +69,16 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     :param min_prec_int_in_ms1: minimum required precursor intensity in MS1 spectrum
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
+    :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
     :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
+    :param save: bool, save the results
+    :param save_dir: str, save directory
     :return: PseudoMS1-like object
     """
 
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
+                                                     ion_mode=ion_mode,
                                                      min_prec_int_in_ms1=min_prec_int_in_ms1,
                                                      score_cutoff=score_cutoff,
                                                      min_matched_peak=min_matched_peak)
@@ -81,6 +86,11 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
                                         max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
+
+    if save:
+        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
+        with open(save_path, 'wb') as file:
+            pickle.dump(ms1_spec_ls, file)
 
     return ms1_spec_ls
 
@@ -163,12 +173,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
 #
 #                 annotation.name = matched.get('name', None)
 #                 annotation.precursor_mz = matched.get('precursor_mz')
-#
-#                 precursor_type = matched.get('precursor_type', None)
-#                 if not precursor_type:
-#                     precursor_type = matched.get('precursortype', None)
-#                 annotation.precursor_type = precursor_type
-#
+#                 annotation.precursor_type = matched.get('precursor_type', None)
 #                 annotation.formula = matched.get('formula', None)
 #                 annotation.inchikey = matched.get('inchikey', None)
 #                 annotation.instrument_type = matched.get('instrument_type', None)
@@ -188,6 +193,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
 
 
 def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
+                                       ion_mode: str = None,
                                        min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.7,
                                        min_matched_peak: int = 3) -> List:
     """
@@ -196,6 +202,7 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
     :param ms1_spec_ls: a list of PseudoMS1-like objects
     :param ms2_library: path to the pickle file, indexed library
     :param mz_tol: m/z tolerance in Da, for open matching
+    :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
     :param min_prec_int_in_ms1: minimum precursor intensity in MS1 spectrum
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
@@ -259,12 +266,7 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
 
                 annotation.name = matched.get('name', None)
                 annotation.precursor_mz = matched.get('precursor_mz')
-
-                precursor_type = matched.get('precursor_type', None)
-                if not precursor_type:
-                    precursor_type = matched.get('precursortype', None)
-                annotation.precursor_type = precursor_type
-
+                annotation.precursor_type = matched.get('precursor_type', None)
                 annotation.formula = matched.get('formula', None)
                 annotation.inchikey = matched.get('inchikey', None)
                 annotation.instrument_type = matched.get('instrument_type', None)
@@ -324,11 +326,11 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='../data/gnps_nist20.msp', mz_tol=0.02)
-    prepare_ms2_lib(ms2db='../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02)
-    prepare_ms2_lib(ms2db='../data/nist20.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
+    # prepare_ms2_lib(ms2db='../../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02)
+    # prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02)
 
-    # with open('../data/ALL_GNPS_NO_PROPOGATED.pkl', 'rb') as file:
-    #     search_eng = pickle.load(file)
-    #
-    # print(search_eng)
+    with open('../../data/nist20.pkl', 'rb') as file:
+        search_eng = pickle.load(file)
+
+    print(search_eng)

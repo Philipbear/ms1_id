@@ -22,7 +22,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
         for annotation in spec.annotation_ls:
             annotation_peaks = annotation.peaks
             annotation_peaks = annotation_peaks[annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
-            matched_peak_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in annotation_peaks])
+            matched_peak_str = ' '.join([f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
 
             out_list.append({
                 'name': annotation.name,

@@ -117,7 +117,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
                                                min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-                                               score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
+                                               score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak,
+                                               save=True, save_dir=config.project_dir)
 
     # feature alignment
     print("Aligning features...")
@@ -129,8 +130,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     features = gap_filling(features, config)
 
     # annotation (using MS2 library)
-    if ms2_id and config.msms_library is not None and os.path.exists(config.msms_library):
-        print("Annotating features (MS2)...")
+    if ms2_id and config.msms_library is not None:
+        print("Annotating MS2...")
         features = feature_annotation(features, config,
                                       ms2id_score_cutoff=ms2id_score_cutoff,
                                       ms2id_min_matched_peak=ms2id_min_matched_peak)

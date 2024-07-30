@@ -80,5 +80,5 @@ if __name__ == '__main__':
                             parallel=False, num_processes=None,
                             mass_detect_int_tol=None, mz_bin_size=0.01,
                             min_spec_overlap_ratio=0.8, min_correlation=0.9, min_cluster_size=5,
-                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
                             ms1id_min_prec_int_in_ms1=1000, ms1id_max_prec_rel_int_in_other_ms2=0.05)
