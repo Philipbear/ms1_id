@@ -319,7 +319,7 @@ def main_workflow_single(file_path,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
                          ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.01,
                          ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
-                         plot_bpc=False):
+                         plot_bpc=False, out_dir=None):
     """
     Untargeted feature detection from a single file (.mzML or .mzXML).
     """
@@ -392,8 +392,10 @@ def main_workflow_single(file_path,
         bpc_path = os.path.splitext(file_path)[0] + "_bpc.png"
         d.plot_bpc(label_name=True, output_dir=bpc_path)
 
-    # output single file to a txt file, in the same directory as the raw file
-    out_path = os.path.splitext(file_path)[0] + ".tsv"
+    # output single file to a tsv file, in the same directory as the raw file
+    if out_dir is None:
+        out_dir = os.path.dirname(file_path)
+    out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(file_path))[0] + "_feature_table.tsv")
     write_single_file(d, pseudo_ms1_spectra, ion_mode, out_path)
 
     return d

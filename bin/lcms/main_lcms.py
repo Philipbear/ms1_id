@@ -13,7 +13,8 @@ def ms1id_single_file(file_path, library_path,
                       ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
                       ms1id_min_prec_int_in_ms1=1e5,
                       ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3):
+                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
+                      out_dir=None):
     print('===========================================')
     print(f'Processing {file_path}')
 
@@ -28,7 +29,8 @@ def ms1id_single_file(file_path, library_path,
         ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
         ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
         ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-        ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
+        ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
+        out_dir=out_dir)
 
     return
 
@@ -43,7 +45,8 @@ def ms1id_single_file_batch(data_dir, library_path,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
                             ms1id_min_prec_int_in_ms1=1e5,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                            ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3
+                            ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
+                            out_dir=None
                             ):
     """
     Process all files in a directory in single file mode using parallel processing.
@@ -67,7 +70,8 @@ def ms1id_single_file_batch(data_dir, library_path,
                                ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
                                ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                                ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-                               ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
+                               ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
+                               out_dir=out_dir)
 
         # Create a pool of worker processes
         with multiprocessing.Pool(processes=num_processes) as pool:
@@ -85,7 +89,8 @@ def ms1id_single_file_batch(data_dir, library_path,
                               ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
                               ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                               ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-                              ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
+                              ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
+                              out_dir=out_dir)
 
     return
 
@@ -100,8 +105,7 @@ def ms1id_batch_workflow(project_dir, library_path, sample_dir='data',
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
                          ms1id_min_prec_int_in_ms1=1e5,
                          ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3
-                         ):
+                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3):
     main_workflow(project_path=project_dir,
                   msms_library_path=library_path,
                   sample_dir=sample_dir,
@@ -124,18 +128,22 @@ if __name__ == '__main__':
     #     file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
     #     library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl')
 
-    ms1id_single_file_batch(data_dir='../../data/test/data',
-                            library_path='../../data/gnps_nist20.pkl',
-                            parallel=True, num_processes=None,
-                            ms1_id=True, ms2_id=False,
-                            mz_tol_ms1=0.015, mz_tol_ms2=0.02,
-                            mass_detect_int_tol=30000,
-                            peak_cor_rt_tol=0.05,
-                            min_ppc=0.8, roi_min_length=6,
-                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                            ms1id_min_prec_int_in_ms1=1e5,
-                            ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                            ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3)
+    data_dirs = ['../../data/PR000677_data/c8_pos', '../../data/PR000677_data/c18_neg',
+                 '../../data/PR000677_data/hilic_pos', '../../data/PR000677_data/hilic_neg']
+    for data_dir in data_dirs:
+        ms1id_single_file_batch(data_dir=data_dir,
+                                library_path='../../data/gnps_nist20.pkl',
+                                parallel=True, num_processes=None,
+                                ms1_id=True, ms2_id=False,
+                                mz_tol_ms1=0.015, mz_tol_ms2=0.02,
+                                mass_detect_int_tol=30000,
+                                peak_cor_rt_tol=0.05,
+                                min_ppc=0.8, roi_min_length=6,
+                                ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
+                                ms1id_min_prec_int_in_ms1=1e5,
+                                ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                                ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
+                                out_dir=data_dir.replace('PR000677_data', 'PR000677_output'))
 
     # ms1id_batch_workflow(project_dir='../../data/test',
     #                      library_path='../../data/gnps_nist20.pkl',

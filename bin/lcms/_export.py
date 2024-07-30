@@ -106,9 +106,14 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
     df = pd.DataFrame(result, columns=columns)
 
     # add ms1 id results
-    ms1_columns = ['MS1_annotation', 'MS1_formula', 'MS1_similarity', 'MS1_matched_peak',
-                   'MS1_spectral_usage', 'MS1_precursor_type', 'MS1_inchikey', 'MS1_collision_energy']
-    df = df.reindex(columns=df.columns.tolist() + ms1_columns)
+    df['MS1_annotation'] = None
+    df['MS1_formula'] = None
+    df['MS1_similarity'] = None
+    df['MS1_matched_peak'] = None
+    df['MS1_spectral_usage'] = None
+    df['MS1_precursor_type'] = None
+    df['MS1_inchikey'] = None
+    df['MS1_collision_energy'] = None
 
     if pseudo_ms1_spectra is not None:
         ms1_spec_ls = [spec for spec in pseudo_ms1_spectra if spec.annotated]
@@ -127,27 +132,37 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                     idx = df.loc[mask, 'RT'].sub(spec.rt).abs().idxmin()
 
                     # if the annotation is better than the previous one, update the row
-                    new_values = {
-                        'MS1_annotation': annotation.name,
-                        'MS1_formula': annotation.formula,
-                        'MS1_similarity': round(float(annotation.score), 3),
-                        'MS1_matched_peak': annotation.matched_peak,
-                        'MS1_spectral_usage': round(float(annotation.spectral_usage), 4),
-                        'MS1_precursor_type': annotation.precursor_type,
-                        'MS1_inchikey': annotation.inchikey,
-                        'MS1_collision_energy': annotation.collision_energy
-                    }
-
-                    current_values = df.loc[idx, ms1_columns]
-
-                    # if the current row is empty
-                    # if common adduct, compare similarity and matched peak number
-                    if pd.isna(current_values['MS1_similarity']) or \
-                            (annotation.precursor_type in common_adduct_list and
-                             (current_values['MS1_precursor_type'] not in common_adduct_list or
-                              (annotation.score >= current_values['MS1_similarity'] and
-                               annotation.matched_peak >= current_values['MS1_matched_peak']))):
-                        df.loc[idx, ms1_columns] = new_values
+                    if df.loc[idx, 'MS1_similarity'] is None:
+                        df.loc[idx, 'MS1_annotation'] = annotation.name
+                        df.loc[idx, 'MS1_formula'] = annotation.formula
+                        df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
+                        df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
+                        df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
+                        df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
+                        df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
+                        df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
+                    else:
+                        ori_prec_type_bool = df.loc[idx, 'MS1_precursor_type'] in common_adduct_list
+                        new_prec_type_bool = annotation.precursor_type in common_adduct_list
+                        if (ori_prec_type_bool and new_prec_type_bool) or (not ori_prec_type_bool and not new_prec_type_bool):
+                            if annotation.score > df.loc[idx, 'MS1_similarity'] and annotation.matched_peak > df.loc[idx, 'MS1_matched_peak']:
+                                df.loc[idx, 'MS1_annotation'] = annotation.name
+                                df.loc[idx, 'MS1_formula'] = annotation.formula
+                                df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
+                                df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
+                                df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
+                                df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
+                                df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
+                                df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
+                        elif new_prec_type_bool:
+                            df.loc[idx, 'MS1_annotation'] = annotation.name
+                            df.loc[idx, 'MS1_formula'] = annotation.formula
+                            df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
+                            df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
+                            df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
+                            df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
+                            df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
+                            df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
 
     # save the dataframe to csv file
     df.to_csv(save_path, index=False, sep="\t")
@@ -204,40 +219,56 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
 
 def _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config):
     """
-    For each feature, choose the most confident annotation, prioritizing common adducts.
-
-    :param pseudo_ms1_spectra: list of PseudoMS1-like objects
+    for each feature, choose the most confident annotation
+    :param pseudo_ms1_spectra: list of PseudoMS1-like object
     :param df: feature table
-    :param config: configuration object containing align_mz_tol and common_adduct_list
-    :return: list of AlignedMS1Annotation objects with selected annotations
+    :return: AlignedMS1Annotation with selected annotations
     """
 
-    aligned_ms1_annotations = {}  # Dictionary to store AlignedMS1Annotation objects, keyed by df index
+    # only reserve annotated pseudo MS1 spectra
+    ms1_spec_ls = [spec for spec in pseudo_ms1_spectra if spec.annotated]
 
-    for spec in (s for s in pseudo_ms1_spectra if s.annotated):
+    all_df_idx_ls = []  # list of indices in the feature table that have been matched
+    aligned_ms1_annotation_ls = []  # list of AlignedMS1Annotation objects
+
+    for spec in ms1_spec_ls:
+        this_rt = spec.rt
         for annotation in spec.annotation_ls:
-            mask = ((df['m/z'] - annotation.precursor_mz).abs() <= config.align_mz_tol) & \
-                   ((df['RT'] - spec.rt).abs() <= 1)
+            this_precmz = annotation.precursor_mz
+            # Create a boolean mask for the conditions
+            mask = ((df['m/z'] - this_precmz).abs() <= config.align_mz_tol) & ((df['RT'] - this_rt).abs() <= 1)
 
             if not mask.any():
                 continue
 
-            idx = df.loc[mask, 'RT'].sub(spec.rt).abs().idxmin()
+            # Use loc to create a view of the dataframe
+            _df = df.loc[mask].copy()  # Create an explicit copy
 
-            if idx not in aligned_ms1_annotations:
-                aligned_ms1_annotations[idx] = AlignedMS1Annotation(idx)
+            # Calculate RT difference
+            _df.loc[:, 'RT_diff'] = abs(_df['RT'] - this_rt)
 
-            aligned_ms1_annotations[idx].annotation_ls.append(annotation)
+            # Find the row with the smallest RT difference
+            idx = _df['RT_diff'].idxmin()
 
-    # Select the best annotation for each aligned MS1 feature
-    for aligned_ms1_annotation in aligned_ms1_annotations.values():
-        common_adduct_annotations = [a for a in aligned_ms1_annotation.annotation_ls
-                                     if a.precursor_type in config.common_adduct_list]
+            if idx in all_df_idx_ls:
+                aligned_ms1_annotation_idx = all_df_idx_ls.index(idx)
+                # add annotation to the existing AlignedMS1Annotation object
+                aligned_ms1_annotation_ls[aligned_ms1_annotation_idx].annotation_ls.append(annotation)
+            else:
+                # add the index to the list
+                all_df_idx_ls.append(idx)
+                # create an AlignedMS1Annotation object
+                aligned_ms1_annotation = AlignedMS1Annotation(idx)
+                aligned_ms1_annotation.annotation_ls.append(annotation)
+                aligned_ms1_annotation_ls.append(aligned_ms1_annotation)
 
-        if common_adduct_annotations:
-            aligned_ms1_annotation.selected_annotation = max(common_adduct_annotations, key=lambda x: x.score)
-        else:
+    # find the one with the highest similarity score
+    for aligned_ms1_annotation in aligned_ms1_annotation_ls:
+        if len(aligned_ms1_annotation.annotation_ls) > 1:
             aligned_ms1_annotation.selected_annotation = max(aligned_ms1_annotation.annotation_ls,
                                                              key=lambda x: x.score)
+        else:
+            aligned_ms1_annotation.selected_annotation = aligned_ms1_annotation.annotation_ls[0]
 
-    return list(aligned_ms1_annotations.values())
+    return aligned_ms1_annotation_ls
+
