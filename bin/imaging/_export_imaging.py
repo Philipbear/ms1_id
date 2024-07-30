@@ -37,7 +37,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
                 'instrument_type': annotation.instrument_type,
                 'collision_energy': annotation.collision_energy,
                 'pseudo_ms1': pseudo_ms1_str,
-                'matched_spectrum': matched_peak_str
+                'matched_ref_spectrum': matched_peak_str
             })
 
     out_df = pd.DataFrame(out_list)
