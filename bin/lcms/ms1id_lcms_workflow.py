@@ -4,7 +4,6 @@ create a workflow for MS1_ID using masscube backend.
 
 import multiprocessing
 import os
-import pickle
 
 from masscube.alignment import feature_alignment, gap_filling
 from masscube.feature_grouping import annotate_isotope
@@ -66,11 +65,11 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     """
 
     # init a new config object
-    config = init_config(project_path, msms_library_path,
+    config = init_config(project_path, msms_library_path, sample_dir,
                          ms1_id=ms1_id, ms2_id=ms2_id,
-                         run_rt_correction=True, run_normalization=False,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
-                         align_mz_tol=0.01, align_rt_tol=0.2,
+                         run_rt_correction=run_rt_correction, run_normalization=run_normalization,
+                         mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2, mass_detect_int_tol=mass_detect_int_tol,
+                         align_mz_tol=align_mz_tol, align_rt_tol=align_rt_tol,
                          alignment_drop_by_fill_pct_ratio=alignment_drop_by_fill_pct_ratio,
                          peak_cor_rt_tol=peak_cor_rt_tol,
                          min_ppc=min_ppc, roi_min_length=roi_min_length,
@@ -125,9 +124,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     # annotation (using MS2 library)
     if ms2_id and config.msms_library is not None:
         print("Annotating MS2...")
-        features = feature_annotation(features, config,
-                                      ms2id_score_cutoff=ms2id_score_cutoff,
-                                      ms2id_min_matched_peak=ms2id_min_matched_peak)
+        features = feature_annotation(features, config)
 
     feature_table = convert_features_to_df(features, config.sample_names)
 
