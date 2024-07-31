@@ -73,7 +73,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       ion_mode=None,
                       min_prec_int_in_ms1=1000,
                       max_prec_rel_int_in_other_ms2=0.05,
-                      save=False, save_dir=None):
+                      save=False, save_path=None):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
@@ -100,8 +100,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
                                         max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
 
-    if save:
-        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
+    if save and save_path is not None:
         with open(save_path, 'wb') as file:
             pickle.dump(ms1_spec_ls, file)
 

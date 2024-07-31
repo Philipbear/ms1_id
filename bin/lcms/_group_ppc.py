@@ -22,7 +22,7 @@ def retrieve_pseudo_ms1_spectra(config):
 
     files = os.listdir(config.single_file_dir)
     for file in files:
-        if file.endswith('_pseudoMS1.pkl'):
+        if file.endswith('_pseudoMS1_annotated.pkl'):
             try:
                 with open(os.path.join(config.single_file_dir, file), 'rb') as f:
                     new_pseudo_ms1_spectra = pickle.load(f)
@@ -35,8 +35,7 @@ def retrieve_pseudo_ms1_spectra(config):
 
 def generate_pseudo_ms1(msdata, ppc_matrix,
                         peak_cor_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
-                        min_cluster_size=6, resolution=0.05,
-                        save=False, save_dir=None):
+                        min_cluster_size=6, resolution=0.05):
     """
     Generate pseudo MS1 spectra for a single file
     :param msdata: MSData object
@@ -61,10 +60,7 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
     pseudo_ms1_spectra = _perform_clustering(msdata, ppc_matrix, min_ppc=min_ppc, peak_cor_rt_tol=peak_cor_rt_tol,
                                              min_cluster_size=min_cluster_size, roi_min_length=roi_min_length)
 
-    plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_length=roi_min_length)
-
-    if save:
-        save_pseudo_ms1_spectra(pseudo_ms1_spectra, msdata, save_dir)
+    # plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_length=roi_min_length)
 
     return pseudo_ms1_spectra
 
@@ -111,38 +107,39 @@ def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8, peak_cor_rt_tol=0.05,
             pseudo_ms1 = PseudoMS1(mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt)
             pseudo_ms1_spectra.append(pseudo_ms1)
 
-    # Sort pseudo MS1 spectra by RT
-    pseudo_ms1_spectra.sort(key=lambda x: x.rt)
+    # # Sort pseudo MS1 spectra by RT
+    # pseudo_ms1_spectra.sort(key=lambda x: x.rt)
 
-    # First pass: store subset information
-    subset_info = {i: set() for i in range(len(pseudo_ms1_spectra))}
-    for i, spec1 in enumerate(pseudo_ms1_spectra):
-        set1 = set(spec1.roi_ids)
-        for j, spec2 in enumerate(pseudo_ms1_spectra[i + 1:], start=i + 1):
-            if abs(spec1.rt - spec2.rt) > peak_cor_rt_tol:
-                break
-
-            set2 = set(spec2.roi_ids)
-
-            if set1 == set2:
-                subset_info[i].add(j)
-                subset_info[j].add(i)
-            elif set1.issubset(set2):
-                subset_info[i].add(j)
-            elif set2.issubset(set1):
-                subset_info[j].add(i)
-
-    # Second pass: determine spectra to keep
-    spectra_to_keep = set(range(len(pseudo_ms1_spectra)))
-    for i in range(len(pseudo_ms1_spectra)):
-        if i in spectra_to_keep:
-            # Remove all subsets of this spectrum
-            spectra_to_keep -= subset_info[i]
-
-    # Create the final list of non-redundant spectra
-    non_redundant_spectra = [pseudo_ms1_spectra[i] for i in sorted(spectra_to_keep)]
-
-    return non_redundant_spectra
+    # # First pass: store subset information
+    # subset_info = {i: set() for i in range(len(pseudo_ms1_spectra))}
+    # for i, spec1 in enumerate(pseudo_ms1_spectra):
+    #     set1 = set(spec1.roi_ids)
+    #     for j, spec2 in enumerate(pseudo_ms1_spectra[i + 1:], start=i + 1):
+    #         if abs(spec1.rt - spec2.rt) > peak_cor_rt_tol:
+    #             break
+    #
+    #         set2 = set(spec2.roi_ids)
+    #
+    #         if set1 == set2:
+    #             subset_info[i].add(j)
+    #             subset_info[j].add(i)
+    #         elif set1.issubset(set2):
+    #             subset_info[i].add(j)
+    #         elif set2.issubset(set1):
+    #             subset_info[j].add(i)
+    #
+    # # Second pass: determine spectra to keep
+    # spectra_to_keep = set(range(len(pseudo_ms1_spectra)))
+    # for i in range(len(pseudo_ms1_spectra)):
+    #     if i in spectra_to_keep:
+    #         # Remove all subsets of this spectrum
+    #         spectra_to_keep -= subset_info[i]
+    #
+    # # Create the final list of non-redundant spectra
+    # non_redundant_spectra = [pseudo_ms1_spectra[i] for i in sorted(spectra_to_keep)]
+    #
+    # return non_redundant_spectra
+    return pseudo_ms1_spectra
 
 
 def _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois):
@@ -168,16 +165,6 @@ def _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois):
 
     return pseudo_ms1_spectra
 
-
-def save_pseudo_ms1_spectra(pseudo_ms1_spectra, msdata, save_dir):
-    if save_dir is None:
-        path = os.path.join(msdata.params.single_file_dir, msdata.file_name + "_pseudoMS1.pkl")
-    else:
-        path = os.path.splitext(save_dir)[0] + "_pseudoMS1.pkl"
-
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'wb') as f:
-        pickle.dump(pseudo_ms1_spectra, f)
 
 '''
 def _refine_clusters_by_rt_window(cluster_rois, msdata, peak_group_rt_tol, min_cluster_size):

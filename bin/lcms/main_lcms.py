@@ -159,18 +159,17 @@ if __name__ == '__main__':
     #                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
     #                             out_dir=out_dir)
 
-
     ms1id_batch_workflow(project_dir='../../data/MSV000087562/C18_neg_iHMPpool',  # HILIC_pos_iHMPpool
-                         library_path='../../data/gnps_nist20.pkl',
+                         library_path='../../data/gnps.pkl',
                          sample_dir='data',
                          batch_size=100, cpu_ratio=0.9,
-                         ms1_id=False, ms2_id=True,
-                         run_rt_correction=True, run_normalization=False,
+                         ms1_id=True, ms2_id=True,
+                         run_rt_correction=True, run_normalization=True,
                          align_mz_tol=0.015, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.02,
                          mass_detect_int_tol=30000,
                          peak_cor_rt_tol=0.05,
-                         min_ppc=0.8, roi_min_length=6,
+                         min_ppc=0.9, roi_min_length=5,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
                          ms1id_min_prec_int_in_ms1=1e5,
                          ms1id_max_prec_rel_int_in_other_ms2=0.01,

@@ -4,10 +4,7 @@ import re
 import numpy as np
 
 
-def feature_annotation(features, config,
-                       ms2id_score_cutoff=0.8,
-                       ms2id_min_matched_peak=6,
-                       num=5):
+def feature_annotation(features, config, num=5):
     """
     A function to annotate features based on their MS/MS spectra and a MS/MS database.
 
@@ -54,8 +51,8 @@ def feature_annotation(features, config,
             score_arr, matched_peak_arr, spec_usage_arr = search_result['identity_search']
 
             # Find indices that pass all filters
-            valid_indices = np.where((matched_peak_arr >= ms2id_min_matched_peak) &
-                                     (score_arr >= ms2id_score_cutoff))[0]
+            valid_indices = np.where((matched_peak_arr >= config.ms2id_min_matched_peak) &
+                                     (score_arr >= config.ms2id_score_cutoff))[0]
 
             for idx in valid_indices:
                 potential_match = search_eng[idx]

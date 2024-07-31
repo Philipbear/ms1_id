@@ -67,13 +67,17 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
 
     # init a new config object
     config = init_config(project_path, msms_library_path,
-                         sample_dir=sample_dir, mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
-                         mass_detect_int_tol=mass_detect_int_tol,
-                         align_mz_tol=align_mz_tol, align_rt_tol=align_rt_tol,
-                         run_rt_correction=run_rt_correction, run_normalization=run_normalization)
-
-    # with open(os.path.join(config.project_dir, "project.mc"), "wb") as f:
-    #     pickle.dump(config, f)
+                         ms1_id=ms1_id, ms2_id=ms2_id,
+                         run_rt_correction=True, run_normalization=False,
+                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
+                         align_mz_tol=0.01, align_rt_tol=0.2,
+                         alignment_drop_by_fill_pct_ratio=alignment_drop_by_fill_pct_ratio,
+                         peak_cor_rt_tol=peak_cor_rt_tol,
+                         min_ppc=min_ppc, roi_min_length=roi_min_length,
+                         ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+                         ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
+                         ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
+                         ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
 
     raw_file_names = os.listdir(config.sample_dir)
     raw_file_names = [f for f in raw_file_names if f.lower().endswith(".mzml") or f.lower().endswith(".mzxml")]
@@ -100,26 +104,14 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
         else:
             print("Processing files from " + str(i) + " to " + str(i + batch_size))
         p = multiprocessing.Pool(workers)
-        p.starmap(feature_detection,
-                  [(f, config, peak_cor_rt_tol, min_ppc, roi_min_length,
-                    ms1id_min_matched_peak) for f in raw_file_names[i:i + batch_size]])
+        p.starmap(feature_detection, [(f, config) for f in raw_file_names[i:i + batch_size]])
         p.close()
         p.join()
 
-    pseudo_ms1_spectra = None
-    if ms1_id and config.msms_library is not None and os.path.exists(config.msms_library):
-        print("MS1 ID annotation...")
-
+    pseudo_ms1_spectra = []
+    if ms1_id:
         # get all pre-saved pseudo ms1 spectra
         pseudo_ms1_spectra = retrieve_pseudo_ms1_spectra(config)
-
-        # perform rev cos search
-        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
-                                               ion_mode=config.ion_mode,
-                                               min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
-                                               max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-                                               score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak,
-                                               save=True, save_dir=config.project_dir)
 
     # feature alignment
     print("Aligning features...")
@@ -152,11 +144,34 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     print("The workflow is completed.")
 
 
-def init_config(path=None, msms_library_path=None,
-                sample_dir='data', mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
-                align_mz_tol=0.01, align_rt_tol=0.2, run_rt_correction=True, run_normalization=False):
+def init_config(path=None,
+                msms_library_path=None, sample_dir='data',
+                ms1_id=True, ms2_id=False,
+                run_rt_correction=True, run_normalization=False,
+                mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
+                align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+                peak_cor_rt_tol=0.015,
+                min_ppc=0.6, roi_min_length=3,
+                ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+                ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6
+                ):
     # init
     config = Params()
+
+    config.ms1_id = ms1_id
+    config.ms2_id = ms2_id
+
+    config.peak_cor_rt_tol = peak_cor_rt_tol
+    config.min_ppc = min_ppc
+    config.roi_min_length = roi_min_length
+    config.ms1id_score_cutoff = ms1id_score_cutoff
+    config.ms1id_min_matched_peak = ms1id_min_matched_peak
+    config.ms1id_min_prec_int_in_ms1 = ms1id_min_prec_int_in_ms1
+    config.ms1id_max_prec_rel_int_in_other_ms2 = ms1id_max_prec_rel_int_in_other_ms2
+    config.ms2id_score_cutoff = ms2id_score_cutoff
+    config.ms2id_min_matched_peak = ms2id_min_matched_peak
+
     # obtain the working directory
     if path is not None:
         config.project_dir = path
@@ -221,12 +236,12 @@ def init_config(path=None, msms_library_path=None,
     # Parameters for feature alignment
     config.align_mz_tol = align_mz_tol  # m/z tolerance for MS1, default is 0.01
     config.align_rt_tol = align_rt_tol  # RT tolerance, default is 0.2
+    config.alignment_drop_by_fill_pct_ratio = alignment_drop_by_fill_pct_ratio  # Drop by fill percentage ratio, default is 0.1
     config.run_rt_correction = run_rt_correction  # Whether to perform RT correction, default is True
     config.min_scan_num_for_alignment = 5  # Minimum scan number a feature to be aligned, default is 6
 
     # Parameters for feature annotation
     config.msms_library = msms_library_path  # Path to the MS/MS library (.msp or .pickle), character string
-    config.ppr = 0.8  # Peak-peak correlation threshold for feature grouping, default is 0.7
     config.ms2_sim_tol = 0.7  # MS2 similarity tolerance, default is 0.7
 
     # Parameters for normalization
@@ -250,9 +265,8 @@ def init_config(path=None, msms_library_path=None,
     return config
 
 
-def feature_detection(file_name, params=None, peak_cor_rt_tol=0.01,
-                      min_ppc=0.8, roi_min_length=3, ms1id_min_matched_peak=6,
-                      cal_g_score=True, cal_a_score=True,
+def feature_detection(file_name, params=None,
+                      cal_g_score=False, cal_a_score=False,
                       anno_isotope=True, anno_adduct=True, anno_in_source_fragment=False,
                       ms2_library_path=None, cut_roi=True):
     """
@@ -292,19 +306,35 @@ def feature_detection(file_name, params=None, peak_cor_rt_tol=0.01,
     d.summarize_roi(cal_g_score=cal_g_score, cal_a_score=cal_a_score)
 
     if anno_isotope:
-        annotate_isotope(d, mz_tol=0.015, rt_tol=peak_cor_rt_tol)
+        annotate_isotope(d, mz_tol=0.015, rt_tol=params.peak_cor_rt_tol)
     # if anno_in_source_fragment:
     #     annotate_in_source_fragment(d)
     if anno_adduct:
-        annotate_adduct(d, mz_tol=0.01, rt_tol=peak_cor_rt_tol)
+        annotate_adduct(d, mz_tol=0.01, rt_tol=params.peak_cor_rt_tol)
 
     # calc peak-peak correlations for feature groups and output
-    ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, save=False)
+    ppc_matrix = calc_all_ppc(d, rt_tol=params.peak_cor_rt_tol,
+                              roi_min_length=params.roi_min_length, save=False)
 
-    # generate pseudo ms1 spec, for ms1_id
-    generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol, min_ppc=min_ppc,
-                        roi_min_length=roi_min_length, min_cluster_size=ms1id_min_matched_peak,
-                        save=True)
+    if params.ms1_id:
+        # generate pseudo ms1 spec, for ms1_id
+        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix,
+                                                 peak_cor_rt_tol=params.peak_cor_rt_tol,
+                                                 min_ppc=params.min_ppc,
+                                                 roi_min_length=params.roi_min_length,
+                                                 min_cluster_size=params.ms1id_min_matched_peak)
+
+        # perform rev cos search
+        ms1_id_annotation(pseudo_ms1_spectra, params.msms_library,
+                          mz_tol=params.mz_tol_ms1,
+                          ion_mode=params.ion_mode,
+                          min_prec_int_in_ms1=params.ms1id_min_prec_int_in_ms1,
+                          max_prec_rel_int_in_other_ms2=params.ms1id_max_prec_rel_int_in_other_ms2,
+                          score_cutoff=params.ms1id_score_cutoff,
+                          min_matched_peak=params.ms1id_min_matched_peak,
+                          save=True,
+                          save_path=os.path.join(params.single_file_dir,
+                                                 os.path.basename(file_name).split(".")[0] + "_pseudoMS1_annotated.pkl"))
 
     # output single file to a txt file
     d.output_single_file()
@@ -360,7 +390,7 @@ def main_workflow_single(file_path,
     annotate_adduct(d)
 
     # generate pseudo ms1 spec for ms1_id
-    pseudo_ms1_spectra = None
+    pseudo_ms1_spectra = []
     if ms1_id and config.msms_library is not None:
         print("MS1 ID annotation...")
 
@@ -372,8 +402,7 @@ def main_workflow_single(file_path,
         print('Generating pseudo MS1 spectra...')
         pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
                                                  min_ppc=min_ppc, roi_min_length=roi_min_length,
-                                                 min_cluster_size=ms1id_min_matched_peak,
-                                                 save=False)
+                                                 min_cluster_size=ms1id_min_matched_peak)
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
