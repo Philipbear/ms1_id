@@ -103,7 +103,7 @@ def ms1id_single_file_batch(data_dir, library_path,
 
 def ms1id_batch_mode(project_path=None, msms_library_path=None, sample_dir='data', parallel=True,
                      ms1_id=True, ms2_id=False,
-                     batch_size=100, cpu_ratio=0.8,
+                     cpu_ratio=0.8,
                      run_rt_correction=True, run_normalization=True,
                      mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                      align_mz_tol=0.015, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
@@ -115,7 +115,7 @@ def ms1id_batch_mode(project_path=None, msms_library_path=None, sample_dir='data
 
     main_workflow(project_path=project_path, msms_library_path=msms_library_path, sample_dir=sample_dir,
                   parallel=parallel, ms1_id=ms1_id, ms2_id=ms2_id,
-                  batch_size=batch_size, cpu_ratio=cpu_ratio,
+                  cpu_ratio=cpu_ratio,
                   run_rt_correction=run_rt_correction, run_normalization=run_normalization,
                   mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2, mass_detect_int_tol=mass_detect_int_tol,
                   align_mz_tol=align_mz_tol, align_rt_tol=align_rt_tol,

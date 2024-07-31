@@ -27,7 +27,7 @@ tof_mass_detect_int_tol = 500
 
 def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', parallel=True,
                   ms1_id=True, ms2_id=False,
-                  batch_size=100, cpu_ratio=0.9,
+                  cpu_ratio=0.9,
                   run_rt_correction=True, run_normalization=False,
                   mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
@@ -43,7 +43,6 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
     :param parallel: whether to run in parallel
     :param ms1_id: whether to perform MS1 ID
     :param ms2_id: whether to perform MS2 ID
-    :param batch_size: batch size for multiprocessing
     :param cpu_ratio: CPU ratio for multiprocessing
     :param sample_dir: directory where the raw files are stored
     :param run_rt_correction: whether to perform RT correction
@@ -100,15 +99,12 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
     if parallel:
         workers = min(int(multiprocessing.cpu_count() * cpu_ratio), len(raw_file_names))
         print("\t {} CPU cores in total, {} cores used.".format(multiprocessing.cpu_count(), workers))
-        for i in range(0, len(raw_file_names), batch_size):
-            if len(raw_file_names) - i < batch_size:
-                print("Processing files from " + str(i) + " to " + str(len(raw_file_names)))
-            else:
-                print("Processing files from " + str(i) + " to " + str(i + batch_size))
-            p = multiprocessing.Pool(workers)
-            p.starmap(feature_detection, [(f, config) for f in raw_file_names[i:i + batch_size]])
-            p.close()
-            p.join()
+
+        print(f"Processing all {len(raw_file_names)} files")
+        p = multiprocessing.Pool(workers)
+        p.starmap(feature_detection, [(f, config) for f in raw_file_names])
+        p.close()
+        p.join()
     else:
         for i, file_name in enumerate(raw_file_names):
             feature_detection(file_name, params=config)
@@ -366,7 +362,7 @@ if __name__ == "__main__":
                   msms_library_path='../../data/gnps.pkl',
                   sample_dir='data',
                   ms1_id=True, ms2_id=True,
-                  batch_size=100, cpu_ratio=0.8,
+                  cpu_ratio=0.8,
                   run_rt_correction=True, run_normalization=True,
                   mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=300000,
                   align_mz_tol=0.015, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
