@@ -1,6 +1,6 @@
 from ms1id_lcms_workflow import main_workflow_single, main_workflow
 import os
-import multiprocessing
+import concurrent.futures
 from functools import partial
 
 
@@ -58,44 +58,44 @@ def ms1id_single_file_batch(data_dir, library_path,
     # if some file results exist in out_dir, skip them
     if out_dir is not None:
         os.makedirs(out_dir, exist_ok=True)
-        files = [f for f in files if not os.path.exists(os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '_feature_table.tsv'))]
+        files = [f for f in files if not os.path.exists(
+            os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '_feature_table.tsv'))]
+
+    # Create a partial function with the library_path argument
+    process_file = partial(ms1id_single_file, library_path=library_path,
+                           ms1_id=ms1_id, ms2_id=ms2_id,
+                           mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
+                           mass_detect_int_tol=mass_detect_int_tol,
+                           peak_cor_rt_tol=peak_cor_rt_tol,
+                           min_ppc=min_ppc, roi_min_length=roi_min_length,
+                           ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+                           ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
+                           ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
+                           ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
+                           out_dir=out_dir)
 
     if parallel:
         # If num_processes is not specified, use the number of CPU cores
         if num_processes is None:
-            num_processes = multiprocessing.cpu_count()
+            num_processes = min(os.cpu_count(), len(files))
 
-        # Create a partial function with the library_path argument
-        process_file = partial(ms1id_single_file, library_path=library_path,
-                               ms1_id=ms1_id, ms2_id=ms2_id,
-                               mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
-                               mass_detect_int_tol=mass_detect_int_tol,
-                               peak_cor_rt_tol=peak_cor_rt_tol,
-                               min_ppc=min_ppc, roi_min_length=roi_min_length,
-                               ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
-                               ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
-                               ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-                               ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
-                               out_dir=out_dir)
+        with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
+            # Submit all tasks
+            futures = [executor.submit(process_file, file) for file in files]
 
-        # Create a pool of worker processes
-        with multiprocessing.Pool(processes=num_processes) as pool:
-            # Map the process_file function to all files
-            pool.map(process_file, files)
+            # Wait for all tasks to complete
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()  # This will raise any exceptions that occurred during execution
+                except Exception as e:
+                    print(f"An error occurred: {e}")
     else:
         # Process each file sequentially
         for file in files:
-            ms1id_single_file(file, library_path,
-                              ms1_id=ms1_id, ms2_id=ms2_id,
-                              mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
-                              mass_detect_int_tol=mass_detect_int_tol,
-                              peak_cor_rt_tol=peak_cor_rt_tol,
-                              min_ppc=min_ppc, roi_min_length=roi_min_length,
-                              ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
-                              ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
-                              ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-                              ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
-                              out_dir=out_dir)
+            try:
+                process_file(file)
+            except Exception as e:
+                print(f"An error occurred while processing {file}: {e}")
 
     return
 
@@ -145,32 +145,37 @@ if __name__ == '__main__':
     #              f'../../data/{dataset}_data/hilic_neg']
     # for data_dir in data_dirs:
     #     out_dir = data_dir.replace('_data', '_output')
-    #     ms1id_single_file_batch(data_dir=data_dir,
-    #                             library_path='../../data/gnps_nist20.pkl',
-    #                             parallel=True, num_processes=None,
-    #                             ms1_id=True, ms2_id=False,
-    #                             mz_tol_ms1=0.01, mz_tol_ms2=0.02,
-    #                             mass_detect_int_tol=30000,
-    #                             peak_cor_rt_tol=0.05,
-    #                             min_ppc=0.8, roi_min_length=6,
-    #                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-    #                             ms1id_min_prec_int_in_ms1=1e5,
-    #                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
-    #                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
-    #                             out_dir=out_dir)
 
-    ms1id_batch_workflow(project_dir='../../data/MSV000087562/C18_neg_iHMPpool',  # HILIC_pos_iHMPpool
-                         library_path='../../data/gnps.pkl',
-                         sample_dir='data',
-                         batch_size=100, cpu_ratio=0.9,
-                         ms1_id=True, ms2_id=True,
-                         run_rt_correction=True, run_normalization=True,
-                         align_mz_tol=0.015, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.02,
-                         mass_detect_int_tol=30000,
-                         peak_cor_rt_tol=0.05,
-                         min_ppc=0.9, roi_min_length=5,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                         ms1id_min_prec_int_in_ms1=1e5,
-                         ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3)
+
+    out_dir = '../../data/test/output'
+    ms1id_single_file_batch(data_dir='../../data/test/data',
+                            library_path='../../data/gnps.pkl',
+                            parallel=True, num_processes=None,
+                            ms1_id=True, ms2_id=False,
+                            mz_tol_ms1=0.01, mz_tol_ms2=0.02,
+                            mass_detect_int_tol=5000000,
+                            peak_cor_rt_tol=0.05,
+                            min_ppc=0.8, roi_min_length=6,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
+                            ms1id_min_prec_int_in_ms1=1e5,
+                            ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                            ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
+                            out_dir=out_dir)
+
+
+    # ms1id_batch_workflow(project_dir='../../data/test',  # '../../data/MSV000087562/C18_neg_iHMPpool', HILIC_pos_iHMPpool
+    #                      library_path='../../data/gnps.pkl',
+    #                      sample_dir='data',
+    #                      batch_size=100, cpu_ratio=0.9,
+    #                      ms1_id=False, ms2_id=True,
+    #                      run_rt_correction=True, run_normalization=True,
+    #                      align_mz_tol=0.015, align_rt_tol=0.2,
+    #                      alignment_drop_by_fill_pct_ratio=0.1,
+    #                      mz_tol_ms1=0.01, mz_tol_ms2=0.02,
+    #                      mass_detect_int_tol=30000,
+    #                      peak_cor_rt_tol=0.05,
+    #                      min_ppc=0.9, roi_min_length=5,
+    #                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
+    #                      ms1id_min_prec_int_in_ms1=1e5,
+    #                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
+    #                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3)

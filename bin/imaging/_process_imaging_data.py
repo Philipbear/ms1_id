@@ -155,4 +155,4 @@ if __name__ == '__main__':
     # intensity_matrix = np.load('../../imaging/MTBLS313/Brain01_Bregma1-42_01_centroid/intensity_matrix.npy')
     intensity_stats = analyze_intensity_distribution(intensity_matrix)
     print_intensity_stats(intensity_stats)
-    create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=99)
+    create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=50)

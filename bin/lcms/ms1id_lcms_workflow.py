@@ -95,7 +95,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data',
     # process files by multiprocessing, each batch contains 100 files by default (tunable in batch_size)
     print("Processing individual files for feature detection, evaluation, and grouping...")
 
-    workers = int(multiprocessing.cpu_count() * cpu_ratio)
+    workers = min(int(multiprocessing.cpu_count() * cpu_ratio), len(raw_file_names))
     print("\tA total of {} CPU cores are detected, {} cores are used.".format(multiprocessing.cpu_count(), workers))
     for i in range(0, len(raw_file_names), batch_size):
         if len(raw_file_names) - i < batch_size:
@@ -309,17 +309,18 @@ def feature_detection(file_name, params=None,
     if anno_adduct:
         annotate_adduct(d, mz_tol=0.01, rt_tol=params.peak_cor_rt_tol)
 
-    # calc peak-peak correlations for feature groups and output
-    ppc_matrix = calc_all_ppc(d, rt_tol=params.peak_cor_rt_tol,
-                              roi_min_length=params.roi_min_length, save=False)
-
     if params.ms1_id:
+        # calc peak-peak correlations for feature groups and output
+        ppc_matrix = calc_all_ppc(d,
+                                  rt_tol=params.peak_cor_rt_tol,
+                                  roi_min_length=params.roi_min_length,
+                                  save=False)
         # generate pseudo ms1 spec, for ms1_id
         pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix,
-                                                 peak_cor_rt_tol=params.peak_cor_rt_tol,
                                                  min_ppc=params.min_ppc,
                                                  roi_min_length=params.roi_min_length,
                                                  min_cluster_size=params.ms1id_min_matched_peak)
+        del ppc_matrix
 
         # perform rev cos search
         ms1_id_annotation(pseudo_ms1_spectra, params.msms_library,
@@ -332,7 +333,7 @@ def feature_detection(file_name, params=None,
                           save=True,
                           save_path=os.path.join(params.single_file_dir,
                                                  os.path.basename(file_name).split(".")[0] + "_pseudoMS1_annotated.pkl"))
-
+        del pseudo_ms1_spectra
     # output single file to a txt file
     d.output_single_file()
 
@@ -397,7 +398,7 @@ def main_workflow_single(file_path,
 
         # generate pseudo ms1 spec, for ms1_id
         print('Generating pseudo MS1 spectra...')
-        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix, peak_cor_rt_tol=peak_cor_rt_tol,
+        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix,
                                                  min_ppc=min_ppc, roi_min_length=roi_min_length,
                                                  min_cluster_size=ms1id_min_matched_peak)
 
@@ -508,29 +509,12 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    # main_workflow(project_path='/Users/shipei/Documents/projects/ms1_id/data/from_vincent_1',
-    #               msms_library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl',
-    #               sample_dir='data',
-    #               ms1_id=True, ms2_id=True,
-    #               batch_size=100, cpu_ratio=0.9,
-    #               run_rt_correction=True, run_normalization=False,
-    #               mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-    #               mass_detect_int_tol=10000,
-    #               align_mz_tol=0.01, align_rt_tol=0.15,
-    #               alignment_drop_by_fill_pct_ratio=0.1,
-    #               peak_cor_rt_tol=0.025,
-    #               min_ppc=0.9, roi_min_length=4,
-    #               ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-    #               ms1id_min_prec_int_in_ms1=1e5,
-    #               ms1id_max_prec_rel_int_in_other_ms2=0.01,
-    #               ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
-
     main_workflow_single(
-        file_path='/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
-        msms_library_path='/data/gnps_nist20.pkl',
+        file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
+        msms_library_path='../../data/gnps.pkl',
         ms1_id=True, ms2_id=False,
         mz_tol_ms1=0.01, mz_tol_ms2=0.015,
-        mass_detect_int_tol=10000,
+        mass_detect_int_tol=30000,
         peak_cor_rt_tol=0.025,
         min_ppc=0.9, roi_min_length=4,
         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
@@ -538,10 +522,6 @@ if __name__ == "__main__":
         ms1id_max_prec_rel_int_in_other_ms2=0.01,
         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
         plot_bpc=False)
-
-    # GNPS+NIST: /Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl
-    # GNPS: /Users/shipei/Documents/projects/ms1_id/data/gnps.pkl
-    # NIST: /Users/shipei/Documents/projects/ms1_id/data/nist20.pkl
 
     end = time.time()
     print("Time elapsed: ", end - start)

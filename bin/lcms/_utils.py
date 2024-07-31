@@ -8,6 +8,7 @@ class Spectrum:
 
 
 class PseudoMS1:
+
     def __init__(self, mz_ls, int_ls, roi_ids, file_name, rt):
         self.mzs = mz_ls
         self.intensities = int_ls
@@ -45,21 +46,8 @@ class AlignedMS1Annotation:
     for exporting aligned feature table with MS1 IDs
     store all possible MS1 IDs for a feature
     """
+
     def __init__(self, idx):
         self.df_idx = idx  # index of the matched feature in the feature table
         self.annotation_ls = []  # list of SpecAnnotation objects
         self.selected_annotation = None
-
-
-class RoiPair:
-    def __init__(self, roi_a, roi_b, ppc):
-
-        # compare id
-        if roi_a.id < roi_b.id:
-            self.roi_1 = roi_a
-            self.roi_2 = roi_b
-        else:
-            self.roi_1 = roi_b
-            self.roi_2 = roi_a
-
-        self.ppc = ppc  # peak-peak correlation

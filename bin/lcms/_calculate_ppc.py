@@ -45,12 +45,12 @@ def peak_peak_correlation_numba(scan_idx1, int_seq1, scan_idx2, int_seq2, roi_mi
 
 
 @njit
-def calc_ppc_matrix_numba(roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi_lengths, rt_tol, roi_min_length=3):
+def calc_ppc_numba(roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi_lengths, rt_tol,
+                   roi_min_length=3, min_ppc=0.8):
     n_rois = len(roi_ids)
-    rows = np.zeros(n_rois * n_rois, dtype=np.int32)
-    cols = np.zeros(n_rois * n_rois, dtype=np.int32)
-    data = np.zeros(n_rois * n_rois, dtype=np.float64)  # Change to float64
-    counter = 0
+    rows = []
+    cols = []
+    data = []
 
     for i in range(n_rois):
         start_i = np.sum(roi_lengths[:i])
@@ -64,35 +64,34 @@ def calc_ppc_matrix_numba(roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi
                     roi_scan_idx_seqs[start_j:end_j], roi_int_seqs[start_j:end_j],
                     roi_min_length
                 )
-                rows[counter] = i
-                cols[counter] = j
-                data[counter] = ppc
-                counter += 1
+                if ppc >= min_ppc:
+                    rows.append(i)
+                    cols.append(j)
+                    data.append(ppc)
 
-    return rows[:counter], cols[:counter], data[:counter]
+    return np.array(rows), np.array(cols), np.array(data)
 
 
-def calc_all_ppc(d, rt_tol=0.1, roi_min_length=3,
-                 save=True, path=None):
+def calc_all_ppc(d, rt_tol=0.1, roi_min_length=3, min_ppc=0.8, save=True, path=None):
     """
     Calculate peak-peak correlation matrix for all ROIs in the dataset
     """
-
     rois = sorted(d.rois, key=lambda x: x.id)
     n_rois = len(rois)
 
     roi_ids = np.array([roi.id for roi in rois], dtype=np.int32)
-    roi_rts = np.array([roi.rt for roi in rois], dtype=np.float64)  # Change to float64
+    roi_rts = np.array([roi.rt for roi in rois], dtype=np.float64)
 
     roi_lengths = np.array([len(roi.scan_idx_seq) for roi in rois], dtype=np.int32)
     roi_scan_idx_seqs = np.concatenate([np.array(roi.scan_idx_seq, dtype=np.int32) for roi in rois])
-    roi_int_seqs = np.concatenate([np.array(roi.int_seq, dtype=np.float64) for roi in rois])  # Change to float64
+    roi_int_seqs = np.concatenate([np.array(roi.int_seq, dtype=np.float64) for roi in rois])
 
-    rows, cols, data = calc_ppc_matrix_numba(
-        roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi_lengths, rt_tol, roi_min_length
+    rows, cols, data = calc_ppc_numba(
+        roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi_lengths, rt_tol, roi_min_length, min_ppc
     )
 
-    ppc_matrix = csr_matrix((data, (rows, cols)), shape=(n_rois, n_rois), dtype=np.float64)  # Specify dtype
+    # Create sparse matrix
+    ppc_matrix = csr_matrix((data, (rows, cols)), shape=(n_rois, n_rois), dtype=np.float64)
     ppc_matrix = ppc_matrix + ppc_matrix.T
     ppc_matrix.setdiag(1.0)
 

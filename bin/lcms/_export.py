@@ -88,7 +88,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                 ]
 
         temp.extend([ms2, roi.annotation, roi.formula, roi.similarity, roi.matched_peak_number,
-                     roi.inchikey, roi.precursor_type, roi.collision_energy])
+                     roi.inchikey, getattr(roi, 'precursor_type', None), getattr(roi, 'collision_energy', None)])
 
         result.append(temp)
 

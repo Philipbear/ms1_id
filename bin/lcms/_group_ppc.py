@@ -33,18 +33,15 @@ def retrieve_pseudo_ms1_spectra(config):
     return pseudo_ms1_spectra
 
 
-def generate_pseudo_ms1(msdata, ppc_matrix,
-                        peak_cor_rt_tol=0.05, min_ppc=0.8, roi_min_length=3,
-                        min_cluster_size=6, resolution=0.05):
+def generate_pseudo_ms1(msdata, ppc_matrix, min_ppc=0.8, roi_min_length=3,
+                        min_cluster_size=6):
     """
     Generate pseudo MS1 spectra for a single file
     :param msdata: MSData object
     :param ppc_matrix: sparse matrix of PPC scores
     :param roi_min_length: minimum length of ROIs to consider for clustering
-    :param peak_cor_rt_tol: RT tolerance for clustering
     :param min_ppc: minimum PPC score for clustering
     :param min_cluster_size: minimum number of ROIs in a cluster
-    :param resolution: resolution parameter for Louvain clustering
     :param save: whether to save the pseudo MS1 spectra
     :param save_dir: directory to save the pseudo MS1 spectra
     """
@@ -57,7 +54,7 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
     # plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix)
     # pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
 
-    pseudo_ms1_spectra = _perform_clustering(msdata, ppc_matrix, min_ppc=min_ppc, peak_cor_rt_tol=peak_cor_rt_tol,
+    pseudo_ms1_spectra = _perform_clustering(msdata, ppc_matrix, min_ppc=min_ppc,
                                              min_cluster_size=min_cluster_size, roi_min_length=roi_min_length)
 
     # plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_length=roi_min_length)
@@ -65,27 +62,19 @@ def generate_pseudo_ms1(msdata, ppc_matrix,
     return pseudo_ms1_spectra
 
 
-def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8, peak_cor_rt_tol=0.05,
+def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
                         min_cluster_size=6, roi_min_length=3):
     """
     Perform clustering on ROIs based on PPC scores and m/z values.
-
-    :param msdata: MSData object containing ROIs
-    :param ppc_matrix: scipy.sparse.csr_matrix of PPC scores
-    :param min_ppc: Minimum PPC score to consider for clustering
-    :param peak_cor_rt_tol: RT tolerance for clustering
-    :param min_cluster_size: Minimum number of ROIs in a cluster
-    :param roi_min_length: Minimum length of ROIs to consider for clustering
-    :return: List of PseudoMS1 objects
     """
-    # Filter ROIs based on minimum length and isotope status
-    valid_rois = [roi for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope]
+    # Filter ROIs based on minimum length and isotope status using a generator expression
+    valid_rois = (roi for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope)
 
-    # Sort ROIs by m/z values
+    # Sort ROIs by m/z values and create a mapping
     sorted_rois = sorted(valid_rois, key=lambda roi: roi.mz)
 
     # Create a new PPC matrix with only valid ROIs
-    valid_indices = [msdata.rois.index(roi) for roi in valid_rois]
+    valid_indices = [msdata.rois.index(roi) for roi in sorted_rois]
     new_ppc_matrix = ppc_matrix[valid_indices][:, valid_indices]
 
     pseudo_ms1_spectra = []
@@ -104,41 +93,11 @@ def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8, peak_cor_rt_tol=0.05,
             roi_ids = [roi.id for roi in cluster_rois]
             avg_rt = np.mean([roi.rt for roi in cluster_rois])
 
-            pseudo_ms1 = PseudoMS1(mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt)
-            pseudo_ms1_spectra.append(pseudo_ms1)
+            pseudo_ms1_spectra.append((mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt))
 
-    # # Sort pseudo MS1 spectra by RT
-    # pseudo_ms1_spectra.sort(key=lambda x: x.rt)
+    # Convert to PseudoMS1 objects after all processing
+    pseudo_ms1_spectra = [PseudoMS1(*spec) for spec in pseudo_ms1_spectra]
 
-    # # First pass: store subset information
-    # subset_info = {i: set() for i in range(len(pseudo_ms1_spectra))}
-    # for i, spec1 in enumerate(pseudo_ms1_spectra):
-    #     set1 = set(spec1.roi_ids)
-    #     for j, spec2 in enumerate(pseudo_ms1_spectra[i + 1:], start=i + 1):
-    #         if abs(spec1.rt - spec2.rt) > peak_cor_rt_tol:
-    #             break
-    #
-    #         set2 = set(spec2.roi_ids)
-    #
-    #         if set1 == set2:
-    #             subset_info[i].add(j)
-    #             subset_info[j].add(i)
-    #         elif set1.issubset(set2):
-    #             subset_info[i].add(j)
-    #         elif set2.issubset(set1):
-    #             subset_info[j].add(i)
-    #
-    # # Second pass: determine spectra to keep
-    # spectra_to_keep = set(range(len(pseudo_ms1_spectra)))
-    # for i in range(len(pseudo_ms1_spectra)):
-    #     if i in spectra_to_keep:
-    #         # Remove all subsets of this spectrum
-    #         spectra_to_keep -= subset_info[i]
-    #
-    # # Create the final list of non-redundant spectra
-    # non_redundant_spectra = [pseudo_ms1_spectra[i] for i in sorted(spectra_to_keep)]
-    #
-    # return non_redundant_spectra
     return pseudo_ms1_spectra
 
 
