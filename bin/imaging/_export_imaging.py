@@ -20,9 +20,9 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
         pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
-            annotation_peaks = annotation.peaks
-            annotation_peaks = annotation_peaks[annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
-            matched_peak_str = ' '.join([f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
+            # annotation_peaks = annotation.peaks
+            # annotation_peaks = annotation_peaks[annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
+            # matched_peak_str = ' '.join([f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
 
             out_list.append({
                 'name': annotation.name,
@@ -36,8 +36,9 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
                 'inchikey': annotation.inchikey,
                 'instrument_type': annotation.instrument_type,
                 'collision_energy': annotation.collision_energy,
+                'db_id': annotation.db_id,
                 'pseudo_ms1': pseudo_ms1_str,
-                'matched_ref_spectrum': matched_peak_str
+                # 'matched_ref_spectrum': matched_peak_str
             })
 
     out_df = pd.DataFrame(out_list)
