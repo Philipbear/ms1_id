@@ -32,7 +32,7 @@ def ms1id_single_file_batch(file_dir, msms_library_path, parallel=True, num_proc
     if parallel:
         # If num_processes is not specified, use the number of CPU cores
         if num_processes is None:
-            num_processes = multiprocessing.cpu_count()
+            num_processes = min(multiprocessing.cpu_count(), len(files))
 
         # Create a partial function with the library_path argument
         process_file = partial(ms1id_single_file, msms_library_path=msms_library_path,

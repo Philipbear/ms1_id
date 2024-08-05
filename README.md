@@ -5,22 +5,22 @@ Here we utilize MS1 ISF, to match against low-energy reference MS/MS spectra.
 This allows us to provide annotations using MS1 data, which could be expanded to MS imaging.
 
 
-## TODO
-- determine ISF and label in the feature table
-
-
 ## methods
 use masscube workflow, add feature correlation, do rev cos search against library.
 
 ## discussions
-- which compound classes are easier to have ISF, such that they can be annotated using MS1 (nist20)
-- rev cos match FDR
+- some compound classes are easier to have ISF, such that they can be annotated using MS1
 - MS imaging can have better correlation approaches, ML (CNN, etc)
 
 ## data
-- GNPS: ALL_GNPS_NO_PROPOGATED.msp, downloaded on July 17, 2024
-- MassBank (https://github.com/MassBank/MassBank-data/releases, MassBank_NIST, 2024.6 release), 120184 spectra
-- NIST20
+- MS/MS library
+  - GNPS: ALL_GNPS_NO_PROPOGATED.msp, downloaded on July 17, 2024
+  - NIST20
 
+
+- MS imaging data
+  - MTBLS313
+  - mouse body data 1: https://metaspace2020.eu/dataset/2017-05-17_19h49m04s
+  - mouse body data 2: https://metaspace2020.eu/dataset/2022-07-08_20h45m00s
 
 
