@@ -28,7 +28,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_
         mz, intensity = parser.getspectrum(idx)
 
         # Filter intensities and bin m/z values in one step
-        mask = (intensity > mass_detect_int_tol) & ((max_mz is None) | (mz <= max_mz))
+        mask = (intensity > mass_detect_int_tol) & ((max_mz is None) or (mz <= max_mz))
         binned_mz = np.round(mz[mask] / mz_bin_size) * mz_bin_size
         filtered_intensity = intensity[mask]
 
