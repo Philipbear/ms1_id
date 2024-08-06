@@ -5,7 +5,7 @@ import numpy as np
 import pyimzml.ImzMLParser as imzml
 
 
-def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
+def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_mz=None,
                             mz_bin_size=0.005, save=False, save_dir=None):
     parser = imzml.ImzMLParser(imzml_file)
 
@@ -28,7 +28,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
         mz, intensity = parser.getspectrum(idx)
 
         # Filter intensities and bin m/z values in one step
-        mask = intensity > mass_detect_int_tol
+        mask = (intensity > mass_detect_int_tol) & ((max_mz is None) | (mz <= max_mz))
         binned_mz = np.round(mz[mask] / mz_bin_size) * mz_bin_size
         filtered_intensity = intensity[mask]
 
@@ -147,12 +147,11 @@ def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95
 
 
 if __name__ == '__main__':
-    imzml_file = '../../imaging/MTBLS313/Brain01_Bregma1-42_01_centroid.imzML'
+    imzml_file = '../../imaging/mouse_body/wb xenograft in situ metabolomics test - rms_corrected.imzML'
     mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(imzml_file,
                                                                                  imzml_file.replace('.imzML', '.ibd'),
                                                                                  mass_detect_int_tol=None)
 
-    # intensity_matrix = np.load('../../imaging/MTBLS313/Brain01_Bregma1-42_01_centroid/intensity_matrix.npy')
     intensity_stats = analyze_intensity_distribution(intensity_matrix)
     print_intensity_stats(intensity_stats)
     create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=50)
