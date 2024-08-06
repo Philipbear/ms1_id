@@ -7,7 +7,7 @@ from _reverse_matching import ms1_id_annotation
 from _export_imaging import write_ms1_id_results
 
 
-def ms1id_imaging_single_workflow(file_path, msms_library_path,
+def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None,
                                   mass_detect_int_tol=None, max_mz=None,
                                   mz_bin_size=0.01,
                                   min_spec_overlap_ratio=0.1, min_correlation=0.8, min_cluster_size=6,
@@ -33,6 +33,7 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path,
     print(f"Calculating ion image correlations for {file_name}")
     cor_matrix = calc_all_mz_correlations(intensity_matrix,
                                           min_spec_overlap_ratio=min_spec_overlap_ratio,
+                                          n_processes=n_processes,
                                           save=True,
                                           save_dir=result_folder)
 
