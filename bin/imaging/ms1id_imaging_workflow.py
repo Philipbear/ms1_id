@@ -2,7 +2,8 @@ import os
 from _process_imaging_data import process_ms_imaging_data
 # from _calculate_mz_cor import calc_all_mz_correlations
 from _calculate_mz_cor_parallel import calc_all_mz_correlations
-from _group_mz_cor import generate_pseudo_ms1
+# from _group_mz_cor import generate_pseudo_ms1
+from _group_mz_cor_parallel import generate_pseudo_ms1
 from _reverse_matching import ms1_id_annotation
 from _export_imaging import write_ms1_id_results
 
@@ -39,6 +40,7 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None
 
     print(f"Generating pseudo MS1 spectra for {file_name}")
     pseudo_ms1 = generate_pseudo_ms1(mz_values, intensity_matrix, cor_matrix,
+                                     n_processes=n_processes,
                                      min_correlation=min_correlation,
                                      min_cluster_size=min_cluster_size,
                                      save=True,

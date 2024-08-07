@@ -3,9 +3,11 @@ import pickle
 import numpy as np
 from _utils_imaging import PseudoMS1
 from scipy.sparse import csr_matrix
+import multiprocessing as mp
 
 
 def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
+                        n_processes=None,
                         min_correlation=0.8, min_cluster_size=6,
                         save=False, save_dir=None):
     """
@@ -21,6 +23,7 @@ def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
 
     # Perform clustering
     pseudo_ms1_spectra = _perform_clustering(mz_values, intensity_matrix, correlation_matrix,
+                                             n_processes=n_processes,
                                              min_correlation=min_correlation,
                                              min_cluster_size=min_cluster_size)
 
@@ -32,10 +35,39 @@ def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
     return pseudo_ms1_spectra
 
 
-def _perform_clustering(mz_values, intensity_matrix, correlation_matrix,
+def _process_mz(args):
+    """
+    Process a single m/z value for clustering.
+    """
+    i, mz, sorted_indices, mz_values, intensity_matrix, correlation_matrix, min_correlation, min_cluster_size = args
+
+    # Get the row of the correlation matrix for the current m/z
+    row = correlation_matrix[sorted_indices[i]].toarray().flatten()
+
+    # Find all m/z values with correlation scores above the threshold
+    cluster_indices = np.where(row >= min_correlation)[0]
+
+    if len(cluster_indices) >= min_cluster_size:
+        # Form a pseudo MS1 spectrum
+        cluster_mzs = mz_values[cluster_indices]
+        cluster_intensities = intensity_matrix[cluster_indices, :]
+
+        # Find the spectrum with the highest total intensity for this cluster
+        spectrum_sums = np.sum(cluster_intensities, axis=0)
+        max_spectrum_index = np.argmax(spectrum_sums)
+
+        # Select the intensities from the spectrum with the highest total intensity
+        int_ls = cluster_intensities[:, max_spectrum_index].tolist()
+
+        return PseudoMS1(cluster_mzs.tolist(), int_ls)
+
+    return None
+
+
+def _perform_clustering(mz_values, intensity_matrix, correlation_matrix, n_processes=None,
                         min_correlation=0.8, min_cluster_size=6):
     """
-    Perform clustering on m/z values based on correlation scores.
+    Perform clustering on m/z values based on correlation scores using multiprocessing.
     """
     # Ensure correlation_matrix is in CSR format for efficient row slicing
     if not isinstance(correlation_matrix, csr_matrix):
@@ -45,29 +77,20 @@ def _perform_clustering(mz_values, intensity_matrix, correlation_matrix,
     sorted_indices = np.argsort(mz_values)
     sorted_mz_values = mz_values[sorted_indices]
 
-    pseudo_ms1_spectra = []
+    # Prepare arguments for multiprocessing
+    args_list = [
+        (i, mz, sorted_indices, mz_values, intensity_matrix, correlation_matrix, min_correlation, min_cluster_size)
+        for i, mz in enumerate(sorted_mz_values)]
 
-    for i, mz in enumerate(sorted_mz_values):
-        # Get the row of the correlation matrix for the current m/z
-        row = correlation_matrix[sorted_indices[i]].toarray().flatten()
+    # Use multiprocessing to process m/z values in parallel
+    if n_processes is None:
+        n_processes = mp.cpu_count()
 
-        # Find all m/z values with correlation scores above the threshold
-        cluster_indices = np.where(row >= min_correlation)[0]
+    with mp.Pool(processes=n_processes) as pool:
+        results = pool.map(_process_mz, args_list)
 
-        if len(cluster_indices) >= min_cluster_size:
-            # Form a pseudo MS1 spectrum
-            cluster_mzs = mz_values[cluster_indices]
-            cluster_intensities = intensity_matrix[cluster_indices, :]
-
-            # Find the spectrum with the highest total intensity for this cluster
-            spectrum_sums = np.sum(cluster_intensities, axis=0)
-            max_spectrum_index = np.argmax(spectrum_sums)
-
-            # Select the intensities from the spectrum with the highest total intensity
-            int_ls = cluster_intensities[:, max_spectrum_index].tolist()
-
-            pseudo_ms1 = PseudoMS1(cluster_mzs.tolist(), int_ls)
-            pseudo_ms1_spectra.append(pseudo_ms1)
+    # Filter out None results and create the pseudo_ms1_spectra list
+    pseudo_ms1_spectra = [result for result in results if result is not None]
 
     # Remove redundant spectra
     non_redundant_spectra = _remove_redundant_spectra(pseudo_ms1_spectra)
@@ -89,4 +112,3 @@ def _remove_redundant_spectra(pseudo_ms1_spectra):
         if not is_subset:
             non_redundant_spectra.append(spec1)
     return non_redundant_spectra
-

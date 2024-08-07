@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from numba import njit
-from scipy.sparse import csr_matrix, save_npz
+from scipy.sparse import csr_matrix, save_npz, load_npz
 import multiprocessing as mp
 
 
@@ -67,6 +67,13 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, save=
     :param n_processes: Number of processes to use (default: number of CPU cores)
     :return: Sparse correlation matrix
     """
+
+    # check if result files exist
+    if save_dir is not None:
+        path = os.path.join(save_dir, 'mz_correlation_matrix.npz')
+        if os.path.exists(path):
+            return load_npz(path)
+
     n_mzs = intensity_matrix.shape[0]
 
     if n_processes is None:

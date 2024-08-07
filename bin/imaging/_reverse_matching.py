@@ -89,6 +89,14 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     :return: PseudoMS1-like object
     """
 
+    # check if results are already annotated
+    if save_dir:
+        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
+        if os.path.exists(save_path):
+            with open(save_path, 'rb') as file:
+                ms1_spec_ls = pickle.load(file)
+            return ms1_spec_ls
+
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
                                                      ion_mode=ion_mode,

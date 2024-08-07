@@ -7,7 +7,22 @@ import pyimzml.ImzMLParser as imzml
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_mz=None,
                             mz_bin_size=0.005, save=False, save_dir=None):
+
     parser = imzml.ImzMLParser(imzml_file)
+
+    # check if result files exist
+    if save_dir is not None:
+        mz_values_path = os.path.join(save_dir, 'mz_values.npy')
+        intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
+        coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
+
+        if os.path.exists(mz_values_path) and os.path.exists(intensity_matrix_path) and os.path.exists(coordinates_path):
+            mz_values = np.load(mz_values_path)
+            intensity_matrix = np.load(intensity_matrix_path)
+            with open(coordinates_path, 'rb') as f:
+                coordinates = pickle.load(f)
+
+            return mz_values, intensity_matrix, coordinates, parser.polarity
 
     mz_intensity_dict = defaultdict(lambda: defaultdict(float))
     coordinates = []
@@ -49,7 +64,6 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_
         mz_values_path = os.path.join(save_dir, 'mz_values.npy')
         intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
         coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
-
         np.save(mz_values_path, mz_values)
         np.save(intensity_matrix_path, intensity_matrix)
 
