@@ -15,7 +15,7 @@ This strategy works for both **LC-MS** data and **MS imaging** data.
 ```bash
  pip install -r requirements.txt
 ```
-- Run `bin/lcms/main_lcms.py` for LC-MS data, and `bin/imaging/main_imaging.py` for MS imaging data.
+- Run `ms1id_lcms.py` for LC-MS data, and `ms1id_msi.py` for MS imaging data.
 
 
 ### Data
