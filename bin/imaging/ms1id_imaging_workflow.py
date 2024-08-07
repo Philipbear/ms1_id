@@ -64,7 +64,7 @@ if __name__ == '__main__':
     # Single workflow
     file_path = '../../imaging/MTBLS313/Brain01_Bregma-3-88b_centroid.imzML'
     ms1id_imaging_single_workflow(file_path=file_path,
-                                  msms_library_path='../../data/gnps_nist20.pkl',
+                                  msms_library_path='../../data/gnps.pkl',
                                   mass_detect_int_tol=None, max_mz=None, mz_bin_size=0.01,
                                   min_spec_overlap_ratio=0.5, min_correlation=0.9, min_cluster_size=5,
                                   ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,

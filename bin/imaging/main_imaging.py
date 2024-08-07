@@ -47,9 +47,9 @@ def ms1id_single_file_batch(file_dir, msms_library_path, n_processes=None,
 
 if __name__ == '__main__':
 
-    # ############################
-    # # Batch workflow
-    file_dir = '../../imaging/MTBLS313'
+    ############################
+    # Batch workflow
+    file_dir = '../../imaging/MTBLS313'  # File directory containing imzML & ibd files
     ms1id_single_file_batch(file_dir=file_dir,
                             msms_library_path='../../data/gnps.pkl',
                             mass_detect_int_tol=None, max_mz=None,
