@@ -1,4 +1,4 @@
-from bin.imaging.main_imaging import ms1id_single_file_batch
+from bin.msi.main_msi import ms1id_single_file_batch
 
 if __name__ == '__main__':
 

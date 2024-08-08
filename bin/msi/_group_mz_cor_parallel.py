@@ -4,7 +4,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 import multiprocessing as mp
 from tqdm import tqdm
-from _utils_imaging import PseudoMS1
+from _utils_msi import PseudoMS1
 
 
 def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,

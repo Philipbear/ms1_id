@@ -5,7 +5,7 @@ import os
 import pickle
 
 # import matplotlib.colors as mcolors
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # import networkx as nx
 import numpy as np
 
@@ -101,6 +101,7 @@ def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
     return pseudo_ms1_spectra
 
 
+'''
 def _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois):
     """Map clustering labels to PseudoMS1 objects"""
 
@@ -125,7 +126,6 @@ def _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois):
     return pseudo_ms1_spectra
 
 
-'''
 def _refine_clusters_by_rt_window(cluster_rois, msdata, peak_group_rt_tol, min_cluster_size):
     """
     Refine clusters by finding the optimal RT window that preserves the most data points within the given RT tolerance.
@@ -279,7 +279,6 @@ def plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix, min_ppc=0.
 
     plt.tight_layout()
     plt.show()
-'''
 
 
 def plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_length=3):
@@ -310,3 +309,4 @@ def plot_mz_rt_scatter_with_pseudo_ms1(msdata, pseudo_ms1_spectra, roi_min_lengt
     plt.legend()
     plt.tight_layout()
     plt.show()
+'''
