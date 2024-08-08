@@ -3,6 +3,7 @@ import numpy as np
 from numba import njit
 from scipy.sparse import csr_matrix, save_npz, load_npz
 import multiprocessing as mp
+from tqdm import tqdm
 
 
 @njit
@@ -49,7 +50,7 @@ def calc_mz_correlation_matrix_numba(intensity_matrix, start_idx, end_idx, min_s
                 cols[counter] = j
                 data[counter] = corr
                 counter += 1
-                
+
     return rows[:counter], cols[:counter], data[:counter]
 
 
@@ -74,6 +75,7 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_c
     if save_dir is not None:
         path = os.path.join(save_dir, 'mz_correlation_matrix.npz')
         if os.path.exists(path):
+            print("Loading existing correlation matrix...")
             return load_npz(path)
 
     n_mzs = intensity_matrix.shape[0]
@@ -85,20 +87,28 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_c
     chunks = [(i * chunk_size, (i + 1) * chunk_size) for i in range(n_processes)]
     chunks[-1] = (chunks[-1][0], n_mzs)  # Ensure the last chunk goes to the end
 
+    print(f"Calculating correlations using {n_processes} processes...")
     with mp.Pool(processes=n_processes) as pool:
-        results = pool.starmap(worker,
-                               [(intensity_matrix, start, end, min_spec_overlap_ratio, min_cor) for start, end in chunks])
+        results = list(tqdm(
+            pool.istarmap(worker,
+                          [(intensity_matrix, start, end, min_spec_overlap_ratio, min_cor) for start, end in chunks]),
+            total=n_processes,
+            desc="Processing chunks"
+        ))
 
+    print("Combining results...")
     all_rows = np.concatenate([r[0] for r in results])
     all_cols = np.concatenate([r[1] for r in results])
     all_data = np.concatenate([r[2] for r in results])
 
+    print("Creating sparse matrix...")
     corr_matrix = csr_matrix((all_data, (all_rows, all_cols)), shape=(n_mzs, n_mzs), dtype=np.float64)
     corr_matrix = corr_matrix + corr_matrix.T
     corr_matrix.setdiag(1.0)
 
     if save and save_dir:
         path = os.path.join(save_dir, 'mz_correlation_matrix.npz')
+        print(f"Saving correlation matrix to {path}...")
         save_npz(path, corr_matrix)
 
     return corr_matrix
@@ -106,6 +116,7 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_c
 
 if __name__ == "__main__":
     # Create a sample intensity matrix
+    print("Creating sample intensity matrix...")
     intensity_matrix = np.random.rand(1000, 1000)  # 1000 m/z values, 1000 spectra
 
     # Calculate correlations
