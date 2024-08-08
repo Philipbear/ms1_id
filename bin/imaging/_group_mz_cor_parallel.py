@@ -58,7 +58,7 @@ def _process_chunk(args):
 
 
 def _perform_clustering(mz_values, correlation_matrix, n_processes=None,
-                        min_cluster_size=6, chunk_size=1000):
+                        min_cluster_size=6, chunk_size=800):
     """
     Perform clustering on m/z values based on correlation scores using chunked multiprocessing.
     """
