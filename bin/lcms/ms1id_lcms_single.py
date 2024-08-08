@@ -75,7 +75,8 @@ def main_workflow_single(file_path,
 
         # calc peak-peak correlations for feature groups and output
         print('Calculating peak-peak correlations...')
-        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, save=False)
+        ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, min_ppc=min_ppc,
+                                  save=False)
 
         # generate pseudo ms1 spec, for ms1_id
         print('Generating pseudo MS1 spectra...')

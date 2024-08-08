@@ -8,8 +8,7 @@ from tqdm import tqdm
 
 
 def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
-                        n_processes=None,
-                        min_correlation=0.8, min_cluster_size=6,
+                        n_processes=None, min_cluster_size=6,
                         save=False, save_dir=None):
     """
     Generate pseudo MS1 spectra for imaging data
@@ -25,7 +24,6 @@ def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
     # Perform clustering
     pseudo_ms1_spectra = _perform_clustering(mz_values, intensity_matrix, correlation_matrix,
                                              n_processes=n_processes,
-                                             min_correlation=min_correlation,
                                              min_cluster_size=min_cluster_size)
 
     if save and save_dir:
@@ -40,13 +38,13 @@ def _process_mz(args):
     """
     Process a single m/z value for clustering.
     """
-    i, mz, sorted_indices, mz_values, intensity_matrix, correlation_matrix, min_correlation, min_cluster_size = args
+    i, mz, sorted_indices, mz_values, intensity_matrix, correlation_matrix, min_cluster_size = args
 
     # Get the row of the correlation matrix for the current m/z
     row = correlation_matrix[sorted_indices[i]].toarray().flatten()
 
-    # Find all m/z values with correlation scores above the threshold
-    cluster_indices = np.where(row >= min_correlation)[0]
+    # Find all m/z values with non-zero correlation scores
+    cluster_indices = np.nonzero(row)[0]
 
     if len(cluster_indices) >= min_cluster_size:
         # Form a pseudo MS1 spectrum
@@ -66,7 +64,7 @@ def _process_mz(args):
 
 
 def _perform_clustering(mz_values, intensity_matrix, correlation_matrix, n_processes=None,
-                        min_correlation=0.8, min_cluster_size=6):
+                        min_cluster_size=6):
     """
     Perform clustering on m/z values based on correlation scores using multiprocessing.
     """
@@ -80,7 +78,7 @@ def _perform_clustering(mz_values, intensity_matrix, correlation_matrix, n_proce
 
     # Prepare arguments for multiprocessing
     args_list = [
-        (i, mz, sorted_indices, mz_values, intensity_matrix, correlation_matrix, min_correlation, min_cluster_size)
+        (i, mz, sorted_indices, mz_values, intensity_matrix, correlation_matrix, min_cluster_size)
         for i, mz in enumerate(sorted_mz_values)]
 
     # Use multiprocessing to process m/z values in parallel

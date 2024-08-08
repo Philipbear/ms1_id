@@ -33,7 +33,7 @@ def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.6)
 
 
 @njit
-def calc_mz_correlation_matrix_numba(intensity_matrix, start_idx, end_idx, min_spec_overlap_ratio=0.6):
+def calc_mz_correlation_matrix_numba(intensity_matrix, start_idx, end_idx, min_spec_overlap_ratio=0.6, min_cor=0.9):
     n_mzs = intensity_matrix.shape[0]
     max_correlations = (end_idx - start_idx) * n_mzs
     rows = np.zeros(max_correlations, dtype=np.int32)
@@ -44,19 +44,21 @@ def calc_mz_correlation_matrix_numba(intensity_matrix, start_idx, end_idx, min_s
     for i in range(start_idx, end_idx):
         for j in range(i + 1, n_mzs):
             corr = mz_correlation_numba(intensity_matrix[i], intensity_matrix[j], min_spec_overlap_ratio)
-            rows[counter] = i
-            cols[counter] = j
-            data[counter] = corr
-            counter += 1
-
+            if corr >= min_cor:
+                rows[counter] = i
+                cols[counter] = j
+                data[counter] = corr
+                counter += 1
+                
     return rows[:counter], cols[:counter], data[:counter]
 
 
-def worker(intensity_matrix, start_idx, end_idx, min_spec_overlap_ratio):
-    return calc_mz_correlation_matrix_numba(intensity_matrix, start_idx, end_idx, min_spec_overlap_ratio)
+def worker(intensity_matrix, start_idx, end_idx, min_spec_overlap_ratio, min_cor):
+    return calc_mz_correlation_matrix_numba(intensity_matrix, start_idx, end_idx, min_spec_overlap_ratio, min_cor)
 
 
-def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, save=True, save_dir=None, n_processes=None):
+def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_cor=0.9,
+                             save=True, save_dir=None, n_processes=None):
     """
     Calculate m/z correlation matrix for MS imaging data using multiprocessing
 
@@ -85,7 +87,7 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, save=
 
     with mp.Pool(processes=n_processes) as pool:
         results = pool.starmap(worker,
-                               [(intensity_matrix, start, end, min_spec_overlap_ratio) for start, end in chunks])
+                               [(intensity_matrix, start, end, min_spec_overlap_ratio, min_cor) for start, end in chunks])
 
     all_rows = np.concatenate([r[0] for r in results])
     all_cols = np.concatenate([r[1] for r in results])
