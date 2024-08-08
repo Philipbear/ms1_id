@@ -6,7 +6,7 @@ from multiprocessing import Pool, cpu_count
 from ms_entropy import read_one_spectrum
 from tqdm import tqdm
 
-from _utils_msi import SpecAnnotation
+from _utils_imaging import SpecAnnotation
 from flash_cos import FlashCos
 
 

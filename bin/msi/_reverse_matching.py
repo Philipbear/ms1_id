@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 from ms_entropy import read_one_spectrum
 
-from _utils_msi import SpecAnnotation
+from _utils_imaging import SpecAnnotation
 from flash_cos import FlashCos
 
 
