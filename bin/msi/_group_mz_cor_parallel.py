@@ -52,7 +52,7 @@ def _process_chunk(args):
         if len(cluster_indices) >= min_cluster_size:
             cluster_mzs = mz_values[cluster_indices]
             indices = cluster_indices.tolist()
-            chunk_results.append(PseudoMS1(cluster_mzs.tolist(), [0] * len(cluster_mzs), indices))
+            chunk_results.append(PseudoMS1(mz, i, cluster_mzs.tolist(), [0] * len(cluster_mzs), indices))
 
     return chunk_results
 
@@ -93,9 +93,15 @@ def _assign_intensities(pseudo_ms1_spectra, intensity_matrix):
     Assign intensity values to pseudo MS1 spectra.
     """
     for spectrum in tqdm(pseudo_ms1_spectra, desc="Assigning intensities"):
+        # Get the intensities for all m/z values in this PseudoMS1 object
         intensities = intensity_matrix[spectrum.indices, :]
-        spectrum_sums = np.sum(intensities, axis=0)
-        max_spectrum_index = np.argmax(spectrum_sums)
+
+        # Get the intensities for the target m/z across all spectra
+        t_mz_intensities = intensity_matrix[spectrum.t_mz_idx, :]
+
+        # Find the spectrum with the highest intensity at the target m/z
+        max_spectrum_index = np.argmax(t_mz_intensities)
+
         spectrum.intensities = intensities[:, max_spectrum_index].tolist()
 
 

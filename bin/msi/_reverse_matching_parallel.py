@@ -70,6 +70,69 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
     return search_engine
 
 
+def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
+                      mz_tol=0.01,
+                      score_cutoff=0.8, min_matched_peak=6,
+                      ion_mode=None,
+                      refine_results=False,
+                      min_prec_int_in_ms1=1000,
+                      max_prec_rel_int_in_other_ms2=0.05,
+                      save=False, save_dir=None,
+                      chunk_size=None):
+    """
+    Perform ms1 annotation
+    :param ms1_spec_ls: a list of PseudoMS1-like object
+    :param ms2_library: path to the pickle file, indexed library
+    :param n_processes: number of processes to use
+    :param mz_tol: mz tolerance in Da, for rev cos matching
+    :param min_prec_int_in_ms1: minimum required precursor intensity in MS1 spectrum
+    :param score_cutoff: for rev cos
+    :param min_matched_peak: for rev cos
+    :param ion_mode: str, ion mode. If None, all ion modes are considered
+    :param refine_results: bool, whether to refine the results
+    :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
+    :param save: bool, whether to save the results
+    :param save_dir: str, directory to save the results
+    :param chunk_size: int, number of spectra to process in each parallel task
+    :return: PseudoMS1-like object
+    """
+
+    # check if results are already annotated
+    if save_dir:
+        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
+        if os.path.exists(save_path):
+            with open(save_path, 'rb') as file:
+                ms1_spec_ls = pickle.load(file)
+            return ms1_spec_ls
+
+    if n_processes is None:
+        n_processes = max(1, cpu_count() // 10)  # ms2 library is large, for RAM usage
+
+    if chunk_size is None:
+        chunk_size = min(len(ms1_spec_ls) // n_processes, 1000)
+
+    # perform revcos matching
+    ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, n_processes=n_processes,
+                                                     mz_tol=mz_tol,
+                                                     ion_mode=ion_mode,
+                                                     min_prec_int_in_ms1=min_prec_int_in_ms1,
+                                                     score_cutoff=score_cutoff,
+                                                     min_matched_peak=min_matched_peak,
+                                                     chunk_size=chunk_size)
+
+    if refine_results:
+        # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated)
+        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
+                                            max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
+
+    if save:
+        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
+        with open(save_path, 'wb') as file:
+            pickle.dump(ms1_spec_ls, file)
+
+    return ms1_spec_ls
+
+
 def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, n_processes: int = None,
                                        mz_tol: float = 0.02,
                                        ion_mode: str = None,
@@ -187,69 +250,6 @@ def _process_chunk(args):
             spec.annotated = False
 
     return chunk
-
-
-def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
-                      mz_tol=0.01,
-                      score_cutoff=0.8, min_matched_peak=6,
-                      ion_mode=None,
-                      refine_results=False,
-                      min_prec_int_in_ms1=1000,
-                      max_prec_rel_int_in_other_ms2=0.05,
-                      save=False, save_dir=None,
-                      chunk_size=None):
-    """
-    Perform ms1 annotation
-    :param ms1_spec_ls: a list of PseudoMS1-like object
-    :param ms2_library: path to the pickle file, indexed library
-    :param n_processes: number of processes to use
-    :param mz_tol: mz tolerance in Da, for rev cos matching
-    :param min_prec_int_in_ms1: minimum required precursor intensity in MS1 spectrum
-    :param score_cutoff: for rev cos
-    :param min_matched_peak: for rev cos
-    :param ion_mode: str, ion mode. If None, all ion modes are considered
-    :param refine_results: bool, whether to refine the results
-    :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
-    :param save: bool, whether to save the results
-    :param save_dir: str, directory to save the results
-    :param chunk_size: int, number of spectra to process in each parallel task
-    :return: PseudoMS1-like object
-    """
-
-    # check if results are already annotated
-    if save_dir:
-        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
-        if os.path.exists(save_path):
-            with open(save_path, 'rb') as file:
-                ms1_spec_ls = pickle.load(file)
-            return ms1_spec_ls
-
-    if n_processes is None:
-        n_processes = max(1, cpu_count() // 10)  # ms2 library is large, for RAM usage
-
-    if chunk_size is None:
-        chunk_size = min(len(ms1_spec_ls) // n_processes, 1000)
-
-    # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, n_processes=n_processes,
-                                                     mz_tol=mz_tol,
-                                                     ion_mode=ion_mode,
-                                                     min_prec_int_in_ms1=min_prec_int_in_ms1,
-                                                     score_cutoff=score_cutoff,
-                                                     min_matched_peak=min_matched_peak,
-                                                     chunk_size=chunk_size)
-
-    if refine_results:
-        # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated)
-        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
-                                            max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
-
-    if save:
-        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
-        with open(save_path, 'wb') as file:
-            pickle.dump(ms1_spec_ls, file)
-
-    return ms1_spec_ls
 
 
 def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms2=0.05):

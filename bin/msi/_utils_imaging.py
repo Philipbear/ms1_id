@@ -2,7 +2,9 @@
 
 
 class PseudoMS1:
-    def __init__(self, mz_ls, int_ls, idx_ls):
+    def __init__(self, t_mz, t_mz_idx, mz_ls, int_ls, idx_ls):
+        self.t_mz = t_mz  # this PseudoMS1 spectrum is generated starting from this mz
+        self.t_mz_idx = t_mz_idx  # this PseudoMS1 spectrum is generated starting from this mz
         self.mzs = mz_ls
         self.intensities = int_ls
         self.indices = idx_ls  # indices of mzs, for later assign intensities
