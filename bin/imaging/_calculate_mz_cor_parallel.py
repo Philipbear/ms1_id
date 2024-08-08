@@ -89,12 +89,8 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_c
 
     print(f"Calculating correlations using {n_processes} processes...")
     with mp.Pool(processes=n_processes) as pool:
-        results = list(tqdm(
-            pool.istarmap(worker,
-                          [(intensity_matrix, start, end, min_spec_overlap_ratio, min_cor) for start, end in chunks]),
-            total=n_processes,
-            desc="Processing chunks"
-        ))
+        args = [(intensity_matrix, start, end, min_spec_overlap_ratio, min_cor) for start, end in chunks]
+        results = list(tqdm(pool.starmap(worker, args), total=len(args), desc="Processing chunks"))
 
     print("Combining results...")
     all_rows = np.concatenate([r[0] for r in results])
