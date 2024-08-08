@@ -228,7 +228,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
         n_processes = max(1, cpu_count() // 10)  # ms2 library is large, for RAM usage
 
     if chunk_size is None:
-        chunk_size = len(ms1_spec_ls) // n_processes
+        chunk_size = min(len(ms1_spec_ls) // n_processes, 1000)
 
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, n_processes=n_processes,
