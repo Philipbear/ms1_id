@@ -4,6 +4,7 @@ import numpy as np
 from _utils_imaging import PseudoMS1
 from scipy.sparse import csr_matrix
 import multiprocessing as mp
+from tqdm import tqdm
 
 
 def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
@@ -87,7 +88,7 @@ def _perform_clustering(mz_values, intensity_matrix, correlation_matrix, n_proce
         n_processes = mp.cpu_count()
 
     with mp.Pool(processes=n_processes) as pool:
-        results = pool.map(_process_mz, args_list)
+        results = list(tqdm(pool.imap(_process_mz, args_list), total=len(args_list), desc="Clustering"))
 
     # Filter out None results and create the pseudo_ms1_spectra list
     pseudo_ms1_spectra = [result for result in results if result is not None]
@@ -103,7 +104,7 @@ def _remove_redundant_spectra(pseudo_ms1_spectra):
     Remove redundant spectra (subsets of larger spectra).
     """
     non_redundant_spectra = []
-    for i, spec1 in enumerate(pseudo_ms1_spectra):
+    for i, spec1 in enumerate(tqdm(pseudo_ms1_spectra, desc="Removing redundant spectra")):
         is_subset = False
         for j, spec2 in enumerate(pseudo_ms1_spectra):
             if i != j and set(spec1.mzs).issubset(set(spec2.mzs)):
