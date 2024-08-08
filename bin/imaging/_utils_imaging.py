@@ -2,9 +2,10 @@
 
 
 class PseudoMS1:
-    def __init__(self, mz_ls, int_ls):
+    def __init__(self, mz_ls, int_ls, idx_ls):
         self.mzs = mz_ls
         self.intensities = int_ls
+        self.indices = idx_ls  # indices of mzs, for later assign intensities
         self.annotated = False
         self.annotation_ls = []  # list of SpecAnnotation objects
 

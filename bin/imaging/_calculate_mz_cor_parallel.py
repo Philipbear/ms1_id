@@ -3,7 +3,6 @@ import numpy as np
 from numba import njit
 from scipy.sparse import csr_matrix, save_npz, load_npz
 import multiprocessing as mp
-from tqdm import tqdm
 import tempfile
 
 
@@ -101,7 +100,7 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_c
             for start, end in chunks
         ]
 
-        for job in tqdm(jobs, total=len(chunks), desc="Processing chunks"):
+        for job in jobs:
             job.get()  # Wait for the job to complete
 
     print("Combining results...")
@@ -130,11 +129,14 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_c
 
 
 if __name__ == "__main__":
-    # Create a sample intensity matrix
-    print("Creating sample intensity matrix...")
-    intensity_matrix = np.random.rand(2000, 1000)  # 1000 m/z values, 1000 spectra
+    import time
+    start = time.time()
+    intensity_matrix = np.random.rand(4000, 100)  # 4000 m/z values, 100 spectra
 
     # Calculate correlations
-    corr_matrix = calc_all_mz_correlations(intensity_matrix, save=False)
+    corr_matrix = calc_all_mz_correlations(intensity_matrix, n_processes=10,
+                                           save=False)
+
+    print(f"Time elapsed: {time.time() - start:.2f} s")
 
     print(f"Correlation matrix shape: {corr_matrix.shape}")
