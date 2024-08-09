@@ -72,13 +72,13 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                       mz_tol=0.01,
-                      score_cutoff=0.8, min_matched_peak=6,
+                      score_cutoff=0.6, min_matched_peak=4,
                       ion_mode=None,
                       refine_results=False,
                       min_prec_int_in_ms1=1000,
                       max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_dir=None,
-                      chunk_size=500):
+                      chunk_size=100):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
@@ -106,7 +106,9 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
             return ms1_spec_ls
 
     if n_processes is None:
-        n_processes = max(1, cpu_count() // 10)  # ms2 library is large, for RAM usage
+        n_processes = max(1, cpu_count() // 8)  # ms2 library is large, for RAM usage
+
+    chunk_size = min(chunk_size, len(ms1_spec_ls))
 
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, n_processes=n_processes,

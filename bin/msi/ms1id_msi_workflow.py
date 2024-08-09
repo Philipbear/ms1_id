@@ -45,7 +45,7 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None
                                      save_dir=result_folder)
 
     print(f"Annotating pseudo MS1 spectra for {file_name}")
-    pseudo_ms1 = ms1_id_annotation(pseudo_ms1, msms_library_path, n_processes=n_processes,
+    pseudo_ms1 = ms1_id_annotation(pseudo_ms1, msms_library_path, n_processes=None,
                                    mz_tol=ms1id_mz_tol,
                                    ion_mode=ion_mode,
                                    score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak,
