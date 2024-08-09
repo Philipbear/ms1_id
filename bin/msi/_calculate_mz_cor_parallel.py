@@ -7,15 +7,12 @@ import tempfile
 
 
 @njit
-def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.9, min_overlap=5):
-    x_non_zero_mask = intensities1 != 0
-    y_non_zero_mask = intensities2 != 0
+def mz_correlation_numba(intensities1, intensities2, min_overlap=5):
 
     non_zero_mask = (intensities1 != 0) & (intensities2 != 0)
 
     n = len(intensities1[non_zero_mask])
-    smaller_length = min(len(intensities1[x_non_zero_mask]), len(intensities2[y_non_zero_mask]))
-    if n < min_spec_overlap_ratio * smaller_length or n < min_overlap:
+    if n < min_overlap:
         return 0.0
 
     x = intensities1[non_zero_mask]
@@ -33,7 +30,7 @@ def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.9,
     return numerator / denominator if denominator != 0 else 0.0
 
 
-def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_spec_overlap_ratio, min_overlap,
+def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overlap,
            min_cor, return_dict):
 
     intensity_matrix = np.memmap(mmap_filename, dtype=np.float64, mode='r', shape=intensity_matrix_shape)
@@ -45,7 +42,7 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_spec_o
 
     for i in range(start_idx, end_idx):
         for j in range(i + 1, n_mzs):
-            corr = mz_correlation_numba(intensity_matrix[i], intensity_matrix[j], min_spec_overlap_ratio, min_overlap)
+            corr = mz_correlation_numba(intensity_matrix[i], intensity_matrix[j], min_overlap)
             if corr >= min_cor:
                 rows.append(i)
                 cols.append(j)
@@ -54,14 +51,12 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_spec_o
     return_dict[start_idx] = (rows, cols, data)
 
 
-def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.5, min_overlap=5,
-                             min_cor=0.9,
+def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
                              save=True, save_dir=None, n_processes=None, chunk_size=1000):
     """
     Calculate m/z correlation matrix for MS imaging data using multiprocessing and numpy memmap
 
     :param intensity_matrix: 2D numpy array where rows are m/z values and columns are spectra
-    :param min_spec_overlap_ratio: Minimum ratio of overlapping spectra between two ions
     :param min_overlap: Minimum number of overlapping spectra between two ions
     :param min_cor: Minimum correlation value to keep
     :param save: Boolean indicating whether to save the result
@@ -99,7 +94,7 @@ def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.5, min_o
 
     with mp.Pool(processes=n_processes) as pool:
         jobs = [
-            pool.apply_async(worker, (start, end, mmap_filename, intensity_matrix.shape, min_spec_overlap_ratio,
+            pool.apply_async(worker, (start, end, mmap_filename, intensity_matrix.shape,
                                       min_overlap, min_cor, return_dict))
             for start, end in chunks
         ]
