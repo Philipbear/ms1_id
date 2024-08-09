@@ -7,7 +7,7 @@ import tempfile
 
 
 @njit
-def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.6):
+def mz_correlation_numba(intensities1, intensities2, min_spec_overlap_ratio=0.9):
     x_non_zero_mask = intensities1 != 0
     y_non_zero_mask = intensities2 != 0
 
@@ -52,7 +52,7 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_spec_o
     return_dict[start_idx] = (rows, cols, data)
 
 
-def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.6, min_cor=0.9,
+def calc_all_mz_correlations(intensity_matrix, min_spec_overlap_ratio=0.9, min_cor=0.9,
                              save=True, save_dir=None, n_processes=None, chunk_size=1000):
     """
     Calculate m/z correlation matrix for MS imaging data using multiprocessing and numpy memmap

@@ -78,7 +78,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                       min_prec_int_in_ms1=1000,
                       max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_dir=None,
-                      chunk_size=None):
+                      chunk_size=500):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
@@ -108,9 +108,6 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
     if n_processes is None:
         n_processes = max(1, cpu_count() // 10)  # ms2 library is large, for RAM usage
 
-    if chunk_size is None:
-        chunk_size = min(len(ms1_spec_ls) // n_processes, 1000)
-
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, n_processes=n_processes,
                                                      mz_tol=mz_tol,
@@ -137,7 +134,7 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, n_pr
                                        mz_tol: float = 0.02,
                                        ion_mode: str = None,
                                        min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.7,
-                                       min_matched_peak: int = 3, chunk_size: int = 1000) -> List:
+                                       min_matched_peak: int = 3, chunk_size: int = 500) -> List:
     """
     Perform MS1 annotation using parallel open search for the entire spectrum, with filters similar to identity search.
 
