@@ -9,7 +9,7 @@ from _utils_imaging import PseudoMS1
 
 def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
                         n_processes=None, min_cluster_size=6,
-                        save=False, save_dir=None, chunk_size=1000):
+                        save=False, save_dir=None, chunk_size=500):
     """
     Generate pseudo MS1 spectra for imaging data using chunked parallel processing
     """
@@ -93,7 +93,7 @@ def _assign_intensities_parallel(pseudo_ms1_spectra, intensity_matrix, n_process
     """
     Assign intensity values to pseudo MS1 spectra using parallel processing.
     """
-    n_processes = max(1, n_processes // 8)  # intensity matrix is large, so use fewer processes to avoid memory issues
+    n_processes = max(1, n_processes // 5)  # intensity matrix is large, so use fewer processes to avoid memory issues
 
     # Split the spectra into chunks
     chunk_size = len(pseudo_ms1_spectra) // n_processes
