@@ -106,7 +106,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
             return ms1_spec_ls
 
     if n_processes is None:
-        n_processes = max(1, cpu_count() // 8)  # ms2 library is large, for RAM usage
+        n_processes = max(1, cpu_count() // 5)  # ms2 library is large, for RAM usage
 
     chunk_size = min(chunk_size, len(ms1_spec_ls))
 
