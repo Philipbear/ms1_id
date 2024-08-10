@@ -13,7 +13,7 @@ def preprocess_ms2(peaks, prec_mz,
                    min_ms2_difference_in_ppm=-1,
                    top6_every_50da=False,
                    sn_estimate=False,
-                   peak_transform=None,
+                   peak_intensity_power=1,
                    peak_norm=None) -> np.ndarray:
     """
     Main function to preprocess MS2 spectra.
@@ -24,8 +24,7 @@ def preprocess_ms2(peaks, prec_mz,
         3. Centroid the spectrum by merging peaks within min_ms2_difference_in_da.
         4. Remove peaks with intensity < relative_intensity_cutoff * max_intensity.
         5. Keep only the top max_peak_num peaks within every 50 Da or remove noise peaks with S/N estimate.
-        6. Transform the peak intensity.
-        (Optional) 7. apply entropy weight to the intensity. (for entropy similarity)
+        6. Transform the peak intensity. peak_intensity_power is used to transform the intensity to intensity^peak_intensity_power.
         7. Normalize the intensity.
 
         The cleaned spectrum will be sorted by m/z in ascending order.
@@ -59,9 +58,9 @@ def preprocess_ms2(peaks, prec_mz,
     sn_estimate : bool, optional
         The signal-to-noise ratio estimate. Defaults to False, which will skip the SN estimate.
 
-    peak_transform : str, optional
-        The peak transformation method. Defaults to None, which will skip the peak transformation. The available methods are: 'sqrt', 'log'.
-
+    peak_intensity_power : float, optional
+        The power to transform the peak intensity. Defaults to 1, which will not transform the intensity.
+        
     peak_norm : str, optional
         The peak normalization method. The available methods are: 'sum', 'sum_sq'.
     """
@@ -110,13 +109,7 @@ def preprocess_ms2(peaks, prec_mz,
         peaks = sn_remove_noise_peaks(peaks, max_noise_ion_percentage=(1 - 1e-5), max_noise_ion_rsd=0.20)
 
     # Step 6. Transform the intensity.
-    if peak_transform is not None:
-        if peak_transform == 'sqrt':
-            peaks[:, 1] = np.sqrt(peaks[:, 1])
-        elif peak_transform == 'log':
-            # first normalize the intensity to max = 100
-            peaks[:, 1] = peaks[:, 1] / np.max(peaks[:, 1]) * 100
-            peaks[:, 1] = np.log(peaks[:, 1] + 1)
+    peaks[:, 1] = peaks[:, 1] ** peak_intensity_power
 
     # Step 7. Normalize the intensity.
     if peak_norm is not None:

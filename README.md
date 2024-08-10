@@ -1,6 +1,6 @@
 ## MS1-based structural annotation
 
-In high-resolution mass spectrometry analysis, compounds can be fragmented in or post ion source, resulting in fragment ions detected in MS1 spectra.
+In mass spectrometry analysis, compounds can be fragmented in- or post-ion source, resulting in fragment ions detected in MS1 spectra.
 
 Here we utilize MS1 data to match against reference MS/MS spectra, to provide structural annotations.
 

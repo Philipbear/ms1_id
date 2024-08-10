@@ -9,7 +9,7 @@ from _utils_imaging import PseudoMS1
 
 def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
                         n_processes=None, min_cluster_size=6,
-                        save=False, save_dir=None, chunk_size=500):
+                        save=False, save_dir=None, chunk_size=1000):
     """
     Generate pseudo MS1 spectra for imaging data using chunked parallel processing
     """
@@ -27,8 +27,7 @@ def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
                                              chunk_size=chunk_size)
 
     # Assign intensity values
-    _assign_intensities_parallel(pseudo_ms1_spectra, intensity_matrix, n_processes)
-    # _assign_intensities(pseudo_ms1_spectra, intensity_matrix)
+    _assign_intensities(pseudo_ms1_spectra, intensity_matrix)
 
     if save and save_dir:
         save_path = os.path.join(save_dir, 'pseudo_ms1_spectra.pkl')
@@ -87,46 +86,6 @@ def _perform_clustering(mz_values, correlation_matrix, n_processes=None,
     non_redundant_spectra = _remove_redundant_spectra(pseudo_ms1_spectra)
 
     return non_redundant_spectra
-
-
-def _assign_intensities_parallel(pseudo_ms1_spectra, intensity_matrix, n_processes):
-    """
-    Assign intensity values to pseudo MS1 spectra using parallel processing.
-    """
-    n_processes = max(1, n_processes // 5)  # intensity matrix is large, so use fewer processes to avoid memory issues
-
-    # Split the spectra into chunks
-    chunk_size = len(pseudo_ms1_spectra) // n_processes
-    chunks = [pseudo_ms1_spectra[i:i + chunk_size] for i in range(0, len(pseudo_ms1_spectra), chunk_size)]
-
-    with mp.Pool(processes=n_processes) as pool:
-        results = list(tqdm(pool.imap(_assign_intensities_chunk,
-                                      [(chunk, intensity_matrix) for chunk in chunks]),
-                            total=len(chunks),
-                            desc="Assigning intensities"))
-
-    # Flatten results
-    pseudo_ms1_spectra[:] = [spectrum for chunk_result in results for spectrum in chunk_result]
-
-
-def _assign_intensities_chunk(args):
-    """
-    Assign intensity values to a chunk of pseudo MS1 spectra.
-    """
-    chunk, intensity_matrix = args
-    for spectrum in chunk:
-        # Get the intensities for all m/z values in this PseudoMS1 object
-        intensities = intensity_matrix[spectrum.indices, :]
-
-        # Get the intensities for the target m/z across all spectra
-        t_mz_intensities = intensity_matrix[spectrum.t_mz_idx, :]
-
-        # Find the spectrum with the highest intensity at the target m/z
-        max_spectrum_index = np.argmax(t_mz_intensities)
-
-        spectrum.intensities = intensities[:, max_spectrum_index].tolist()
-
-    return chunk
 
 
 def _assign_intensities(pseudo_ms1_spectra, intensity_matrix):

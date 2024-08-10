@@ -5,10 +5,10 @@ import numpy as np
 from ms_entropy import read_one_spectrum
 
 from _utils_imaging import SpecAnnotation
-from flash_cos import FlashCos
+from bin.msi.flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -49,12 +49,12 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, sqrt_transform=True):
     print('initializing search engine')
     search_engine = FlashCos(max_ms2_tolerance_in_da=mz_tol * 1.005,
                              mz_index_step=0.0001,
-                             sqrt_transform=sqrt_transform)
+                             peak_intensity_power=peak_intensity_power)
     print('building index')
     search_engine.build_index(db,
                               max_indexed_mz=2000,
                               precursor_ions_removal_da=0.5,
-                              noise_threshold=0.0,
+                              noise_threshold=0.02,
                               min_ms2_difference_in_da=mz_tol * 2.02,
                               clean_spectra=True)
 

@@ -1,9 +1,9 @@
 import os
-from _process_msi_data import process_ms_imaging_data
-from _calculate_mz_cor_parallel import calc_all_mz_correlations
-from _group_mz_cor_parallel import generate_pseudo_ms1
-from _reverse_matching_parallel import ms1_id_annotation
-from _export_msi import write_ms1_id_results
+from bin.msi._process_msi_data import process_ms_imaging_data
+from bin.msi._calculate_mz_cor_parallel import calc_all_mz_correlations
+from bin.msi._group_mz_cor_parallel import generate_pseudo_ms1
+from bin.msi._reverse_matching_parallel import ms1_id_annotation
+from bin.msi._export_msi import write_ms1_id_results
 
 
 def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None,

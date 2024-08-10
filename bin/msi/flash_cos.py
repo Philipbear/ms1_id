@@ -1,7 +1,6 @@
 """
 Flash search for cos / reverse cos
-no/sqrt/log transformation
-return score, matched peaks, spectral usage, reverse score
+return matched peaks, spectral usage, reverse score
 """
 import json
 import multiprocessing
@@ -12,14 +11,14 @@ from typing import Union, List
 
 import numpy as np
 
-from _preprocess_ms2 import preprocess_ms2
+from bin.msi._preprocess_ms2 import preprocess_ms2
 
 np.seterr(divide='ignore', invalid='ignore')
 
 
 class FlashCosCore:
     def __init__(self, path_data=None, max_ms2_tolerance_in_da=0.024, mz_index_step=0.0001,
-                 sqrt_transform=False):
+                 peak_intensity_power=1.0):
         """
         Initialize the search core. for CPU only.
         :param path_array: The path array of the index files.
@@ -30,7 +29,7 @@ class FlashCosCore:
         self.mz_index_step = mz_index_step
         self._init_for_multiprocessing = False
         self.max_ms2_tolerance_in_da = max_ms2_tolerance_in_da
-        self.sqrt_transform = sqrt_transform
+        self.peak_intensity_power = peak_intensity_power
 
         self.total_spectra_num = 0
         self.total_peaks_num = 0
@@ -169,9 +168,8 @@ class FlashCosCore:
             spec_usage_arr = np.sum(match_table_q, axis=0) / np.sum(peaks[:, 1])
 
             # normalize query spectrum intensity in each column
-            if self.sqrt_transform:
-                match_table_q = np.sqrt(match_table_q)
-                peaks[:, 1] = np.sqrt(peaks[:, 1])
+            match_table_q = np.power(match_table_q, self.peak_intensity_power)
+            peaks[:, 1] = np.power(peaks[:, 1], self.peak_intensity_power)
 
             if reverse:
                 match_table_q = match_table_q / np.sqrt(np.sum(np.square(match_table_q), axis=0))
@@ -190,9 +188,8 @@ class FlashCosCore:
             # calculate spectral usage
             part_spectral_usage = np.sum(match_table_q, axis=0) / np.sum(peaks[:, 1])
             # normalize query spectrum intensity in each column
-            if self.sqrt_transform:
-                match_table_q = np.sqrt(match_table_q)
-                peaks[:, 1] = np.sqrt(peaks[:, 1])
+            match_table_q = np.power(match_table_q, self.peak_intensity_power)
+            peaks[:, 1] = np.power(peaks[:, 1], self.peak_intensity_power)
 
             if reverse:
                 match_table_q_rev = match_table_q / np.sqrt(np.sum(np.square(match_table_q), axis=0))
@@ -329,9 +326,8 @@ class FlashCosCore:
         # calculate spectral usage
         spec_usage_arr = np.sum(match_table_q_all, axis=0) / np.sum(peaks[:, 1])
         # normalize query spectrum intensity in each column
-        if self.sqrt_transform:
-            match_table_q_all = np.sqrt(match_table_q_all)
-            peaks[:, 1] = np.sqrt(peaks[:, 1])
+        match_table_q_all = np.power(match_table_q_all, self.peak_intensity_power)
+        peaks[:, 1] = np.power(peaks[:, 1], self.peak_intensity_power)
 
         if reverse:
             match_table_q_all_rev = match_table_q_all / np.sqrt(np.sum(np.square(match_table_q_all), axis=0))
@@ -590,14 +586,14 @@ def _read_data_from_file(file_data, item_start, item_end):
 
 class FlashCos:
     def __init__(self, max_ms2_tolerance_in_da=0.024, mz_index_step=0.0001, path_data=None,
-                 sqrt_transform=False):
+                 peak_intensity_power=1.0):
         self.precursor_mz_array = np.zeros(0, dtype=np.float32)
-        self.sqrt_transform = sqrt_transform
+        self.peak_intensity_power = peak_intensity_power
 
         self.similarity_search = FlashCosCore(path_data=path_data,
                                               max_ms2_tolerance_in_da=max_ms2_tolerance_in_da,
                                               mz_index_step=mz_index_step,
-                                              sqrt_transform=sqrt_transform)
+                                              peak_intensity_power=peak_intensity_power)
 
     def identity_search(self, precursor_mz, peaks, ms1_tolerance_in_da, ms2_tolerance_in_da, reverse,
                         **kwargs):
@@ -673,7 +669,7 @@ class FlashCos:
                                   precursor_ions_removal_da: float = 1.6,
                                   noise_threshold=0.01,
                                   min_ms2_difference_in_da: float = 0.05,
-                                  sqrt_transform: bool = False):
+                                  peak_intensity_power: float = 1.0):
         """
         Clean the MS/MS spectrum, need to be called before any search.
 
@@ -684,17 +680,13 @@ class FlashCos:
         :param noise_threshold: The intensity threshold for removing the noise peaks. The peaks with intensity smaller than noise_threshold * max(intensity)
                                 will be removed. Default is 0.01.
         :param min_ms2_difference_in_da:    The minimum difference between two peaks in the MS/MS spectrum. Default is 0.05.
-        :param sqrt_transform:  Whether to perform the square root transform on the intensity. Default is False.
+        :param peak_intensity_power:    The power of the peak intensity. Default is 1.0.
         """
 
         if precursor_ions_removal_da is not None:
             max_mz = precursor_mz - precursor_ions_removal_da
         else:
             max_mz = None
-
-        _peak_transform = None
-        if sqrt_transform:
-            _peak_transform = "sqrt"
 
         return preprocess_ms2(peaks=peaks,
                               prec_mz=precursor_mz,
@@ -705,7 +697,7 @@ class FlashCos:
                               min_ms2_difference_in_ppm=-1,
                               top6_every_50da=False,
                               sn_estimate=False,
-                              peak_transform=_peak_transform,
+                              peak_intensity_power=peak_intensity_power,
                               peak_norm='sum_sq')
 
     def search(self,
@@ -752,7 +744,7 @@ class FlashCos:
                                min_ms2_difference_in_ppm=-1,
                                top6_every_50da=False,
                                sn_estimate=False,
-                               peak_transform=None,
+                               peak_intensity_power=1,
                                peak_norm=None)
 
         result = {}
@@ -879,7 +871,7 @@ class FlashCos:
                                                                precursor_ions_removal_da=precursor_ions_removal_da,
                                                                noise_threshold=noise_threshold,
                                                                min_ms2_difference_in_da=min_ms2_difference_in_da,
-                                                               sqrt_transform=self.sqrt_transform)
+                                                               peak_intensity_power=self.peak_intensity_power)
             if len(spec["peaks"]) > 0:
                 all_spectra_list.append(spec)
                 all_metadata_list.append(pickle.dumps(spec))
@@ -967,7 +959,18 @@ def _clean_search_result(temp_result):
     return temp_result
 
 
+# test
 if __name__ == "__main__":
+    # cosine between two vectors
+    def cosine_similarity(v1, v2):
+        return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
+
+    print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), np.array([100, 20, 4, 3, 10, 0])))
+    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 0, 0, 20])), np.sqrt(np.array([100, 20, 4, 3, 10, 0]))))
+
+    print(cosine_similarity(np.array([100, 0.5, 20, 20]), np.array([100, 20, 4, 0])))
+    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 20])), np.sqrt(np.array([100, 20, 4, 0]))))
 
     # load spectral library
     spectral_library = [{
@@ -992,11 +995,11 @@ if __name__ == "__main__":
     # search
     search_eng = FlashCos(max_ms2_tolerance_in_da=ms2_tol * 1.05,
                           mz_index_step=0.0001,
-                          sqrt_transform=True)
+                          peak_intensity_power=0.5)
     search_eng.build_index(spectral_library,
                            max_indexed_mz=2000,
                            precursor_ions_removal_da=0.5,
-                           noise_threshold=0.0,
+                           noise_threshold=0.02,
                            min_ms2_difference_in_da=ms2_tol * 2.2,
                            clean_spectra=True)
 
