@@ -11,7 +11,7 @@ from typing import Union, List
 
 import numpy as np
 
-from bin.msi._preprocess_ms2 import preprocess_ms2
+from bin.lcms._preprocess_ms2 import preprocess_ms2
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -669,7 +669,9 @@ class FlashCos:
                                   precursor_ions_removal_da: float = 1.6,
                                   noise_threshold=0.01,
                                   min_ms2_difference_in_da: float = 0.05,
-                                  peak_intensity_power: float = 1.0):
+                                  peak_intensity_power: float = 1.0,
+                                  peak_scale: bool = True,
+                                  peak_scale_k: float = 1.0):
         """
         Clean the MS/MS spectrum, need to be called before any search.
 
@@ -696,7 +698,8 @@ class FlashCos:
                               min_ms2_difference_in_da=min_ms2_difference_in_da,
                               min_ms2_difference_in_ppm=-1,
                               top6_every_50da=False,
-                              sn_estimate=False,
+                              peak_scale=peak_scale,
+                              peak_scale_k=peak_scale_k,
                               peak_intensity_power=peak_intensity_power,
                               peak_norm='sum_sq')
 
@@ -711,23 +714,8 @@ class FlashCos:
                reverse: bool = True):
         """
         Run the Flash search for the query spectrum.
-
-        :param precursor_mz:    The precursor m/z of the query spectrum.
-        :param peaks:           The peaks of the query spectrum, should be a list or numpy array with shape (N, 2), N is the number of peaks. The format of the peaks is [[mz1, intensity1], [mz2, intensity2], ...].
-        :param ms1_tolerance_in_da:  The MS1 tolerance in Da. Default is 0.01.
-        :param ms2_tolerance_in_da:  The MS2 tolerance in Da. Default is 0.02.
-        :param method:  The search method, can be "identity", "open", "neutral_loss", "hybrid", "all", or list of the above.
-        :param precursor_ions_removal_da:   The ions with m/z larger than precursor_mz - precursor_ions_removal_da will be removed.
-                                            Default is 1.6.
-        :param noise_threshold: The intensity threshold for removing the noise peaks. The peaks with intensity smaller than noise_threshold * max(intensity)
-                                will be removed. Default is 0.01.
-        :param min_ms2_difference_in_da:    The minimum difference between two peaks in the MS/MS spectrum. Default is 0.05.
         :return:    A dictionary with the search results. The keys are "identity_search", "open_search", "neutral_loss_search", "hybrid_search", and the values are the search results for each method.
         """
-        # if precursor_ions_removal_da is not None:
-        #     max_mz = precursor_mz - precursor_ions_removal_da
-        # else:
-        #     max_mz = -1
 
         if method == "all":
             method = {"identity", "open", "neutral_loss", "hybrid"}
@@ -743,8 +731,8 @@ class FlashCos:
                                min_ms2_difference_in_da=min_ms2_difference_in_da,
                                min_ms2_difference_in_ppm=-1,
                                top6_every_50da=False,
-                               sn_estimate=False,
-                               peak_intensity_power=1,
+                               peak_scale=False,
+                               peak_intensity_power=1.0,
                                peak_norm=None)
 
         result = {}
@@ -828,32 +816,12 @@ class FlashCos:
                     precursor_ions_removal_da: Union[float, None] = 1.6,
                     noise_threshold=0.01,
                     min_ms2_difference_in_da: float = 0.05,
+                    peak_scale: bool = True,
+                    peak_scale_k: float = 1.0,
                     clean_spectra: bool = True):
         """
-        Set the library spectra for search.
+        Set the library spectra for search. This function will sort the spectra by the precursor m/z and output the sorted spectra list.
 
-        The `all_spectra_list` must be a list of dictionaries, with each dictionary containing at least two keys: "precursor_mz" and "peaks".
-        The dictionary should be in the format of {"precursor_mz": precursor_mz, "peaks": peaks, ...}, All keys in the dictionary, except "peaks,"
-        will be saved as the metadata and can be accessed using the  __getitem__ function (e.g. similarity_search[0] returns the metadata for the
-        first spectrum in the library).
-
-            - The precursor_mz is the precursor m/z value of the MS/MS spectrum;
-
-            - The peaks is a numpy array or a nested list of the MS/MS spectrum, looks like [[mz1, intensity1], [mz2, intensity2], ...].
-
-        :param all_spectra_list:    A list of dictionaries in the format of {"precursor_mz": precursor_mz, "peaks": peaks},
-                                    the spectra in the list do not need to be sorted by the precursor m/z.
-                                    This function will sort the spectra by the precursor m/z and output the sorted spectra list.
-
-        :param max_indexed_mz: The maximum m/z value that will be indexed. Default is 1500.00005.
-        :param precursor_ions_removal_da:   The ions with m/z larger than precursor_mz - precursor_ions_removal_da will be removed.
-                                            Default is 1.6.
-        :param noise_threshold: The intensity threshold for removing the noise peaks. The peaks with intensity smaller than noise_threshold * max(intensity)
-                                will be removed. Default is 0.01.
-        :param min_ms2_difference_in_da:    The minimum difference between two peaks in the MS/MS spectrum. Default is 0.05.
-        :param clean_spectra:   If True, the spectra will be cleaned before indexing. Default is True. If ALL spectra in the library are pre-cleaned with the
-                                function `clean_spectrum` or `clean_spectrum_for_search`, set this parameter to False. ALWAYS set this parameter to true if
-                                the spectra are not pre-prepossessed with the function `clean_spectrum` or `clean_spectrum_for_search`.
         :return:    If the all_spectra_list is provided, this function will return the sorted spectra list.
         """
 
@@ -871,7 +839,9 @@ class FlashCos:
                                                                precursor_ions_removal_da=precursor_ions_removal_da,
                                                                noise_threshold=noise_threshold,
                                                                min_ms2_difference_in_da=min_ms2_difference_in_da,
-                                                               peak_intensity_power=self.peak_intensity_power)
+                                                               peak_intensity_power=self.peak_intensity_power,
+                                                               peak_scale=peak_scale,
+                                                               peak_scale_k=peak_scale_k)
             if len(spec["peaks"]) > 0:
                 all_spectra_list.append(spec)
                 all_metadata_list.append(pickle.dumps(spec))
@@ -904,9 +874,6 @@ class FlashCos:
     def write(self, path_data=None):
         """
         Write the MS/MS spectral library to a file.
-
-        :param path_data:   The path of the file to write.
-        :return:    None
         """
         if path_data is None:
             path_data = self.similarity_search.path_data
@@ -925,9 +892,6 @@ class FlashCos:
     def read(self, path_data=None):
         """
         Read the MS/MS spectral library from a file.
-
-        :param path_data:   The path of the file to read.
-        :return:    None
         """
         if path_data is None:
             path_data = self.similarity_search.path_data
@@ -966,11 +930,9 @@ if __name__ == "__main__":
         return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
 
 
-    print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), np.array([100, 20, 4, 3, 10, 0])))
-    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 0, 0, 20])), np.sqrt(np.array([100, 20, 4, 3, 10, 0]))))
+    print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), np.array([100, 30, 4, 3, 10, 0])))
 
-    print(cosine_similarity(np.array([100, 0.5, 20, 20]), np.array([100, 20, 4, 0])))
-    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 20])), np.sqrt(np.array([100, 20, 4, 0]))))
+    print(cosine_similarity(np.array([100, 0.5, 20, 20]), np.array([100, 30, 4, 0])))
 
     # load spectral library
     spectral_library = [{
@@ -995,24 +957,26 @@ if __name__ == "__main__":
     # search
     search_eng = FlashCos(max_ms2_tolerance_in_da=ms2_tol * 1.05,
                           mz_index_step=0.0001,
-                          peak_intensity_power=0.5)
+                          peak_intensity_power=1.0)
     search_eng.build_index(spectral_library,
                            max_indexed_mz=2000,
                            precursor_ions_removal_da=0.5,
-                           noise_threshold=0.02,
+                           noise_threshold=0.0,
                            min_ms2_difference_in_da=ms2_tol * 2.2,
+                           peak_scale=True,
+                           peak_scale_k=1.0,
                            clean_spectra=True)
 
     search_result = search_eng.search(
         precursor_mz=300.0,
-        peaks=[[200.0, 100], [201.0, 20], [202.0, 4.0], [203.0, 3.0], [204.0, 10]],
+        peaks=[[200.0, 100], [201.0, 30], [202.0, 4.0], [203.0, 3.0], [204.0, 10]],
         ms1_tolerance_in_da=0.02,
         ms2_tolerance_in_da=ms2_tol,
         method="open",  # "identity", "open", "neutral_loss", "hybrid", "all", or list of the above
         precursor_ions_removal_da=0.5,
         noise_threshold=0.0,
         min_ms2_difference_in_da=ms2_tol * 2.2,
-        reverse=True
+        reverse=False
     )
 
     # score_arr, matched_peak_arr, spec_usage_arr = search_result['open_search']

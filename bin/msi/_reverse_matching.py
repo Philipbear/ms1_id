@@ -8,7 +8,7 @@ from _utils_imaging import SpecAnnotation
 from bin.msi.flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5, peak_scale_k=8.0):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -54,8 +54,10 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
     search_engine.build_index(db,
                               max_indexed_mz=2000,
                               precursor_ions_removal_da=0.5,
-                              noise_threshold=0.02,
+                              noise_threshold=0.0,
                               min_ms2_difference_in_da=mz_tol * 2.02,
+                              peak_scale=True,
+                              peak_scale_k=peak_scale_k,
                               clean_spectra=True)
 
     new_path = os.path.splitext(ms2db)[0] + '.pkl'

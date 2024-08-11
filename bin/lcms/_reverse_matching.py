@@ -8,7 +8,7 @@ from bin.lcms._utils import SpecAnnotation
 from bin.lcms.flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5, peak_scale_k=8.0):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -54,8 +54,10 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
     search_engine.build_index(db,
                               max_indexed_mz=2000,
                               precursor_ions_removal_da=0.5,
-                              noise_threshold=0.02,
+                              noise_threshold=0.0,
                               min_ms2_difference_in_da=mz_tol * 2.02,
+                              peak_scale=True,
+                              peak_scale_k=peak_scale_k,
                               clean_spectra=True)
 
     new_path = os.path.splitext(ms2db)[0] + '.pkl'
@@ -85,7 +87,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
     :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
     :param save: bool, save the results
-    :param save_dir: str, save directory
+    :param save_path: str, save directory
     :return: PseudoMS1-like object
     """
 
@@ -246,9 +248,9 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
-    prepare_ms2_lib(ms2db='../../data/ALL_GNPS_NO_PROPOGATED.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02)
     prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
 
     # with open('../../data/nist20.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)

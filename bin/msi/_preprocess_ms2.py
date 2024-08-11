@@ -12,7 +12,8 @@ def preprocess_ms2(peaks, prec_mz,
                    min_ms2_difference_in_da=0.05,
                    min_ms2_difference_in_ppm=-1,
                    top6_every_50da=False,
-                   sn_estimate=False,
+                   peak_scale=False,
+                   peak_scale_k=1,
                    peak_intensity_power=1,
                    peak_norm=None) -> np.ndarray:
     """
@@ -23,9 +24,10 @@ def preprocess_ms2(peaks, prec_mz,
         2. Remove peaks with m/z >= max_mz or m/z < min_mz.
         3. Centroid the spectrum by merging peaks within min_ms2_difference_in_da.
         4. Remove peaks with intensity < relative_intensity_cutoff * max_intensity.
-        5. Keep only the top max_peak_num peaks within every 50 Da or remove noise peaks with S/N estimate.
-        6. Transform the peak intensity. peak_intensity_power is used to transform the intensity to intensity^peak_intensity_power.
-        7. Normalize the intensity.
+        5. Keep only the top max_peak_num peaks within every 50 Da.
+        6. peak_intensity_power is used to transform the intensity to intensity^peak_intensity_power.
+        7. Transform the peak intensity.
+        8. Normalize the intensity.
 
         The cleaned spectrum will be sorted by m/z in ascending order.
 
@@ -55,12 +57,9 @@ def preprocess_ms2(peaks, prec_mz,
     top6_every_50da : bool, optional
         Whether to keep only the top 6 peaks within every 50 Da. Defaults to False, which will keep all peaks.
 
-    sn_estimate : bool, optional
-        The signal-to-noise ratio estimate. Defaults to False, which will skip the SN estimate.
-
     peak_intensity_power : float, optional
         The power to transform the peak intensity. Defaults to 1, which will not transform the intensity.
-        
+
     peak_norm : str, optional
         The peak normalization method. The available methods are: 'sum', 'sum_sq'.
     """
@@ -101,17 +100,19 @@ def preprocess_ms2(peaks, prec_mz,
     if relative_intensity_cutoff is not None:
         peaks = peaks[peaks[:, 1] >= relative_intensity_cutoff * np.max(peaks[:, 1])]
 
-    # Step 5. Keep only the top 6 peaks within every 50 Da. or remove noise peaks with S/N estimate.
+    # Step 5. Keep only the top 6 peaks within every 50 Da
     if top6_every_50da:
         peaks = top_n_per_mz_range(peaks, n_peaks=6, mz_range=50)
 
-    if sn_estimate:
-        peaks = sn_remove_noise_peaks(peaks, max_noise_ion_percentage=(1 - 1e-5), max_noise_ion_rsd=0.20)
+    # Step 6. scale the intensity.
+    if peak_scale:
+        scaling_factor = peaks[:, 0] / prec_mz * peak_scale_k
+        peaks[:, 1] = peaks[:, 1] * np.exp(scaling_factor)
 
-    # Step 6. Transform the intensity.
-    peaks[:, 1] = peaks[:, 1] ** peak_intensity_power
+    # Step 7. Power the intensity.
+    peaks[:, 1] = np.power(peaks[:, 1], peak_intensity_power)
 
-    # Step 7. Normalize the intensity.
+    # Step 8. Normalize the intensity.
     if peak_norm is not None:
         if peak_norm == 'sum':
             peaks[:, 1] = peaks[:, 1] / np.sum(peaks[:, 1])
@@ -153,40 +154,6 @@ def top_n_per_mz_range(peaks: np.ndarray, n_peaks: int = 6, mz_range: int = 50) 
     peaks = peaks[np.argsort(peaks[:, 0])]
 
     return peaks
-
-
-def sn_remove_noise_peaks(peaks, max_noise_ion_percentage=(1 - 1e-5), max_noise_ion_rsd=0.20):
-    """
-    Remove MS/MS noise ions based on the signal-to-noise ratio estimate.
-    """
-    # >=10 peaks
-    if len(peaks) < 10:
-        return peaks
-
-    # >=3 peaks to start
-    max_noise_cnt = int(len(peaks) * max_noise_ion_percentage)
-    if max_noise_cnt < 3:
-        return peaks
-
-    # sorted intensity array, ascending order
-    int_arr = peaks[:, 1]
-    int_arr_sorted = np.sort(int_arr)
-
-    # calculate noise ion threshold
-    final_noise_cutoff = 0.0
-    for k in range(3, max_noise_cnt + 1):
-        # mean
-        noise_ion_mean = np.mean(int_arr_sorted[:k])
-        # calculate RSD
-        noise_ion_rsd = np.std(int_arr_sorted[:k]) / noise_ion_mean
-        if noise_ion_rsd <= max_noise_ion_rsd:
-            final_noise_cutoff = int_arr_sorted[k]
-        else:
-            break
-
-    # filter peaks based on final noise cutoff
-    valid_peaks = peaks[int_arr >= final_noise_cutoff]
-    return valid_peaks
 
 
 def centroid_spectrum(peaks: np.ndarray, ms2_da: float = -1, ms2_ppm: float = -1) -> np.ndarray:
