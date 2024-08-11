@@ -413,7 +413,7 @@ class FlashCosCore:
             assert peaks.ndim == 2, "The peaks array should be a 2D numpy array."
             assert peaks.shape[1] == 2, "The peaks array should be a 2D numpy array with the shape of [n, 2]."
             assert peaks.shape[0] > 0, "The peaks array should not be empty."
-            assert abs(np.sum(np.square(peaks[:, 1])) - 1) < 2e-4, "The peaks array should be normalized to sum to 1."
+            assert abs(np.sum(np.square(peaks[:, 1])) - 1) < 1e-4, "The peaks array should be normalized to sum to 1."
             assert (
                     peaks.shape[0] <= 1 or np.min(peaks[1:, 0] - peaks[:-1, 0]) > self.max_ms2_tolerance_in_da * 2
             ), "The peaks array should be sorted by m/z, and the m/z difference between two adjacent peaks should be larger than 2 * max_ms2_tolerance_in_da."

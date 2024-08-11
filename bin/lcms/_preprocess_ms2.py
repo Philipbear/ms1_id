@@ -103,7 +103,7 @@ def preprocess_ms2(peaks, prec_mz,
     # Step 6. scale the intensity.
     if peak_scale:
         _prec_mz = prec_mz if prec_mz > 0 else np.max(peaks[:, 0])
-        scaling_factor = peaks[:, 0] / prec_mz * peak_scale_k
+        scaling_factor = peaks[:, 0] / _prec_mz * peak_scale_k
         peaks[:, 1] = peaks[:, 1] * np.exp(scaling_factor)
 
     # Step 7. Power the intensity.

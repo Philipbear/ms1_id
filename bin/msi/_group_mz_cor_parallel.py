@@ -47,11 +47,13 @@ def _process_chunk(args):
     for i in range(start_idx, end_idx):
         mz = mz_values[i]
         row = correlation_matrix[i].toarray().flatten()
-        cluster_indices = np.nonzero(row)[0]
 
-        if len(cluster_indices) >= min_cluster_size:
-            cluster_mzs = mz_values[cluster_indices]
-            indices = cluster_indices.tolist()
+        # Only consider m/z values smaller than the target m/z
+        smaller_mz_indices = np.where((mz_values < mz) & (row > 0))[0]
+
+        if len(smaller_mz_indices) >= min_cluster_size:
+            cluster_mzs = mz_values[smaller_mz_indices]
+            indices = smaller_mz_indices.tolist()
             chunk_results.append(PseudoMS1(mz, i, cluster_mzs.tolist(), [0] * len(cluster_mzs), indices))
 
     return chunk_results
