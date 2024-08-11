@@ -7,25 +7,7 @@ import pyimzml.ImzMLParser as imzml
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_mz=None,
                             mz_bin_size=0.005, save=False, save_dir=None):
-
     parser = imzml.ImzMLParser(imzml_file)
-
-    # check if result files exist
-    if save_dir is not None:
-        mz_values_path = os.path.join(save_dir, 'mz_values.npy')
-        intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
-        coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
-
-        if os.path.exists(mz_values_path) and os.path.exists(intensity_matrix_path) and os.path.exists(coordinates_path):
-            mz_values = np.load(mz_values_path)
-            intensity_matrix = np.load(intensity_matrix_path)
-            with open(coordinates_path, 'rb') as f:
-                coordinates = pickle.load(f)
-
-            return mz_values, intensity_matrix, coordinates, parser.polarity
-
-    mz_intensity_dict = defaultdict(lambda: defaultdict(float))
-    coordinates = []
 
     all_intensities = []
     # First pass: collect all intensities if mass_detect_int_tol is None
@@ -38,6 +20,24 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_
         non_zero_intensities = all_intensities[all_intensities > 0.0]
         # Calculate intensity value for mass detection
         mass_detect_int_tol = min(np.min(non_zero_intensities) * 3, np.percentile(non_zero_intensities, 5))
+
+    # check if result files exist
+    if save_dir is not None:
+        mz_values_path = os.path.join(save_dir, 'mz_values.npy')
+        intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
+        coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
+
+        if os.path.exists(mz_values_path) and os.path.exists(intensity_matrix_path) and os.path.exists(
+                coordinates_path):
+            mz_values = np.load(mz_values_path)
+            intensity_matrix = np.load(intensity_matrix_path)
+            with open(coordinates_path, 'rb') as f:
+                coordinates = pickle.load(f)
+
+            return mz_values, intensity_matrix, coordinates, parser.polarity, mass_detect_int_tol
+
+    mz_intensity_dict = defaultdict(lambda: defaultdict(float))
+    coordinates = []
 
     for idx, (x, y, z) in enumerate(parser.coordinates):
         mz, intensity = parser.getspectrum(idx)
@@ -70,7 +70,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_
         with open(coordinates_path, 'wb') as f:
             pickle.dump(coordinates, f)
 
-    return mz_values, intensity_matrix, coordinates, parser.polarity
+    return mz_values, intensity_matrix, coordinates, parser.polarity, mass_detect_int_tol
 
 
 def analyze_intensity_distribution(intensity_matrix):
@@ -162,9 +162,10 @@ def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95
 
 if __name__ == '__main__':
     imzml_file = '../../imaging/mouse_body/wb xenograft in situ metabolomics test - rms_corrected.imzML'
-    mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(imzml_file,
-                                                                                 imzml_file.replace('.imzML', '.ibd'),
-                                                                                 mass_detect_int_tol=None)
+    mz_values, intensity_matrix, coordinates, ion_mode, _ = process_ms_imaging_data(imzml_file,
+                                                                                    imzml_file.replace('.imzML',
+                                                                                                       '.ibd'),
+                                                                                    mass_detect_int_tol=None)
 
     intensity_stats = analyze_intensity_distribution(intensity_matrix)
     print_intensity_stats(intensity_stats)

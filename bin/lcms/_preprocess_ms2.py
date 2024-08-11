@@ -63,10 +63,6 @@ def preprocess_ms2(peaks, prec_mz,
     peak_norm : str, optional
         The peak normalization method. The available methods are: 'sum', 'sum_sq'.
     """
-    if max_mz > 0:
-        _max_mz = min(max_mz - 1e-6, prec_mz - 0.5)
-    else:
-        _max_mz = prec_mz - 0.5
 
     # Check the input spectrum and convert it to numpy array with shape (n, 2) and dtype np.float32.
     peaks = np.asarray(peaks, dtype=np.float32, order="C")
@@ -106,6 +102,7 @@ def preprocess_ms2(peaks, prec_mz,
 
     # Step 6. scale the intensity.
     if peak_scale:
+        _prec_mz = prec_mz if prec_mz > 0 else np.max(peaks[:, 0])
         scaling_factor = peaks[:, 0] / prec_mz * peak_scale_k
         peaks[:, 1] = peaks[:, 1] * np.exp(scaling_factor)
 

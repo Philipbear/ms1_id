@@ -11,7 +11,7 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None
                                   mz_bin_size=0.01,
                                   min_overlap=5, min_correlation=0.9, min_cluster_size=6,
                                   ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                                  ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05):
+                                  ms1id_min_prec_sn_ratio=3, ms1id_max_prec_rel_int_in_other_ms2=0.05):
     file_dir = os.path.dirname(file_path)
     file_name = os.path.basename(file_path).replace('.imzML', '')
 
@@ -20,7 +20,7 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None
     os.makedirs(result_folder, exist_ok=True)
 
     print(f"Processing {file_name}")
-    mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(
+    mz_values, intensity_matrix, coordinates, ion_mode, actual_mass_detect_int_tol = process_ms_imaging_data(
         file_path,
         file_path.replace('.imzML', '.ibd'),
         mass_detect_int_tol=mass_detect_int_tol,
@@ -49,7 +49,7 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None
                                    mz_tol=ms1id_mz_tol,
                                    ion_mode=ion_mode,
                                    score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak,
-                                   min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
+                                   min_prec_int_in_ms1=ms1id_min_prec_sn_ratio * actual_mass_detect_int_tol,
                                    max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                    save=True,
                                    save_dir=result_folder)
@@ -69,4 +69,4 @@ if __name__ == '__main__':
                                   mass_detect_int_tol=None, max_mz=None, mz_bin_size=0.01,
                                   min_overlap=5, min_correlation=0.9, min_cluster_size=5,
                                   ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                                  ms1id_min_prec_int_in_ms1=0, ms1id_max_prec_rel_int_in_other_ms2=0.05)
+                                  ms1id_min_prec_sn_ratio=3, ms1id_max_prec_rel_int_in_other_ms2=0.05)

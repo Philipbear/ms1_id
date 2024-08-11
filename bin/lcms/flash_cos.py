@@ -398,18 +398,16 @@ class FlashCosCore:
         peak_data = np.zeros(total_peaks_num, dtype=dtype_peak_data)
         peak_idx = 0
 
+        print('Number of spectra:', len(all_spectra_list))
+
         # Adding the precursor m/z and peaks information to the peak data array.
         for idx, spectrum in enumerate(all_spectra_list):
             precursor_mz, peaks = spectrum["precursor_mz"], spectrum["peaks"]
-            print('idx:', idx)
-            print('sum:', np.sum(np.square(peaks[:, 1])))
 
-            if abs(np.sum(np.square(peaks[:, 1])) - 1) >= 1e-4:
-                print('idx:', idx)
-                print('peaks:', peaks)
-                print('precursor_mz:', precursor_mz)
-                print('sum:', np.sum(np.square(peaks[:, 1])))
-                print('spectrum:', spectrum)
+            print('idx:', idx)
+            print('precursor_mz:', precursor_mz)
+            print('peaks:', peaks)
+            print('sum:', np.sum(np.square(peaks[:, 1])))
 
             # Check the peaks array.
             assert peaks.ndim == 2, "The peaks array should be a 2D numpy array."

@@ -249,7 +249,7 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
         sorted_intensities = np.array(spec.intensities)[sorted_indices]
 
         matching_result = search_eng.search(
-            precursor_mz=0.0,
+            precursor_mz=2000.0,
             peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,

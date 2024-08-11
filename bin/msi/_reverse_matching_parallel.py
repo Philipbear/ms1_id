@@ -188,7 +188,7 @@ def _process_chunk(args):
         sorted_intensities = np.array(spec.intensities)[sorted_indices]
 
         matching_result = search_eng.search(
-            precursor_mz=0.0,
+            precursor_mz=2000.0,
             peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
