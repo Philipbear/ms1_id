@@ -842,6 +842,13 @@ class FlashCos:
                                                                peak_intensity_power=self.peak_intensity_power,
                                                                peak_scale=peak_scale,
                                                                peak_scale_k=peak_scale_k)
+
+                if abs(np.sum(np.square(spec["peaks"][:, 1])) - 1) > 1e-4:
+                    print(spec['precursor_mz'])
+                    print(spec['peaks'])
+                    print(spec)
+                    raise ValueError("The peaks array should be normalized to sum to 1.")
+
             if len(spec["peaks"]) > 0:
                 all_spectra_list.append(spec)
                 all_metadata_list.append(pickle.dumps(spec))
