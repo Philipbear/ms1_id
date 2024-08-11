@@ -11,7 +11,7 @@ from typing import Union, List
 
 import numpy as np
 
-from bin.lcms._preprocess_ms2 import preprocess_ms2
+from _preprocess_ms2 import preprocess_ms2
 
 np.seterr(divide='ignore', invalid='ignore')
 

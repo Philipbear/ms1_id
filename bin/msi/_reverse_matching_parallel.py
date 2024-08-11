@@ -7,7 +7,7 @@ from ms_entropy import read_one_spectrum
 from tqdm import tqdm
 
 from _utils_imaging import SpecAnnotation
-from bin.msi.flash_cos import FlashCos
+from flash_cos import FlashCos
 
 
 def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5, peak_scale_k=8.0):

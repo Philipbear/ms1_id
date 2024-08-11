@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from bin.lcms._utils import AlignedMS1Annotation
+from _utils import AlignedMS1Annotation
 
 
 def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):

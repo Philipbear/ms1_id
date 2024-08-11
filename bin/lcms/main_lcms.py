@@ -1,5 +1,5 @@
-from bin.lcms.ms1id_lcms_single import main_workflow_single
-from bin.lcms.ms1id_lcms_batch import main_workflow
+from ms1id_lcms_single import main_workflow_single
+from ms1id_lcms_batch import main_workflow
 import os
 import concurrent.futures
 from functools import partial

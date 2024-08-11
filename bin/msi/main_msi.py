@@ -1,4 +1,4 @@
-from bin.msi.ms1id_msi_workflow import ms1id_imaging_single_workflow
+from ms1id_msi_workflow import ms1id_imaging_single_workflow
 import os
 
 

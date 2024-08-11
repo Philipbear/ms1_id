@@ -9,7 +9,7 @@ import pickle
 # import networkx as nx
 import numpy as np
 
-from bin.lcms._utils import PseudoMS1
+from _utils import PseudoMS1
 
 
 def retrieve_pseudo_ms1_spectra(config):
