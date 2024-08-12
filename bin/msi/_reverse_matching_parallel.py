@@ -72,7 +72,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                       mz_tol=0.01,
-                      score_cutoff=0.6, min_matched_peak=4,
+                      score_cutoff=0.6, min_matched_peak=4, peak_scale_k=4.0,
                       ion_mode=None,
                       save=False, save_dir=None,
                       chunk_size=1000):
@@ -82,12 +82,10 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
     :param ms2_library: path to the pickle file, indexed library
     :param n_processes: number of processes to use
     :param mz_tol: mz tolerance in Da, for rev cos matching
-    :param min_prec_int_in_ms1: minimum required precursor intensity in MS1 spectrum
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
+    :param peak_scale_k: for rev cos, peak scaling factor
     :param ion_mode: str, ion mode. If None, all ion modes are considered
-    :param refine_results: bool, whether to refine the results
-    :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
     :param save: bool, whether to save the results
     :param save_dir: str, directory to save the results
     :param chunk_size: int, number of spectra to process in each parallel task
@@ -113,6 +111,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
                                          min_matched_peak=min_matched_peak,
+                                         peak_scale_k=peak_scale_k,
                                          chunk_size=chunk_size)
 
     if save:
@@ -127,7 +126,9 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int
                            mz_tol: float = 0.02,
                            ion_mode: str = None,
                            score_cutoff: float = 0.7,
-                           min_matched_peak: int = 3, chunk_size: int = 500) -> List:
+                           min_matched_peak: int = 3,
+                           peak_scale_k: float = 4.0,
+                           chunk_size: int = 500) -> List:
     """
     Perform MS1 annotation using parallel open search for the entire spectrum, with filters similar to identity search.
 
@@ -151,7 +152,7 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int
     chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
 
     # Prepare arguments for parallel processing
-    args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak)
+    args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, peak_scale_k)
                  for chunk in chunks]
 
     # Use multiprocessing to process chunks in parallel
@@ -163,7 +164,7 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int
 
 
 def _process_chunk(args):
-    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak = args
+    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, peak_scale_k = args
 
     for spec in chunk:
         matching_result = search_eng.search(
@@ -175,6 +176,7 @@ def _process_chunk(args):
             precursor_ions_removal_da=0.5,
             noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.02,
+            peak_scale_k=peak_scale_k,
             reverse=True
         )
 

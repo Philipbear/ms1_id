@@ -767,7 +767,7 @@ class FlashCos:
                precursor_ions_removal_da: Union[float, None] = 1.6,
                noise_threshold=0.01,
                min_ms2_difference_in_da: float = 0.05,
-               peak_scale_k: float = 1.0,
+               peak_scale_k: float = 4.0,
                reverse: bool = True):
         """
         Run the Flash search for the query spectrum.
