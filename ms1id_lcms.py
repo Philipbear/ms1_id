@@ -3,12 +3,13 @@ from bin.lcms.main_lcms import ms1id_batch_mode
 if __name__ == '__main__':
 
     project_path = '../../data/MSV000087562/C18_neg_iHMPpool'
-    msms_library_path = '../../data/gnps.pkl'
+    ms1id_library_path = '../../data/gnps_k10.pkl'
+    ms2id_library_path = '../../data/gnps.pkl'
 
     # mzML/mzXML files should be in 'project_path/data'
 
     ms1id_batch_mode(project_path=project_path,
-                     msms_library_path=msms_library_path,
+                     ms1id_library_path=ms1id_library_path, ms2id_library_path=ms2id_library_path,
                      sample_dir='data', parallel=True,
                      ms1_id=True, ms2_id=False,
                      cpu_ratio=0.8,

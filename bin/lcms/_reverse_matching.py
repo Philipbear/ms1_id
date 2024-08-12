@@ -248,7 +248,7 @@ if __name__ == "__main__":
     # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
 
     prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
-    # prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
     # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
 
     # with open('../../data/gnps.pkl', 'rb') as file:

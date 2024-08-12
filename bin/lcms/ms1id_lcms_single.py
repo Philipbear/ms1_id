@@ -22,7 +22,7 @@ tof_mass_detect_int_tol = 500
 
 
 def main_workflow_single(file_path,
-                         msms_library_path,
+                         ms1id_library_path=None, ms2id_library_path=None,
                          ms1_id=True, ms2_id=False,
                          mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
                          peak_cor_rt_tol=0.015,
@@ -41,7 +41,7 @@ def main_workflow_single(file_path,
         raise ValueError("The file is not centroided.")
 
     # init a new config object
-    config = init_config_single(ms_type, ion_mode, msms_library_path,
+    config = init_config_single(ms_type, ion_mode, ms1id_library_path, ms2id_library_path,
                                 mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
                                 mass_detect_int_tol=mass_detect_int_tol)
 
@@ -70,7 +70,7 @@ def main_workflow_single(file_path,
 
     # generate pseudo ms1 spec for ms1_id
     pseudo_ms1_spectra = []
-    if ms1_id and config.msms_library is not None:
+    if ms1_id and config.ms1id_library_path is not None:
         print("MS1 ID annotation...")
 
         # calc peak-peak correlations for feature groups and output
@@ -86,7 +86,7 @@ def main_workflow_single(file_path,
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
-        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
+        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.ms1id_library_path, mz_tol=mz_tol_ms1,
                                                ion_mode=ion_mode, rt_tol=peak_cor_rt_tol,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
@@ -95,7 +95,7 @@ def main_workflow_single(file_path,
         # write_ms1_id_results(pseudo_ms1_spectra, save=True, out_dir=os.path.dirname(file_path))
 
     # annotate MS2 spectra
-    if ms2_id and config.msms_library is not None:
+    if ms2_id and config.ms2id_library_path is not None:
         print("Annotating MS2 spectra...")
         annotate_rois(d, ms2id_score_cutoff=ms2id_score_cutoff,
                       ms2id_min_matched_peak=ms2id_min_matched_peak,
@@ -114,7 +114,7 @@ def main_workflow_single(file_path,
     return d
 
 
-def init_config_single(ms_type, ion_mode, msms_library_path,
+def init_config_single(ms_type, ion_mode, ms1id_library_path, ms2id_library_path,
                        mz_tol_ms1=0.01, mz_tol_ms2=0.015,
                        mass_detect_int_tol=None):
     # init
@@ -161,7 +161,8 @@ def init_config_single(ms_type, ion_mode, msms_library_path,
     config.min_scan_num_for_alignment = 5  # Minimum scan number a feature to be aligned, default is 6
 
     # Parameters for feature annotation
-    config.msms_library = msms_library_path  # Path to the MS/MS library (.msp or .pickle), character string
+    config.ms1id_library_path = ms1id_library_path  # Path to the MS1 library (.pkl), character string
+    config.ms2id_library_path = ms2id_library_path  # Path to the MS/MS library (.pkl), character string
     config.ms2_sim_tol = 0.7  # MS2 similarity tolerance, default is 0.7
 
     # Parameters for normalization

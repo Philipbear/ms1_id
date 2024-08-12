@@ -19,7 +19,7 @@ def feature_annotation(features, config, num=5):
     """
 
     # load the MS/MS database
-    search_eng = pickle.load(open(config.msms_library, 'rb'))
+    search_eng = pickle.load(open(config.ms2id_library_path, 'rb'))
 
     ms2_tol = max(config.mz_tol_ms2, 0.02)  # indexed library mz_tol is 0.02
 
@@ -99,7 +99,7 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, ion_mode=
     """
 
     # load the MS/MS database
-    search_eng = pickle.load(open(d.params.msms_library, 'rb'))
+    search_eng = pickle.load(open(d.params.ms2id_library_path, 'rb'))
 
     ms2_tol = max(d.params.mz_tol_ms2, 0.02)  # indexed library mz_tol is 0.02
 

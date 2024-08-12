@@ -25,7 +25,8 @@ orbitrap_mass_detect_int_tol = 10000
 tof_mass_detect_int_tol = 500
 
 
-def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', parallel=True,
+def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path=None,
+                  sample_dir='data', parallel=True,
                   ms1_id=True, ms2_id=False,
                   cpu_ratio=0.9,
                   run_rt_correction=True, run_normalization=False,
@@ -39,7 +40,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
     """
     Main workflow for MS1_ID.
     :param project_path: path to the project directory
-    :param msms_library_path: path to the MS/MS library
+    :param ms1id_library_path: path to the MS1 ID library
+    :param ms2id_library_path: path to the MS2 ID library
     :param parallel: whether to run in parallel
     :param ms1_id: whether to perform MS1 ID
     :param ms2_id: whether to perform MS2 ID
@@ -66,7 +68,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
     """
 
     # init a new config object
-    config = init_config(project_path, msms_library_path, sample_dir,
+    config = init_config(project_path, ms1id_library_path, ms2id_library_path,
+                         sample_dir,
                          ms1_id=ms1_id, ms2_id=ms2_id,
                          run_rt_correction=run_rt_correction, run_normalization=run_normalization,
                          mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2, mass_detect_int_tol=mass_detect_int_tol,
@@ -123,7 +126,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
     features = gap_filling(features, config)
 
     # annotation (using MS2 library)
-    if ms2_id and config.msms_library is not None:
+    if ms2_id and config.ms2id_library_path is not None:
         print("Annotating MS2...")
         features = feature_annotation(features, config)
 
@@ -143,7 +146,8 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
 
 
 def init_config(path=None,
-                msms_library_path=None, sample_dir='data',
+                ms1id_library_path=None, ms2id_library_path=None,
+                sample_dir='data',
                 ms1_id=True, ms2_id=False,
                 run_rt_correction=True, run_normalization=False,
                 mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
@@ -238,7 +242,8 @@ def init_config(path=None,
     config.min_scan_num_for_alignment = 10  # Minimum scan number a feature to be aligned, default is 6
 
     # Parameters for feature annotation
-    config.msms_library = msms_library_path  # Path to the MS/MS library (.msp or .pickle), character string
+    config.ms1id_library_path = ms1id_library_path
+    config.ms2id_library_path = ms2id_library_path
     config.ms2_sim_tol = 0.7  # MS2 similarity tolerance, default is 0.7
 
     # Parameters for normalization
@@ -289,7 +294,7 @@ def feature_detection(file_name, params=None,
         params.set_default(ms_type, ion_mode)
 
     if ms2_library_path is not None:
-        params.msms_library = ms2_library_path
+        params.ms2id_library_path = ms2_library_path
 
     print(f'Reading raw data from {file_name}...')
     # read raw data
@@ -333,7 +338,7 @@ def feature_detection(file_name, params=None,
 
         print(f"Performing MS1 ID annotation for {file_name}...")
         # perform rev cos search
-        ms1_id_annotation(pseudo_ms1_spectra, params.msms_library,
+        ms1_id_annotation(pseudo_ms1_spectra, params.ms1id_library_path,
                           mz_tol=params.mz_tol_ms1,
                           ion_mode=params.ion_mode,
                           rt_tol=params.peak_cor_rt_tol,

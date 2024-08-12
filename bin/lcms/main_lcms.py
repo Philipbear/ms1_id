@@ -5,7 +5,7 @@ import concurrent.futures
 from functools import partial
 
 
-def ms1id_single_file(file_path, library_path,
+def ms1id_single_file(file_path, ms1id_library_path=None, ms2id_library_path=None,
                       ms1_id=True, ms2_id=False,
                       mz_tol_ms1=0.01, mz_tol_ms2=0.015,
                       mass_detect_int_tol=10000,
@@ -20,7 +20,7 @@ def ms1id_single_file(file_path, library_path,
 
     main_workflow_single(
         file_path=file_path,
-        msms_library_path=library_path,
+        ms1id_library_path=ms1id_library_path, ms2id_library_path=ms2id_library_path,
         ms1_id=ms1_id, ms2_id=ms2_id,
         mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
         mass_detect_int_tol=mass_detect_int_tol,
@@ -34,7 +34,7 @@ def ms1id_single_file(file_path, library_path,
     return
 
 
-def ms1id_single_file_batch(data_dir, library_path,
+def ms1id_single_file_batch(data_dir, ms1id_library_path=None, ms2id_library_path=None,
                             parallel=True, num_processes=None,
                             ms1_id=True, ms2_id=False,
                             mz_tol_ms1=0.01, mz_tol_ms2=0.015,
@@ -60,7 +60,8 @@ def ms1id_single_file_batch(data_dir, library_path,
             os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '_feature_table.tsv'))]
 
     # Create a partial function with the library_path argument
-    process_file = partial(ms1id_single_file, library_path=library_path,
+    process_file = partial(ms1id_single_file,
+                           ms1id_library_path=ms1id_library_path, ms2id_library_path=ms2id_library_path,
                            ms1_id=ms1_id, ms2_id=ms2_id,
                            mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
                            mass_detect_int_tol=mass_detect_int_tol,
@@ -90,7 +91,7 @@ def ms1id_single_file_batch(data_dir, library_path,
         # Process each file sequentially
         for file in files:
             ms1id_single_file(file_path=file,
-                              library_path=library_path,
+                              ms1id_library_path=ms1id_library_path, ms2id_library_path=ms2id_library_path,
                               ms1_id=ms1_id, ms2_id=ms2_id,
                               mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
                               mass_detect_int_tol=mass_detect_int_tol,
@@ -104,7 +105,8 @@ def ms1id_single_file_batch(data_dir, library_path,
     return
 
 
-def ms1id_batch_mode(project_path=None, msms_library_path=None, sample_dir='data', parallel=True,
+def ms1id_batch_mode(project_path=None, ms1id_library_path=None, ms2id_library_path=None,
+                     sample_dir='data', parallel=True,
                      ms1_id=True, ms2_id=False,
                      cpu_ratio=0.8,
                      run_rt_correction=True, run_normalization=True,
@@ -115,7 +117,9 @@ def ms1id_batch_mode(project_path=None, msms_library_path=None, sample_dir='data
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3):
-    main_workflow(project_path=project_path, msms_library_path=msms_library_path, sample_dir=sample_dir,
+    main_workflow(project_path=project_path, ms1id_library_path=ms1id_library_path,
+                  ms2id_library_path=ms2id_library_path,
+                  sample_dir=sample_dir,
                   parallel=parallel, ms1_id=ms1_id, ms2_id=ms2_id,
                   cpu_ratio=cpu_ratio,
                   run_rt_correction=run_rt_correction, run_normalization=run_normalization,
