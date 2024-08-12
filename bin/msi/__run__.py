@@ -21,7 +21,7 @@ def exp_1(ms2db='gnps'):
 # 2. whole mouse body data
 def exp_2(ms2db='gnps'):
     ms1id_single_file_batch(file_dir='../../imaging/mouse_body',
-                            msms_library_path=f'../../data/{ms2db}_k10.pkl',
+                            msms_library_path=f'../../data/{ms2db}.pkl',
                             n_processes=48,
                             mass_detect_int_tol=5e5, max_mz=None,
                             mz_bin_size=0.01,
@@ -32,4 +32,4 @@ def exp_2(ms2db='gnps'):
 ##########################################
 if __name__ == '__main__':
     # exp_1('gnps')
-    exp_2('gnps')
+    exp_2('gnps_k10')
