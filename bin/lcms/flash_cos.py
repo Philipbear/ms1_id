@@ -675,7 +675,7 @@ class FlashCos:
                     np.zeros(self.similarity_search.total_spectra_num, dtype=np.float32),
                     np.zeros(self.similarity_search.total_spectra_num, dtype=np.float32))
         else:
-            return self.similarity_search.search(method="open", peaks=peaks,
+            return self.similarity_search.search(method="open", peaks=peaks, precursor_mz=precursor_mz,
                                                  ms2_tolerance_in_da=ms2_tolerance_in_da,
                                                  search_type=1, search_spectra_idx_min=spectra_idx_min,
                                                  search_spectra_idx_max=spectra_idx_max,
@@ -987,6 +987,7 @@ if __name__ == "__main__":
     # cosine between two vectors
     def scale(peaks, prec_mz):
         scaling_factor = peaks[:, 0] / prec_mz * 4
+        print('scaling_factor:', scaling_factor)
         return peaks[:, 1] / np.exp(scaling_factor)
 
 
@@ -1024,27 +1025,34 @@ if __name__ == "__main__":
                            min_ms2_difference_in_da=ms2_tol * 2.2,
                            clean_spectra=True)
 
-    peaks=np.array([[100.0, 100], [101.0, 30], [202.0, 4.0], [203.0, 3.0], [204.0, 10], [205.0, 0]])
+    peaks = np.array([[100.0, 100], [101.0, 30], [202.0, 4.0], [203.0, 3.0], [204.0, 10], [205.0, 0]])
+    _precursor_mz = 250.0
 
     print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), np.array([100, 30, 4, 3, 10, 0])))
 
-    print(scale(peaks, 300.0))
+    print(scale(peaks, _precursor_mz))
 
-    print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), scale(peaks, 300.0)))
+    print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), scale(peaks, _precursor_mz)))
 
+    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 0, 0, 20])), np.sqrt(scale(peaks, _precursor_mz))))
+
+    print('reverse')
+    _peaks = np.array([[100.0, 100], [101.0, 30], [202.0, 4.0], [205.0, 0]])
+    print(scale(_peaks, _precursor_mz))
+    print(cosine_similarity(np.array([100, 0.5, 20, 20]), scale(_peaks, _precursor_mz)))
     print(cosine_similarity(np.array([100, 0.5, 20, 20]), np.array([100, 30, 4, 0])))
 
     search_result = search_eng.search(
-        precursor_mz=300.0,
+        precursor_mz=_precursor_mz,
         peaks=peaks,
         ms1_tolerance_in_da=0.02,
         ms2_tolerance_in_da=ms2_tol,
-        method="open",  # "identity", "open", "neutral_loss", "hybrid", "all", or list of the above
+        method="identity",  # "identity", "open", "neutral_loss", "hybrid", "all", or list of the above
         precursor_ions_removal_da=0.5,
         noise_threshold=0.0,
         min_ms2_difference_in_da=ms2_tol * 2.2,
         peak_scale_k=4.0,
-        reverse=False
+        reverse=True
     )
 
     # score_arr, matched_peak_arr, spec_usage_arr, scaled_score_arr = search_result['identity_search']
