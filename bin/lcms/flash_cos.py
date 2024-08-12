@@ -404,11 +404,6 @@ class FlashCosCore:
         for idx, spectrum in enumerate(all_spectra_list):
             precursor_mz, peaks = spectrum["precursor_mz"], spectrum["peaks"]
 
-            print('idx:', idx)
-            print('precursor_mz:', precursor_mz)
-            print('peaks:', peaks)
-            print('sum:', np.sum(np.square(peaks[:, 1])))
-
             # Check the peaks array.
             assert peaks.ndim == 2, "The peaks array should be a 2D numpy array."
             assert peaks.shape[1] == 2, "The peaks array should be a 2D numpy array with the shape of [n, 2]."
