@@ -8,7 +8,7 @@ from _utils import SpecAnnotation
 from flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -74,7 +74,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
-                      ion_mode=None,
+                      ion_mode=None, refine=True,
                       rt_tol=0.025, max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_path=None):
     """
@@ -98,9 +98,10 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                                          min_matched_peak=min_matched_peak)
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
-    ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, rt_tol=rt_tol,
-                                        mz_tol=mz_tol,
-                                        max_prec_rel_int=max_prec_rel_int_in_other_ms2)
+    if refine:
+        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, rt_tol=rt_tol,
+                                            mz_tol=mz_tol,
+                                            max_prec_rel_int=max_prec_rel_int_in_other_ms2)
 
     if save and save_path is not None:
         with open(save_path, 'wb') as file:
@@ -242,15 +243,15 @@ def refine_ms1_id_results(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
-    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
-    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
+    # prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
+    # prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
+    # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
 
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5)
-    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5)
-    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
+    # prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
+    # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
 
-    # with open('../../data/nist20.pkl', 'rb') as file:
+    # with open('../../data/gnps.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)
     #
     # print(search_eng)

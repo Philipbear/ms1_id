@@ -10,7 +10,7 @@ from _utils_imaging import SpecAnnotation
 from flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file

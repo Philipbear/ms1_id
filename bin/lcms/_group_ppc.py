@@ -79,7 +79,7 @@ def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
         cluster_indices = new_ppc_matrix[i].nonzero()[1]
         cluster_scores = new_ppc_matrix[i, cluster_indices].toarray().flatten()
         cluster_indices = cluster_indices[(cluster_scores >= min_ppc) &
-                                          (np.array([sorted_rois[idx].mz for idx in cluster_indices]) < t_mz)]
+                                          (np.array([sorted_rois[idx].mz for idx in cluster_indices]) <= t_mz + 1e-2)]
 
         if len(cluster_indices) >= min_cluster_size:
             # Form a pseudo MS1 spectrum
