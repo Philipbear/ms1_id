@@ -8,7 +8,7 @@ from _utils import SpecAnnotation
 from flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -49,6 +49,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
     print('initializing search engine')
     search_engine = FlashCos(max_ms2_tolerance_in_da=mz_tol * 1.005,
                              mz_index_step=0.0001,
+                             peak_scale_k=peak_scale_k,
                              peak_intensity_power=peak_intensity_power)
     print('building index')
     search_engine.build_index(db,
@@ -58,7 +59,10 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
                               min_ms2_difference_in_da=mz_tol * 2.02,
                               clean_spectra=True)
 
-    new_path = os.path.splitext(ms2db)[0] + '.pkl'
+    if peak_scale_k is None:
+        new_path = os.path.splitext(ms2db)[0] + '.pkl'
+    else:
+        new_path = os.path.splitext(ms2db)[0] + f'_k{peak_scale_k}.pkl'
     # save as pickle
     with open(new_path, 'wb') as file:
         # Dump the data into the file
@@ -70,9 +74,8 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
-                      ion_mode=None, peak_scale_k=8.0,
-                      rt_tol=0.025,
-                      max_prec_rel_int_in_other_ms2=0.05,
+                      ion_mode=None,
+                      rt_tol=0.025, max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_path=None):
     """
     Perform ms1 annotation
@@ -92,8 +95,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
-                                         min_matched_peak=min_matched_peak,
-                                         peak_scale_k=peak_scale_k)
+                                         min_matched_peak=min_matched_peak)
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, rt_tol=rt_tol,
@@ -109,8 +111,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
 
 def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
                            ion_mode: str = None, score_cutoff: float = 0.7,
-                           min_matched_peak: int = 3,
-                           peak_scale_k: float = 4.0):
+                           min_matched_peak: int = 3):
     """
     Perform MS1 annotation using open search for the entire spectrum, with filters similar to identity search.
 
@@ -143,17 +144,13 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
             precursor_ions_removal_da=0.5,
             noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.02,
-            peak_scale_k=peak_scale_k,
             reverse=True
         )
 
-        score_arr, matched_peak_arr, spec_usage_arr, scaled_score_arr = matching_result['identity_search']
+        score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
 
         # filter by matching cutoffs, including scaled score
-        v = np.where(np.logical_and(
-            np.logical_or(score_arr >= score_cutoff, scaled_score_arr >= score_cutoff),
-            matched_peak_arr >= min_matched_peak
-        ))[0]
+        v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
 
         all_matches = []
         for idx in v:
@@ -163,20 +160,18 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
             if ion_mode is not None and ion_mode != this_ion_mode:
                 continue
 
-            all_matches.append((idx, score_arr[idx], scaled_score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
+            all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
 
         if all_matches:
             spec.annotated = True
             spec.annotation_ls = []
-            for idx, score, scaled_score, matched_peaks, spectral_usage in all_matches:
+            for idx, score, matched_peaks, spectral_usage in all_matches:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
-                annotation = SpecAnnotation(idx, max(score, scaled_score), matched_peaks)
+                annotation = SpecAnnotation(idx, score, matched_peaks)
                 annotation.spectral_usage = spectral_usage
 
-                # Add '_scaled' to the name if only the scaled score is beyond the cutoff
-                name_suffix = '_scaled' if scaled_score >= score_cutoff > score else ''
-                annotation.name = (matched.get('name', '') + name_suffix) or None
+                annotation.name = matched.get('name', '')
                 annotation.precursor_mz = matched.get('precursor_mz')
                 annotation.precursor_type = matched.get('precursor_type', None)
                 annotation.formula = matched.get('formula', None)
@@ -186,9 +181,6 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
                 annotation.peaks = matched.get('peaks', None)
                 annotation.db_id = matched.get('comment', None)
                 annotation.matched_spec = matched.get('peaks', None)
-
-                # Add the scaled score as a new attribute
-                # annotation.scaled_score = scaled_score
 
                 spec.annotation_ls.append(annotation)
 
@@ -250,9 +242,13 @@ def refine_ms1_id_results(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int
 
 
 if __name__ == "__main__":
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02)
-    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02)
-    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
+
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=8, peak_intensity_power=0.5)
 
     # with open('../../data/nist20.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)

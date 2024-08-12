@@ -18,6 +18,7 @@ np.seterr(divide='ignore', invalid='ignore')
 
 class FlashCosCore:
     def __init__(self, path_data=None, max_ms2_tolerance_in_da=0.024, mz_index_step=0.0001,
+                 peak_scale_k=8.0,
                  peak_intensity_power=1.0):
         """
         Initialize the search core. for CPU only.
@@ -29,6 +30,7 @@ class FlashCosCore:
         self.mz_index_step = mz_index_step
         self._init_for_multiprocessing = False
         self.max_ms2_tolerance_in_da = max_ms2_tolerance_in_da
+        self.peak_scale_k = peak_scale_k
         self.peak_intensity_power = peak_intensity_power
 
         self.total_spectra_num = 0
@@ -72,7 +74,6 @@ class FlashCosCore:
             search_type=0,
             search_spectra_idx_min=0,
             search_spectra_idx_max=0,
-            peak_scale_k=1.0,
             reverse=False
     ):
         """
@@ -133,18 +134,11 @@ class FlashCosCore:
             library_spec_idx = all_nl_spec_idx
             peaks[:, 0] = precursor_mz - peaks[:, 0]
 
-        # Prepare scaled peaks for query spectra
-        _prec_mz = precursor_mz if precursor_mz is not None and precursor_mz > 0 else np.max(peaks[:, 0])
-        scaling_factor = peaks[:, 0] / _prec_mz * peak_scale_k
-        scaled_peaks = peaks.copy()
-        scaled_peaks[:, 1] = scaled_peaks[:, 1] / np.exp(scaling_factor)
-
         # Start searching
         # Calculate the similarity for this matched peak
         similarity_arr = np.zeros(self.total_spectra_num, dtype=np.float32)
         matched_cnt_arr = np.zeros(self.total_spectra_num, dtype=np.uint32)
         spec_usage_arr = np.zeros(self.total_spectra_num, dtype=np.float32)  # sum(matched peaks intensity) / sum(query peaks intensity)
-        scaled_similarity_arr = np.zeros(self.total_spectra_num, dtype=np.float32)
 
         # a large empty 2D array to record matched peak pairs in query spectrum
         match_table_q = np.zeros((peaks.shape[0], self.total_spectra_num), dtype=np.float32)
@@ -175,10 +169,6 @@ class FlashCosCore:
             # calculate spectral usage
             spec_usage_arr = np.sum(match_table_q, axis=0) / np.sum(peaks[:, 1])
 
-            scaled_match_table_q = match_table_q / np.exp(scaling_factor[:, np.newaxis])
-            scaled_match_table_q = np.power(scaled_match_table_q, self.peak_intensity_power)
-            scaled_peaks[:, 1] = np.power(scaled_peaks[:, 1], self.peak_intensity_power)
-
             # transform query spectrum intensity in each column
             match_table_q = np.power(match_table_q, self.peak_intensity_power)
             peaks[:, 1] = np.power(peaks[:, 1], self.peak_intensity_power)
@@ -188,17 +178,10 @@ class FlashCosCore:
                 # calculate similarity
                 similarity_arr = np.sum(match_table_q * match_table_r, axis=0)
 
-                # Calculate scaled similarity
-                scaled_match_table_q = scaled_match_table_q / np.sqrt(np.sum(np.square(scaled_match_table_q), axis=0))
-                scaled_similarity_arr = np.sum(scaled_match_table_q * match_table_r, axis=0)
             else:
                 match_table_q = match_table_q / np.sqrt(np.sum(np.square(peaks[:, 1]), axis=0))
                 # calculate similarity
                 similarity_arr = np.sum(match_table_q * match_table_r, axis=0)
-
-                # Calculate scaled similarity
-                scaled_match_table_q = scaled_match_table_q / np.sqrt(np.sum(np.square(scaled_peaks[:, 1]), axis=0))
-                scaled_similarity_arr = np.sum(scaled_match_table_q * match_table_r, axis=0)
 
             # count matched peaks
             matched_cnt_arr = np.sum(match_table_q > 0, axis=0)
@@ -209,10 +192,6 @@ class FlashCosCore:
             # calculate spectral usage
             part_spectral_usage = np.sum(match_table_q, axis=0) / np.sum(peaks[:, 1])
 
-            scaled_match_table_q = match_table_q / np.exp(scaling_factor[:, np.newaxis])
-            scaled_match_table_q = np.power(scaled_match_table_q, self.peak_intensity_power)
-            scaled_peaks[:, 1] = np.power(scaled_peaks[:, 1], self.peak_intensity_power)
-
             # normalize query spectrum intensity in each column
             match_table_q = np.power(match_table_q, self.peak_intensity_power)
             peaks[:, 1] = np.power(peaks[:, 1], self.peak_intensity_power)
@@ -222,17 +201,11 @@ class FlashCosCore:
                 # calculate similarity
                 part_similarity = np.sum(match_table_q_rev * match_table_r, axis=0)
 
-                # Calculate scaled similarity
-                scaled_match_table_q_rev = scaled_match_table_q / np.sqrt(np.sum(np.square(scaled_match_table_q), axis=0))
-                part_similarity_scaled = np.sum(scaled_match_table_q_rev * match_table_r, axis=0)
             else:
                 match_table_q = match_table_q / np.sqrt(np.sum(np.square(peaks[:, 1])))
                 # calculate similarity
                 part_similarity = np.sum(match_table_q * match_table_r, axis=0)
 
-                # Calculate scaled similarity
-                scaled_match_table_q = scaled_match_table_q / np.sqrt(np.sum(np.square(scaled_peaks[:, 1])))
-                part_similarity_scaled = np.sum(scaled_match_table_q * match_table_r, axis=0)
             # count matched peaks
             part_matched_cnt = np.sum(match_table_q > 0, axis=0)
 
@@ -240,14 +213,12 @@ class FlashCosCore:
             similarity_arr[search_spectra_idx_min:search_spectra_idx_max] = part_similarity
             matched_cnt_arr[search_spectra_idx_min:search_spectra_idx_max] = part_matched_cnt
             spec_usage_arr[search_spectra_idx_min:search_spectra_idx_max] = part_spectral_usage
-            scaled_similarity_arr[search_spectra_idx_min:search_spectra_idx_max] = part_similarity_scaled
 
         del match_table_q, match_table_r
 
-        return similarity_arr, matched_cnt_arr, spec_usage_arr, scaled_similarity_arr
+        return similarity_arr, matched_cnt_arr, spec_usage_arr
 
-    def search_hybrid(self, precursor_mz=None, peaks=None, ms2_tolerance_in_da=0.02,
-                      peak_scale_k=1.0, reverse=False):
+    def search_hybrid(self, precursor_mz=None, peaks=None, ms2_tolerance_in_da=0.02, reverse=False):
         """
         Perform the hybrid search for the MS/MS spectra.
 
@@ -284,11 +255,6 @@ class FlashCosCore:
 
         # Prepare the query spectrum
         peaks = self._preprocess_peaks(peaks)
-
-        _prec_mz = precursor_mz if precursor_mz > 0 else np.max(peaks[:, 0])
-        scaling_factor = peaks[:, 0] / _prec_mz * peak_scale_k
-        scaled_peaks = peaks.copy()
-        scaled_peaks[:, 1] = scaled_peaks[:, 1] / np.exp(scaling_factor)
 
         # Go through all peak in the spectrum and determine the mz index range
         product_peak_match_idx_min = np.zeros(peaks.shape[0], dtype=np.uint64)
@@ -367,11 +333,6 @@ class FlashCosCore:
         # calculate spectral usage
         spec_usage_arr = np.sum(match_table_q_all, axis=0) / np.sum(peaks[:, 1])
 
-        # calculate scaled similarity
-        scaled_match_table_q_all = match_table_q_all / np.exp(scaling_factor[:, np.newaxis])
-        scaled_match_table_q_all = np.power(scaled_match_table_q_all, self.peak_intensity_power)
-        scaled_peaks[:, 1] = np.power(scaled_peaks[:, 1], self.peak_intensity_power)
-
         # normalize query spectrum intensity in each column
         match_table_q_all = np.power(match_table_q_all, self.peak_intensity_power)
         peaks[:, 1] = np.power(peaks[:, 1], self.peak_intensity_power)
@@ -381,21 +342,15 @@ class FlashCosCore:
             # calculate similarity
             similarity_arr = np.sum(match_table_q_all_rev * match_table_r_all, axis=0)
 
-            # Calculate scaled similarity
-            scaled_match_table_q_all_rev = scaled_match_table_q_all / np.sqrt(np.sum(np.square(scaled_match_table_q_all), axis=0))
-            scaled_similarity_arr = np.sum(scaled_match_table_q_all_rev * match_table_r_all, axis=0)
         else:
             match_table_q_all = match_table_q_all / np.sqrt(np.sum(np.square(peaks[:, 1]), axis=0))
             # calculate similarity
             similarity_arr = np.sum(match_table_q_all * match_table_r_all, axis=0)
 
-            # Calculate scaled similarity
-            scaled_match_table_q_all = scaled_match_table_q_all / np.sqrt(np.sum(np.square(scaled_peaks[:, 1]), axis=0))
-            scaled_similarity_arr = np.sum(scaled_match_table_q_all * match_table_r_all, axis=0)
         # count matched peaks
         matched_cnt_arr = np.sum(match_table_q_all > 0, axis=0)
 
-        return similarity_arr, matched_cnt_arr, spec_usage_arr, scaled_similarity_arr
+        return similarity_arr, matched_cnt_arr, spec_usage_arr
 
     def _remove_duplicate_with_cpu(self, array_1, array_2, max_element):
         if len(array_1) + len(array_2) < 4_000_000:
@@ -642,16 +597,19 @@ def _read_data_from_file(file_data, item_start, item_end):
 
 class FlashCos:
     def __init__(self, max_ms2_tolerance_in_da=0.024, mz_index_step=0.0001, path_data=None,
+                 peak_scale_k=8.0,
                  peak_intensity_power=1.0):
         self.precursor_mz_array = np.zeros(0, dtype=np.float32)
+        self.peak_scale_k = peak_scale_k
         self.peak_intensity_power = peak_intensity_power
 
         self.similarity_search = FlashCosCore(path_data=path_data,
                                               max_ms2_tolerance_in_da=max_ms2_tolerance_in_da,
                                               mz_index_step=mz_index_step,
+                                              peak_scale_k=peak_scale_k,
                                               peak_intensity_power=peak_intensity_power)
 
-    def identity_search(self, precursor_mz, peaks, ms1_tolerance_in_da, ms2_tolerance_in_da, peak_scale_k,
+    def identity_search(self, precursor_mz, peaks, ms1_tolerance_in_da, ms2_tolerance_in_da,
                         reverse, **kwargs):
         """
         Run the identity search, the query spectrum should be preprocessed.
@@ -679,10 +637,9 @@ class FlashCos:
                                                  ms2_tolerance_in_da=ms2_tolerance_in_da,
                                                  search_type=1, search_spectra_idx_min=spectra_idx_min,
                                                  search_spectra_idx_max=spectra_idx_max,
-                                                 peak_scale_k=peak_scale_k,
                                                  reverse=reverse)
 
-    def open_search(self, precursor_mz, peaks, ms2_tolerance_in_da, reverse, peak_scale_k, **kwargs):
+    def open_search(self, precursor_mz, peaks, ms2_tolerance_in_da, reverse, **kwargs):
         """
         Run the open search, the query spectrum should be preprocessed.
 
@@ -692,10 +649,9 @@ class FlashCos:
         """
         return self.similarity_search.search(method="open", peaks=peaks, precursor_mz=precursor_mz,
                                              ms2_tolerance_in_da=ms2_tolerance_in_da, search_type=0,
-                                             peak_scale_k=peak_scale_k,
                                              reverse=reverse)
 
-    def neutral_loss_search(self, precursor_mz, peaks, ms2_tolerance_in_da, peak_scale_k, reverse, **kwargs):
+    def neutral_loss_search(self, precursor_mz, peaks, ms2_tolerance_in_da, reverse, **kwargs):
         """
         Run the neutral loss search, the query spectrum should be preprocessed.
 
@@ -706,10 +662,9 @@ class FlashCos:
         """
         return self.similarity_search.search(method="neutral_loss", precursor_mz=precursor_mz, peaks=peaks,
                                              ms2_tolerance_in_da=ms2_tolerance_in_da, search_type=0,
-                                             peak_scale_k=peak_scale_k,
                                              reverse=reverse)
 
-    def hybrid_search(self, precursor_mz, peaks, ms2_tolerance_in_da, peak_scale_k, reverse, **kwargs):
+    def hybrid_search(self, precursor_mz, peaks, ms2_tolerance_in_da, reverse, **kwargs):
         """
         Run the hybrid search, the query spectrum should be preprocessed.
 
@@ -721,7 +676,6 @@ class FlashCos:
         """
         return self.similarity_search.search_hybrid(precursor_mz=precursor_mz, peaks=peaks,
                                                     ms2_tolerance_in_da=ms2_tolerance_in_da,
-                                                    peak_scale_k=peak_scale_k,
                                                     reverse=reverse)
 
     def clean_spectrum_for_search(self,
@@ -730,6 +684,7 @@ class FlashCos:
                                   precursor_ions_removal_da: float = 1.6,
                                   noise_threshold=0.01,
                                   min_ms2_difference_in_da: float = 0.05,
+                                  peak_scale_k: float = 8.0,
                                   peak_intensity_power: float = 1.0):
         """
         Clean the MS/MS spectrum, need to be called before any search.
@@ -757,6 +712,7 @@ class FlashCos:
                               min_ms2_difference_in_da=min_ms2_difference_in_da,
                               min_ms2_difference_in_ppm=-1,
                               top6_every_50da=False,
+                              peak_scale_k=peak_scale_k,
                               peak_intensity_power=peak_intensity_power,
                               peak_norm='sum_sq')
 
@@ -768,7 +724,6 @@ class FlashCos:
                precursor_ions_removal_da: Union[float, None] = 1.6,
                noise_threshold=0.01,
                min_ms2_difference_in_da: float = 0.05,
-               peak_scale_k: float = 4.0,
                reverse: bool = True):
         """
         Run the Flash search for the query spectrum.
@@ -798,28 +753,24 @@ class FlashCos:
                                                peaks=peaks,
                                                ms1_tolerance_in_da=ms1_tolerance_in_da,
                                                ms2_tolerance_in_da=ms2_tolerance_in_da,
-                                               peak_scale_k=peak_scale_k,
                                                reverse=reverse)
             result["identity_search"] = _clean_search_result(temp_result)
         if "open" in method:
             temp_result = self.open_search(precursor_mz=precursor_mz,
                                            peaks=peaks,
                                            ms2_tolerance_in_da=ms2_tolerance_in_da,
-                                           peak_scale_k=peak_scale_k,
                                            reverse=reverse)
             result["open_search"] = _clean_search_result(temp_result)
         if "neutral_loss" in method:
             temp_result = self.neutral_loss_search(precursor_mz=precursor_mz,
                                                    peaks=peaks,
                                                    ms2_tolerance_in_da=ms2_tolerance_in_da,
-                                                   peak_scale_k=peak_scale_k,
                                                    reverse=reverse)
             result["neutral_loss_search"] = _clean_search_result(temp_result)
         if "hybrid" in method:
             temp_result = self.hybrid_search(precursor_mz=precursor_mz,
                                              peaks=peaks,
                                              ms2_tolerance_in_da=ms2_tolerance_in_da,
-                                             peak_scale_k=peak_scale_k,
                                              reverse=reverse)
             result["hybrid_search"] = _clean_search_result(temp_result)
         return result
@@ -899,6 +850,7 @@ class FlashCos:
                                                                precursor_ions_removal_da=precursor_ions_removal_da,
                                                                noise_threshold=noise_threshold,
                                                                min_ms2_difference_in_da=min_ms2_difference_in_da,
+                                                               peak_scale_k=self.peak_scale_k,
                                                                peak_intensity_power=self.peak_intensity_power)
 
             if len(spec["peaks"]) > 0:
@@ -977,8 +929,7 @@ class FlashCos:
 
 def _clean_search_result(temp_result):
     score_arr = np.where(np.isfinite(temp_result[0]), temp_result[0], 0)
-    scaled_score_arr = np.where(np.isfinite(temp_result[3]), temp_result[3], 0)
-    temp_result = (score_arr, temp_result[1], temp_result[2], scaled_score_arr)
+    temp_result = (score_arr, temp_result[1], temp_result[2])
     return temp_result
 
 
@@ -986,9 +937,9 @@ def _clean_search_result(temp_result):
 if __name__ == "__main__":
     # cosine between two vectors
     def scale(peaks, prec_mz):
-        scaling_factor = peaks[:, 0] / prec_mz * 4
-        print('scaling_factor:', scaling_factor)
-        return peaks[:, 1] / np.exp(scaling_factor)
+        scaling_factor = peaks[:, 0] / prec_mz * 8.0
+        # print('scaling_factor:', scaling_factor)
+        return peaks[:, 1] * np.exp(scaling_factor)
 
 
     def cosine_similarity(v1, v2):
@@ -1017,7 +968,8 @@ if __name__ == "__main__":
     # search
     search_eng = FlashCos(max_ms2_tolerance_in_da=ms2_tol * 1.05,
                           mz_index_step=0.0001,
-                          peak_intensity_power=1.0)
+                          peak_scale_k=8.0,
+                          peak_intensity_power=0.5)
     search_eng.build_index(spectral_library,
                            max_indexed_mz=2000,
                            precursor_ions_removal_da=0.5,
@@ -1025,33 +977,30 @@ if __name__ == "__main__":
                            min_ms2_difference_in_da=ms2_tol * 2.2,
                            clean_spectra=True)
 
-    peaks = np.array([[100.0, 100], [101.0, 30], [202.0, 4.0], [203.0, 3.0], [204.0, 10], [205.0, 0]])
+    # test
     _precursor_mz = 250.0
+    peaks = np.array([[100.0, 100], [101.0, 0.5], [202.0, 20], [203.0, 0], [204.0, 0], [205.0, 20]])
 
     print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), np.array([100, 30, 4, 3, 10, 0])))
-
-    print(scale(peaks, _precursor_mz))
-
-    print(cosine_similarity(np.array([100, 0.5, 20, 0, 0, 20]), scale(peaks, _precursor_mz)))
-
-    print(cosine_similarity(np.sqrt(np.array([100, 0.5, 20, 0, 0, 20])), np.sqrt(scale(peaks, _precursor_mz))))
+    # print(scale(peaks, _precursor_mz))
+    print(cosine_similarity(scale(peaks, _precursor_mz), np.array([100, 30, 4, 3, 10, 0])))
+    print(cosine_similarity(np.sqrt(scale(peaks, _precursor_mz)), np.sqrt(np.array([100, 30, 4, 3, 10, 0]))))
 
     print('reverse')
-    _peaks = np.array([[100.0, 100], [101.0, 30], [202.0, 4.0], [205.0, 0]])
-    print(scale(_peaks, _precursor_mz))
-    print(cosine_similarity(np.array([100, 0.5, 20, 20]), scale(_peaks, _precursor_mz)))
-    print(cosine_similarity(np.array([100, 0.5, 20, 20]), np.array([100, 30, 4, 0])))
+    _peaks = np.array([[100.0, 100], [101.0, 0.5], [202.0, 20], [205.0, 20]])
+    # print(scale(_peaks, _precursor_mz))
+    print(cosine_similarity(scale(_peaks, _precursor_mz), np.array([100, 30, 4, 0])))
+    print(cosine_similarity(np.sqrt(scale(_peaks, _precursor_mz)), np.sqrt(np.array([100, 30, 4, 0]))))
 
     search_result = search_eng.search(
-        precursor_mz=_precursor_mz,
-        peaks=peaks,
+        precursor_mz=250.0,
+        peaks=np.array([[100.0, 100], [101.0, 30], [202.0, 4.0], [203.0, 3.0], [204.0, 10], [205.0, 0]]),
         ms1_tolerance_in_da=0.02,
         ms2_tolerance_in_da=ms2_tol,
         method="identity",  # "identity", "open", "neutral_loss", "hybrid", "all", or list of the above
         precursor_ions_removal_da=0.5,
         noise_threshold=0.0,
         min_ms2_difference_in_da=ms2_tol * 2.2,
-        peak_scale_k=4.0,
         reverse=True
     )
 

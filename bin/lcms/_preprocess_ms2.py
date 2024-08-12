@@ -12,6 +12,7 @@ def preprocess_ms2(peaks, prec_mz,
                    min_ms2_difference_in_da=0.05,
                    min_ms2_difference_in_ppm=-1,
                    top6_every_50da=False,
+                   peak_scale_k=None,
                    peak_intensity_power=1,
                    peak_norm=None) -> np.ndarray:
     """
@@ -23,8 +24,8 @@ def preprocess_ms2(peaks, prec_mz,
         3. Centroid the spectrum by merging peaks within min_ms2_difference_in_da.
         4. Remove peaks with intensity < relative_intensity_cutoff * max_intensity.
         5. Keep only the top max_peak_num peaks within every 50 Da.
-        6. peak_intensity_power is used to transform the intensity to intensity^peak_intensity_power.
-        7. Transform the peak intensity.
+        6. Transform the peak intensity.
+        7. peak_intensity_power is used to transform the intensity to intensity^peak_intensity_power.
         8. Normalize the intensity.
 
         The cleaned spectrum will be sorted by m/z in ascending order.
@@ -98,11 +99,11 @@ def preprocess_ms2(peaks, prec_mz,
     if top6_every_50da:
         peaks = top_n_per_mz_range(peaks, n_peaks=6, mz_range=50)
 
-    # # Step 6. scale the intensity.
-    # if peak_scale:
-    #     _prec_mz = prec_mz if prec_mz > 0 else np.max(peaks[:, 0])
-    #     scaling_factor = peaks[:, 0] / _prec_mz * peak_scale_k
-    #     peaks[:, 1] = peaks[:, 1] * np.exp(scaling_factor)
+    # Step 6. scale the intensity.
+    if peak_scale_k is not None:
+        _prec_mz = prec_mz if prec_mz > 0 else np.max(peaks[:, 0])
+        scaling_factor = peaks[:, 0] / _prec_mz * peak_scale_k
+        peaks[:, 1] = peaks[:, 1] * np.exp(scaling_factor)
 
     # Step 7. Power the intensity.
     peaks[:, 1] = np.power(peaks[:, 1], peak_intensity_power)
