@@ -28,7 +28,7 @@ def main_workflow_single(file_path,
                          peak_cor_rt_tol=0.015,
                          min_ppc=0.8, roi_min_length=3,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
-                         ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                         ms1id_max_prec_rel_int_in_other_ms2=0.01,
                          ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
                          plot_bpc=False, out_dir=None):
     """
@@ -88,7 +88,6 @@ def main_workflow_single(file_path,
         print('Performing MS1 ID annotation...')
         pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.msms_library, mz_tol=mz_tol_ms1,
                                                ion_mode=ion_mode,
-                                               min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
@@ -200,7 +199,7 @@ if __name__ == "__main__":
         peak_cor_rt_tol=0.025,
         min_ppc=0.9, roi_min_length=4,
         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-        ms1id_min_prec_int_in_ms1=1e5,
+        ms1id_min_prec_int_sn_ratio=3,
         ms1id_max_prec_rel_int_in_other_ms2=0.01,
         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
         plot_bpc=False)

@@ -31,7 +31,6 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
             out_list.append({
                 'file_name': spec.file_name,
                 'rt': round(spec.rt, 2) if spec.rt else None,
-                'intensity': round(annotation.intensity, 0) if annotation.intensity else None,
                 'name': annotation.name,
                 'precursor_mz': round(annotation.precursor_mz, 4),
                 'matched_score': round(annotation.score, 4),

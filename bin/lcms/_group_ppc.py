@@ -46,14 +46,6 @@ def generate_pseudo_ms1(msdata, ppc_matrix, min_ppc=0.8, roi_min_length=3,
     :param save_dir: directory to save the pseudo MS1 spectra
     """
 
-    # Cluster ROIs using Louvain algorithm
-    # cluster_rois = _perform_louvain_clustering(msdata, ppc_matrix, roi_min_length=roi_min_length,
-    #                                            min_ppc=min_ppc, peak_group_rt_tol=peak_group_rt_tol,
-    #                                            resolution=resolution, min_cluster_size=min_cluster_size,
-    #                                            seed=123)
-    # plot_louvain_clustering_network(msdata, cluster_rois, ppc_matrix)
-    # pseudo_ms1_spectra = _map_cluster_labels_to_pseudo_ms1(msdata, cluster_rois)
-
     pseudo_ms1_spectra = _perform_clustering(msdata, ppc_matrix, min_ppc=min_ppc,
                                              min_cluster_size=min_cluster_size, roi_min_length=roi_min_length)
 
@@ -65,7 +57,8 @@ def generate_pseudo_ms1(msdata, ppc_matrix, min_ppc=0.8, roi_min_length=3,
 def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
                         min_cluster_size=6, roi_min_length=3):
     """
-    Perform clustering on ROIs based on PPC scores and m/z values.
+    Perform clustering on ROIs based on PPC scores and m/z values,
+    considering only m/z values smaller than the target m/z for each ROI.
     """
     # Filter ROIs based on minimum length and isotope status using a generator expression
     valid_rois = (roi for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope)
@@ -80,10 +73,13 @@ def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
     pseudo_ms1_spectra = []
 
     for i, roi in enumerate(sorted_rois):
-        # Find all ROIs with PPC scores above the threshold
+        t_mz = roi.mz  # Set the target m/z as the current ROI's m/z
+
+        # Find all ROIs with PPC scores above the threshold and m/z smaller than t_mz
         cluster_indices = new_ppc_matrix[i].nonzero()[1]
         cluster_scores = new_ppc_matrix[i, cluster_indices].toarray().flatten()
-        cluster_indices = cluster_indices[cluster_scores >= min_ppc]
+        cluster_indices = cluster_indices[(cluster_scores >= min_ppc) &
+                                          (np.array([sorted_rois[idx].mz for idx in cluster_indices]) < t_mz)]
 
         if len(cluster_indices) >= min_cluster_size:
             # Form a pseudo MS1 spectrum
@@ -93,7 +89,7 @@ def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
             roi_ids = [roi.id for roi in cluster_rois]
             avg_rt = np.mean([roi.rt for roi in cluster_rois])
 
-            pseudo_ms1_spectra.append((mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt))
+            pseudo_ms1_spectra.append((t_mz, mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt))
 
     # Convert to PseudoMS1 objects after all processing
     pseudo_ms1_spectra = [PseudoMS1(*spec) for spec in pseudo_ms1_spectra]

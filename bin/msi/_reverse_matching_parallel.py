@@ -76,11 +76,8 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                       mz_tol=0.01,
                       score_cutoff=0.6, min_matched_peak=4,
                       ion_mode=None,
-                      refine_results=False,
-                      min_prec_int_in_ms1=1000,
-                      max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_dir=None,
-                      chunk_size=100):
+                      chunk_size=1000):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS1-like object
@@ -113,18 +110,12 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
     chunk_size = min(chunk_size, len(ms1_spec_ls))
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, n_processes=n_processes,
-                                                     mz_tol=mz_tol,
-                                                     ion_mode=ion_mode,
-                                                     min_prec_int_in_ms1=min_prec_int_in_ms1,
-                                                     score_cutoff=score_cutoff,
-                                                     min_matched_peak=min_matched_peak,
-                                                     chunk_size=chunk_size)
-
-    if refine_results:
-        # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated)
-        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
-                                            max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2)
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, n_processes=n_processes,
+                                         mz_tol=mz_tol,
+                                         ion_mode=ion_mode,
+                                         score_cutoff=score_cutoff,
+                                         min_matched_peak=min_matched_peak,
+                                         chunk_size=chunk_size)
 
     if save:
         save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
@@ -134,11 +125,11 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
     return ms1_spec_ls
 
 
-def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, n_processes: int = None,
-                                       mz_tol: float = 0.02,
-                                       ion_mode: str = None,
-                                       min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.7,
-                                       min_matched_peak: int = 3, chunk_size: int = 500) -> List:
+def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int = None,
+                           mz_tol: float = 0.02,
+                           ion_mode: str = None,
+                           score_cutoff: float = 0.7,
+                           min_matched_peak: int = 3, chunk_size: int = 500) -> List:
     """
     Perform MS1 annotation using parallel open search for the entire spectrum, with filters similar to identity search.
 
@@ -163,7 +154,7 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, n_pr
     chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
 
     # Prepare arguments for parallel processing
-    args_list = [(chunk, search_eng, mz_tol, ion_mode, min_prec_int_in_ms1, score_cutoff, min_matched_peak)
+    args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak)
                  for chunk in chunks]
 
     # Use multiprocessing to process chunks in parallel
@@ -175,31 +166,23 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, n_pr
 
 
 def _process_chunk(args):
-    chunk, search_eng, mz_tol, ion_mode, min_prec_int_in_ms1, score_cutoff, min_matched_peak = args
+    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak = args
 
     for spec in chunk:
-        if len(spec.mzs) < min_matched_peak:
-            spec.annotated = False
-            continue
-
-        # Sort mzs and intensities in ascending order of mz
-        sorted_indices = np.argsort(spec.mzs)
-        sorted_mzs = np.array(spec.mzs)[sorted_indices]
-        sorted_intensities = np.array(spec.intensities)[sorted_indices]
 
         matching_result = search_eng.search(
-            precursor_mz=2000.0,
-            peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
+            precursor_mz=spec.t_mz,
+            peaks=[[mz, intensity] for mz, intensity in zip(spec.mzs, spec.intensities)],
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
-            method="open",
+            method="identity",
             precursor_ions_removal_da=0.5,
             noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.02,
             reverse=True
         )
 
-        score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
+        score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
 
         # filter by matching cutoffs
         v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
@@ -212,25 +195,16 @@ def _process_chunk(args):
             if ion_mode is not None and ion_mode != this_ion_mode:
                 continue
 
-            precursor_mz = matched.get('precursor_mz')
-
-            if precursor_mz is not None:
-                closest_mz_idx = np.argmin(np.abs(sorted_mzs - precursor_mz))
-                if abs(sorted_mzs[closest_mz_idx] - precursor_mz) <= mz_tol:
-                    prec_intensity = sorted_intensities[closest_mz_idx]
-                    if prec_intensity >= min_prec_int_in_ms1:
-                        all_matches.append(
-                            (idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx], precursor_mz))
+            all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
 
         if all_matches:
             spec.annotated = True
             spec.annotation_ls = []
-            for idx, score, matched_peaks, spectral_usage, prec_mz in all_matches:
+            for idx, score, matched_peaks, spectral_usage in all_matches:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
                 annotation = SpecAnnotation(idx, score, matched_peaks)
                 annotation.spectral_usage = spectral_usage
-                annotation.intensity = sorted_intensities[np.argmin(np.abs(sorted_mzs - prec_mz))]
 
                 annotation.name = matched.get('name', None)
                 annotation.precursor_mz = matched.get('precursor_mz')
@@ -244,57 +218,13 @@ def _process_chunk(args):
                 annotation.matched_spec = matched.get('peaks', None)
 
                 spec.annotation_ls.append(annotation)
-
-            # sort the annotations by precursor m/z in descending order
-            spec.annotation_ls = sorted(spec.annotation_ls, key=lambda x: x.precursor_mz, reverse=True)
         else:
             spec.annotated = False
 
     return chunk
 
 
-def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms2=0.05):
-    """
-    Refine the ms1 id results, to avoid redundant annotations (ATP, ADP, AMP all annotated at the same RT)
-    :param ms1_spec_ls: a list of PseudoMS1-like object
-    :param mz_tol: float, mz tolerance
-    :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
-    :return: refined ms1_spec_ls
-    """
-
-    for spec in ms1_spec_ls:
-        if not spec.annotated or len(spec.annotation_ls) == 0:
-            continue
-
-        all_precursor_mzs = np.array([annotation.precursor_mz for annotation in spec.annotation_ls])
-        annotation_bool_arr = np.array([True] * len(spec.annotation_ls))
-
-        for i, annotation in enumerate(spec.annotation_ls):
-            # Skip if this annotation is already labeled as False
-            if not annotation_bool_arr[i]:
-                continue
-
-            # Get the peaks from the annotation
-            peaks = annotation.peaks
-            if peaks is None or len(peaks) == 0:
-                continue
-
-            # Get the m/z values of the peaks with relative intensities >= max_prec_rel_int_in_other_ms2
-            max_intensity = np.max(peaks[:, 1])
-            peak_mzs = peaks[:, 0][peaks[:, 1] / max_intensity >= max_prec_rel_int_in_other_ms2]
-
-            # Check which precursor mzs exist in the peak mz list
-            matches = np.any(np.abs(all_precursor_mzs[i + 1:, np.newaxis] - peak_mzs) <= mz_tol, axis=1)
-            annotation_bool_arr[i + 1:][matches] = False
-
-        # Remove annotations that didn't pass the checks
-        spec.annotation_ls = [ann for ann, keep in zip(spec.annotation_ls, annotation_bool_arr) if keep]
-
-    return ms1_spec_ls
-
-
 if __name__ == "__main__":
-
     ###################
     # index library
     prepare_ms2_lib(ms2db='../data/gnps.msp', mz_tol=0.02)

@@ -4,7 +4,7 @@
 class PseudoMS1:
     def __init__(self, t_mz, t_mz_idx, mz_ls, int_ls, idx_ls):
         self.t_mz = t_mz  # this PseudoMS1 spectrum is generated starting from this mz
-        self.t_mz_idx = t_mz_idx  # this PseudoMS1 spectrum is generated starting from this mz
+        self.t_mz_idx = t_mz_idx  # idx of t_mz in the mz_values
         self.mzs = mz_ls
         self.intensities = int_ls
         self.indices = idx_ls  # indices of mzs, for later assign intensities
@@ -19,7 +19,6 @@ class SpecAnnotation:
         self.matched_peak = matched_peak
         self.spectral_usage = None
         self.matched_spec = None  # the matched spectrum in the search engine
-        self.intensity = None  # intensity of the precursor ion in PseudoMS1 spectrum
         self.db_id = None
         self.name = None
         self.precursor_mz = None

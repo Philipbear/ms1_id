@@ -73,7 +73,6 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5, peak_scale_k=8
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
                       ion_mode=None,
-                      min_prec_int_in_ms1=1000,
                       max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_path=None):
     """
@@ -92,11 +91,10 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     """
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching_open_search(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
-                                                     ion_mode=ion_mode,
-                                                     min_prec_int_in_ms1=min_prec_int_in_ms1,
-                                                     score_cutoff=score_cutoff,
-                                                     min_matched_peak=min_matched_peak)
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, mz_tol=mz_tol,
+                                         ion_mode=ion_mode,
+                                         score_cutoff=score_cutoff,
+                                         min_matched_peak=min_matched_peak)
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
@@ -109,10 +107,9 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     return ms1_spec_ls
 
 
-def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
-                                       ion_mode: str = None,
-                                       min_prec_int_in_ms1: float = 1000, score_cutoff: float = 0.7,
-                                       min_matched_peak: int = 3) -> List:
+def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 0.02,
+                           ion_mode: str = None, score_cutoff: float = 0.7,
+                           min_matched_peak: int = 3) -> List:
     """
     Perform MS1 annotation using open search for the entire spectrum, with filters similar to identity search.
 
@@ -120,7 +117,6 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
     :param ms2_library: path to the pickle file, indexed library
     :param mz_tol: m/z tolerance in Da, for open matching
     :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
-    :param min_prec_int_in_ms1: minimum precursor intensity in MS1 spectrum
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
     :return: List of updated PseudoMS1-like objects
@@ -132,9 +128,6 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
         search_eng = pickle.load(file)
 
     for spec in ms1_spec_ls:
-        if len(spec.mzs) < min_matched_peak:
-            spec.annotated = False
-            continue
 
         # Sort mzs and intensities in ascending order of mz
         sorted_indices = np.argsort(spec.mzs)
@@ -142,18 +135,18 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
         sorted_intensities = np.array(spec.intensities)[sorted_indices]
 
         matching_result = search_eng.search(
-            precursor_mz=2000.0,
+            precursor_mz=spec.t_mz,
             peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
-            method="open",
+            method="identity",
             precursor_ions_removal_da=0.5,
             noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.02,
             reverse=True
         )
 
-        score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
+        score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
 
         # filter by matching cutoffs
         v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
@@ -166,25 +159,16 @@ def ms1_id_revcos_matching_open_search(ms1_spec_ls: List, ms2_library: str, mz_t
             if ion_mode is not None and ion_mode != this_ion_mode:
                 continue
 
-            precursor_mz = matched.get('precursor_mz')
-
-            if precursor_mz is not None:
-                closest_mz_idx = np.argmin(np.abs(sorted_mzs - precursor_mz))
-                if abs(sorted_mzs[closest_mz_idx] - precursor_mz) <= mz_tol:
-                    prec_intensity = sorted_intensities[closest_mz_idx]
-                    if prec_intensity >= min_prec_int_in_ms1:
-                        all_matches.append(
-                            (idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx], precursor_mz))
+            all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
 
         if all_matches:
             spec.annotated = True
             spec.annotation_ls = []
-            for idx, score, matched_peaks, spectral_usage, prec_mz in all_matches:
+            for idx, score, matched_peaks, spectral_usage in all_matches:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
                 annotation = SpecAnnotation(idx, score, matched_peaks)
                 annotation.spectral_usage = spectral_usage
-                annotation.intensity = sorted_intensities[np.argmin(np.abs(sorted_mzs - prec_mz))]
 
                 annotation.name = matched.get('name', None)
                 annotation.precursor_mz = matched.get('precursor_mz')

@@ -49,7 +49,7 @@ def _process_chunk(args):
         row = correlation_matrix[i].toarray().flatten()
 
         # Only consider m/z values smaller than the target m/z
-        smaller_mz_indices = np.where((mz_values < mz) & (row > 0))[0]
+        smaller_mz_indices = np.where((mz_values <= mz + 1e-3) & (row > 0))[0]
 
         if len(smaller_mz_indices) >= min_cluster_size:
             cluster_mzs = mz_values[smaller_mz_indices]

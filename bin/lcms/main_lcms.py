@@ -12,7 +12,7 @@ def ms1id_single_file(file_path, library_path,
                       peak_cor_rt_tol=0.025,
                       min_ppc=0.9, roi_min_length=4,
                       ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                      ms1id_min_prec_int_in_ms1=1e5,
+                      ms1id_min_prec_int_sn_ratio=3,
                       ms1id_max_prec_rel_int_in_other_ms2=0.01,
                       ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
                       out_dir=None):
@@ -28,7 +28,7 @@ def ms1id_single_file(file_path, library_path,
         peak_cor_rt_tol=peak_cor_rt_tol,
         min_ppc=min_ppc, roi_min_length=roi_min_length,
         ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
-        ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
+        ms1id_min_prec_int_sn_ratio=ms1id_min_prec_int_sn_ratio,
         ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
         ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
         out_dir=out_dir)
@@ -44,7 +44,6 @@ def ms1id_single_file_batch(data_dir, library_path,
                             peak_cor_rt_tol=0.025,
                             min_ppc=0.9, roi_min_length=4,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                            ms1id_min_prec_int_in_ms1=1e5,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
                             out_dir=None
@@ -70,7 +69,6 @@ def ms1id_single_file_batch(data_dir, library_path,
                            peak_cor_rt_tol=peak_cor_rt_tol,
                            min_ppc=min_ppc, roi_min_length=roi_min_length,
                            ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
-                           ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                            ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                            ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
                            out_dir=out_dir)
@@ -110,7 +108,7 @@ def ms1id_batch_mode(project_path=None, msms_library_path=None, sample_dir='data
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.9, roi_min_length=5,
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                     ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                     ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3):
 
     main_workflow(project_path=project_path, msms_library_path=msms_library_path, sample_dir=sample_dir,
@@ -122,7 +120,6 @@ def ms1id_batch_mode(project_path=None, msms_library_path=None, sample_dir='data
                   alignment_drop_by_fill_pct_ratio=alignment_drop_by_fill_pct_ratio,
                   peak_cor_rt_tol=peak_cor_rt_tol, min_ppc=min_ppc, roi_min_length=roi_min_length,
                   ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
-                  ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                   ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                   ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
 
@@ -143,7 +140,6 @@ if __name__ == '__main__':
                             peak_cor_rt_tol=0.05,
                             min_ppc=0.8, roi_min_length=6,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                            ms1id_min_prec_int_in_ms1=1e5,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
                             out_dir=out_dir)

@@ -34,7 +34,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
                   peak_cor_rt_tol=0.015,
                   min_ppc=0.6, roi_min_length=3,
                   ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                  ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                  ms1id_max_prec_rel_int_in_other_ms2=0.01,
                   ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
     """
     Main workflow for MS1_ID.
@@ -58,7 +58,7 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
     :param roi_min_length: minimum ROI length for feature grouping
     :param ms1id_score_cutoff: ms1 ID score cutoff
     :param ms1id_min_matched_peak: ms1 ID min matched peak
-    :param ms1id_min_prec_int_in_ms1: ms1 ID, min precursor intensity in MS1
+    :param ms1id_min_prec_int_sn_ratio: ms1 ID min precursor intensity signal-to-noise ratio
     :param ms1id_max_prec_rel_int_in_other_ms2: ms1 ID, max precursor relative intensity in other MS2
     :param ms2id_score_cutoff: ms2 ID score cutoff
     :param ms2id_min_matched_peak: ms2 ID min matched peak
@@ -75,7 +75,6 @@ def main_workflow(project_path=None, msms_library_path=None, sample_dir='data', 
                          peak_cor_rt_tol=peak_cor_rt_tol,
                          min_ppc=min_ppc, roi_min_length=roi_min_length,
                          ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
-                         ms1id_min_prec_int_in_ms1=ms1id_min_prec_int_in_ms1,
                          ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                          ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
 
@@ -152,7 +151,7 @@ def init_config(path=None,
                 peak_cor_rt_tol=0.015,
                 min_ppc=0.6, roi_min_length=3,
                 ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
-                ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                ms1id_max_prec_rel_int_in_other_ms2=0.01,
                 ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6
                 ):
     # init
@@ -166,7 +165,6 @@ def init_config(path=None,
     config.roi_min_length = roi_min_length
     config.ms1id_score_cutoff = ms1id_score_cutoff
     config.ms1id_min_matched_peak = ms1id_min_matched_peak
-    config.ms1id_min_prec_int_in_ms1 = ms1id_min_prec_int_in_ms1
     config.ms1id_max_prec_rel_int_in_other_ms2 = ms1id_max_prec_rel_int_in_other_ms2
     config.ms2id_score_cutoff = ms2id_score_cutoff
     config.ms2id_min_matched_peak = ms2id_min_matched_peak
@@ -338,7 +336,6 @@ def feature_detection(file_name, params=None,
         ms1_id_annotation(pseudo_ms1_spectra, params.msms_library,
                           mz_tol=params.mz_tol_ms1,
                           ion_mode=params.ion_mode,
-                          min_prec_int_in_ms1=params.ms1id_min_prec_int_in_ms1,
                           max_prec_rel_int_in_other_ms2=params.ms1id_max_prec_rel_int_in_other_ms2,
                           score_cutoff=params.ms1id_score_cutoff,
                           min_matched_peak=params.ms1id_min_matched_peak,
