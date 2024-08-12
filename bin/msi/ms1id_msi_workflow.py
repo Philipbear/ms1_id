@@ -6,7 +6,7 @@ from _reverse_matching_parallel import ms1_id_annotation
 from _export_msi import write_ms1_id_results
 
 
-def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None,
+def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                   mass_detect_int_tol=None, max_mz=None,
                                   mz_bin_size=0.01,
                                   min_overlap=5, min_correlation=0.9, min_cluster_size=6,
@@ -44,7 +44,7 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None
                                      save_dir=result_folder)
 
     print(f"Annotating pseudo MS1 spectra for {file_name}")
-    pseudo_ms1 = ms1_id_annotation(pseudo_ms1, msms_library_path, n_processes=None,
+    pseudo_ms1 = ms1_id_annotation(pseudo_ms1, library_path, n_processes=None,
                                    mz_tol=ms1id_mz_tol,
                                    ion_mode=ion_mode,
                                    score_cutoff=ms1id_score_cutoff,
@@ -56,14 +56,3 @@ def ms1id_imaging_single_workflow(file_path, msms_library_path, n_processes=None
     write_ms1_id_results(pseudo_ms1, save=True, save_dir=result_folder)
 
     return
-
-
-if __name__ == '__main__':
-    ############################
-    # Single workflow
-    file_path = '../../imaging/MTBLS313/Brain01_Bregma-3-88b_centroid.imzML'
-    ms1id_imaging_single_workflow(file_path=file_path,
-                                  msms_library_path='../../data/gnps.pkl',
-                                  mass_detect_int_tol=None, max_mz=None, mz_bin_size=0.01,
-                                  min_overlap=5, min_correlation=0.9, min_cluster_size=5,
-                                  ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)

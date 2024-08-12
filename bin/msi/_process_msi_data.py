@@ -19,7 +19,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_
         all_intensities = np.array(all_intensities)
         non_zero_intensities = all_intensities[all_intensities > 0.0]
         # Calculate intensity value for mass detection
-        mass_detect_int_tol = max(np.min(non_zero_intensities) * 3, np.percentile(non_zero_intensities, 5))
+        mass_detect_int_tol = min(np.min(non_zero_intensities) * 3, np.percentile(non_zero_intensities, 5))
 
     # check if result files exist
     if save_dir is not None:

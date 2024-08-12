@@ -218,8 +218,6 @@ def _process_chunk(args):
 
                 spec.annotation_ls.append(annotation)
 
-            # sort the annotations by precursor m/z in descending order
-            spec.annotation_ls = sorted(spec.annotation_ls, key=lambda x: x.precursor_mz, reverse=True)
         else:
             spec.annotated = False
 
