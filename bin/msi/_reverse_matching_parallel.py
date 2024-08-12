@@ -58,7 +58,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5, peak_scale_k=8
                               precursor_ions_removal_da=0.5,
                               noise_threshold=0.0,
                               min_ms2_difference_in_da=mz_tol * 2.02,
-                              peak_scale=True,
+                              peak_scale=True if peak_scale_k is not None else False,
                               peak_scale_k=peak_scale_k,
                               clean_spectra=True)
 
