@@ -89,10 +89,17 @@ def ms1id_single_file_batch(data_dir, library_path,
     else:
         # Process each file sequentially
         for file in files:
-            try:
-                process_file(file)
-            except Exception as e:
-                print(f"An error occurred while processing {file}: {e}")
+            ms1id_single_file(file_path=file,
+                              library_path=library_path,
+                              ms1_id=ms1_id, ms2_id=ms2_id,
+                              mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
+                              mass_detect_int_tol=mass_detect_int_tol,
+                              peak_cor_rt_tol=peak_cor_rt_tol,
+                              min_ppc=min_ppc, roi_min_length=roi_min_length,
+                              ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+                              ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
+                              ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
+                              out_dir=out_dir)
 
     return
 
@@ -108,7 +115,6 @@ def ms1id_batch_mode(project_path=None, msms_library_path=None, sample_dir='data
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3):
-
     main_workflow(project_path=project_path, msms_library_path=msms_library_path, sample_dir=sample_dir,
                   parallel=parallel, ms1_id=ms1_id, ms2_id=ms2_id,
                   cpu_ratio=cpu_ratio,
@@ -126,7 +132,6 @@ if __name__ == '__main__':
     # ms1id_single_file(
     #     file_path='/Users/shipei/Documents/projects/ms1_id/data/trial_data/single/Standards_p_1ugmL_glycocholic.mzXML',
     #     library_path='/Users/shipei/Documents/projects/ms1_id/data/gnps_nist20.pkl')
-
 
     out_dir = '../../data/test/output'
     ms1id_single_file_batch(data_dir='../../data/test/data',

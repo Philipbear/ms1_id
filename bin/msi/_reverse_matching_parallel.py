@@ -72,7 +72,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                       mz_tol=0.01,
-                      score_cutoff=0.6, min_matched_peak=4, peak_scale_k=4.0,
+                      score_cutoff=0.6, min_matched_peak=4, peak_scale_k=8.0,
                       ion_mode=None,
                       save=False, save_dir=None,
                       chunk_size=1000):

@@ -17,6 +17,7 @@ def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
     if save_dir:
         save_path = os.path.join(save_dir, 'pseudo_ms1_spectra.pkl')
         if os.path.exists(save_path):
+            print("Loading existing pseudo MS1 spectra...")
             with open(save_path, 'rb') as f:
                 return pickle.load(f)
 

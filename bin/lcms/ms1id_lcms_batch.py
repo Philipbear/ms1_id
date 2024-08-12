@@ -336,6 +336,7 @@ def feature_detection(file_name, params=None,
         ms1_id_annotation(pseudo_ms1_spectra, params.msms_library,
                           mz_tol=params.mz_tol_ms1,
                           ion_mode=params.ion_mode,
+                          rt_tol=params.peak_cor_rt_tol,
                           max_prec_rel_int_in_other_ms2=params.ms1id_max_prec_rel_int_in_other_ms2,
                           score_cutoff=params.ms1id_score_cutoff,
                           min_matched_peak=params.ms1id_min_matched_peak,
@@ -349,25 +350,3 @@ def feature_detection(file_name, params=None,
 
     return d
 
-
-if __name__ == "__main__":
-    import time
-
-    start = time.time()
-
-    main_workflow(project_path='../../data/test',
-                  msms_library_path='../../data/gnps.pkl',
-                  sample_dir='data',
-                  ms1_id=True, ms2_id=True,
-                  cpu_ratio=0.8,
-                  run_rt_correction=True, run_normalization=True,
-                  mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=300000,
-                  align_mz_tol=0.015, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                  peak_cor_rt_tol=0.05,
-                  min_ppc=0.9, roi_min_length=5,
-                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
-                  ms1id_min_prec_int_in_ms1=1e5, ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                  ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3)
-
-    end = time.time()
-    print("Time elapsed: ", end - start)

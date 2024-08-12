@@ -70,7 +70,8 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
-                      ion_mode=None, peak_scale_k=4.0,
+                      ion_mode=None, peak_scale_k=8.0,
+                      rt_tol=0.025,
                       max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_path=None):
     """
@@ -95,7 +96,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                                          peak_scale_k=peak_scale_k)
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
-    ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, rt_tol=0.025,
+    ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, rt_tol=rt_tol,
                                         mz_tol=mz_tol,
                                         max_prec_rel_int=max_prec_rel_int_in_other_ms2)
 
