@@ -8,7 +8,7 @@ from _utils import SpecAnnotation
 from flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5, peak_scale_k=8.0):
+def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -237,13 +237,9 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int_in_other_ms
 
 
 if __name__ == "__main__":
-    # prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02)
-    # prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02)
-    # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
-
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=None)
-    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=None)
-    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=None)
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02)
+    prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02)
 
     # with open('../../data/nist20.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)
