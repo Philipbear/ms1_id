@@ -56,8 +56,6 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_intensity_power=0.5, peak_scale_k=8
                               precursor_ions_removal_da=0.5,
                               noise_threshold=0.0,
                               min_ms2_difference_in_da=mz_tol * 2.02,
-                              peak_scale=True if peak_scale_k is not None else False,
-                              peak_scale_k=peak_scale_k,
                               clean_spectra=True)
 
     new_path = os.path.splitext(ms2db)[0] + '.pkl'
@@ -128,7 +126,6 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
         search_eng = pickle.load(file)
 
     for spec in ms1_spec_ls:
-
         # Sort mzs and intensities in ascending order of mz
         sorted_indices = np.argsort(spec.mzs)
         sorted_mzs = np.array(spec.mzs)[sorted_indices]
@@ -146,10 +143,13 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
             reverse=True
         )
 
-        score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
+        score_arr, matched_peak_arr, spec_usage_arr, scaled_score_arr = matching_result['identity_search']
 
-        # filter by matching cutoffs
-        v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
+        # filter by matching cutoffs, including scaled score
+        v = np.where(np.logical_and(
+            np.logical_or(score_arr >= score_cutoff, scaled_score_arr >= score_cutoff),
+            matched_peak_arr >= min_matched_peak
+        ))[0]
 
         all_matches = []
         for idx in v:
@@ -159,18 +159,20 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
             if ion_mode is not None and ion_mode != this_ion_mode:
                 continue
 
-            all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
+            all_matches.append((idx, score_arr[idx], scaled_score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
 
         if all_matches:
             spec.annotated = True
             spec.annotation_ls = []
-            for idx, score, matched_peaks, spectral_usage in all_matches:
+            for idx, score, scaled_score, matched_peaks, spectral_usage in all_matches:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
-                annotation = SpecAnnotation(idx, score, matched_peaks)
+                annotation = SpecAnnotation(idx, max(score, scaled_score), matched_peaks)
                 annotation.spectral_usage = spectral_usage
 
-                annotation.name = matched.get('name', None)
+                # Add '_scaled' to the name if only the scaled score is beyond the cutoff
+                name_suffix = '_scaled' if scaled_score >= score_cutoff > score else ''
+                annotation.name = (matched.get('name', '') + name_suffix) or None
                 annotation.precursor_mz = matched.get('precursor_mz')
                 annotation.precursor_type = matched.get('precursor_type', None)
                 annotation.formula = matched.get('formula', None)
@@ -180,6 +182,9 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
                 annotation.peaks = matched.get('peaks', None)
                 annotation.db_id = matched.get('comment', None)
                 annotation.matched_spec = matched.get('peaks', None)
+
+                # Add the scaled score as a new attribute
+                # annotation.scaled_score = scaled_score
 
                 spec.annotation_ls.append(annotation)
 
