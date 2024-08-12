@@ -31,6 +31,6 @@ def exp_2(ms2db):
 
 ##########################################
 if __name__ == '__main__':
-    exp_1('gnps')
+    # exp_1('gnps')
 
-    # exp_2('gnps')
+    exp_2('gnps')
