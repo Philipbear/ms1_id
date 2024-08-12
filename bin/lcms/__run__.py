@@ -44,7 +44,7 @@ def exp_1(ms2db='gnps'):
                             mz_tol_ms1=0.01, mz_tol_ms2=0.02,
                             mass_detect_int_tol=mass_detection_int_tol,
                             peak_cor_rt_tol=0.025,
-                            min_ppc=0.9, roi_min_length=5,
+                            min_ppc=0.8, roi_min_length=5,
                             ms1id_score_cutoff=0.6, ms1id_min_matched_peak=4,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.6, ms2id_min_matched_peak=4,
@@ -62,7 +62,7 @@ def exp_2(ms2db='gnps'):
                             mz_tol_ms1=0.01, mz_tol_ms2=0.02,
                             mass_detect_int_tol=mass_detection_int_tol,
                             peak_cor_rt_tol=0.025,
-                            min_ppc=0.9, roi_min_length=5,
+                            min_ppc=0.8, roi_min_length=5,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
@@ -82,7 +82,7 @@ def exp_3():
                      mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
-                     min_ppc=0.9, roi_min_length=5,
+                     min_ppc=0.8, roi_min_length=5,
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
@@ -96,7 +96,7 @@ def exp_3():
                      mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
-                     min_ppc=0.9, roi_min_length=5,
+                     min_ppc=0.8, roi_min_length=5,
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
@@ -115,7 +115,7 @@ def exp_4():
                      mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
-                     min_ppc=0.9, roi_min_length=5,
+                     min_ppc=0.8, roi_min_length=5,
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
@@ -129,7 +129,7 @@ def exp_4():
                      mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
-                     min_ppc=0.9, roi_min_length=5,
+                     min_ppc=0.8, roi_min_length=5,
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
@@ -143,7 +143,7 @@ def exp_4():
                      mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
-                     min_ppc=0.9, roi_min_length=5,
+                     min_ppc=0.8, roi_min_length=5,
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
@@ -157,7 +157,7 @@ def exp_4():
                      mz_tol_ms1=0.01, mz_tol_ms2=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
-                     min_ppc=0.9, roi_min_length=5,
+                     min_ppc=0.8, roi_min_length=5,
                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
