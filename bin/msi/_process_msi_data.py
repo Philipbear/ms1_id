@@ -3,23 +3,21 @@ from collections import defaultdict
 import os
 import numpy as np
 import pyimzml.ImzMLParser as imzml
+from numba import njit
+from tqdm import tqdm
 
 
-def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_mz=None,
-                            mz_bin_size=0.005, save=False, save_dir=None):
-    parser = imzml.ImzMLParser(imzml_file)
+def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
+                            mz_bin_size=0.005, save=False, save_dir=None,
+                            noise_detection='moving_average'):
+    # noise reduction method: 'percentile' or 'moving_average'
+    assert noise_detection in ['percentile', 'moving_average'], \
+        "Noise reduction method must be 'percentile' or 'moving_average'"
 
-    all_intensities = []
-    # First pass: collect all intensities if mass_detect_int_tol is None
     if mass_detect_int_tol is None:
-        for idx, (x, y, z) in enumerate(parser.coordinates):
-            mz, intensity = parser.getspectrum(idx)
-            all_intensities.extend(intensity)
+        print(f'No intensity threshold provided. Auto-detecting intensity threshold using {noise_detection} method.')
 
-        all_intensities = np.array(all_intensities)
-        non_zero_intensities = all_intensities[all_intensities > 0.0]
-        # Calculate intensity value for mass detection
-        mass_detect_int_tol = min(np.min(non_zero_intensities) * 3, np.percentile(non_zero_intensities, 5))
+    parser = imzml.ImzMLParser(imzml_file)
 
     # check if result files exist
     if save_dir is not None:
@@ -34,22 +32,45 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_
             with open(coordinates_path, 'rb') as f:
                 coordinates = pickle.load(f)
 
-            return mz_values, intensity_matrix, coordinates, parser.polarity, mass_detect_int_tol
+            return mz_values, intensity_matrix, coordinates, parser.polarity
 
+    # Create a dictionary to store m/z values and intensities
     mz_intensity_dict = defaultdict(lambda: defaultdict(float))
     coordinates = []
 
-    for idx, (x, y, z) in enumerate(parser.coordinates):
+    if noise_detection == 'percentile' and mass_detect_int_tol is None:
+        all_intensities = []
+        for idx, (x, y, z) in enumerate(parser.coordinates):
+            mz, intensity = parser.getspectrum(idx)
+            all_intensities.extend(intensity)
+
+        all_intensities = np.array(all_intensities)
+        non_zero_intensities = all_intensities[all_intensities > 0.0]
+        mass_detect_int_tol = max(np.min(non_zero_intensities) * 5, np.percentile(non_zero_intensities, 10))
+        print('Auto-detected intensity threshold (percentile method):', mass_detect_int_tol)
+
+    for idx, (x, y, z) in enumerate(tqdm(parser.coordinates, desc="Denoising spectra", unit="spectrum")):
         mz, intensity = parser.getspectrum(idx)
 
-        # Filter intensities and bin m/z values in one step
-        mask = (intensity > mass_detect_int_tol) & ((max_mz is None) or (mz <= max_mz))
-        binned_mz = np.round(mz[mask] / mz_bin_size) * mz_bin_size
+        if noise_detection == 'moving_average':
+            baseline = moving_average_baseline(mz, intensity)
+            mask = intensity > baseline
+        else:
+            mask = intensity > mass_detect_int_tol
+
+        # Filter mz and intensity arrays
+        filtered_mz = mz[mask]
         filtered_intensity = intensity[mask]
 
+        # Bin m/z values and sum intensities within each bin
+        binned_data = defaultdict(float)
+        for m, i in zip(filtered_mz, filtered_intensity):
+            binned_m = round(m / mz_bin_size) * mz_bin_size
+            binned_data[binned_m] += i
+
         # Update mz_intensity_dict
-        for m, i in zip(binned_mz, filtered_intensity):
-            mz_intensity_dict[m][idx] = i
+        for binned_m, summed_intensity in binned_data.items():
+            mz_intensity_dict[binned_m][idx] = summed_intensity
 
         coordinates.append((x, y))
 
@@ -70,7 +91,44 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None, max_
         with open(coordinates_path, 'wb') as f:
             pickle.dump(coordinates, f)
 
-    return mz_values, intensity_matrix, coordinates, parser.polarity, mass_detect_int_tol
+    return mz_values, intensity_matrix, coordinates, parser.polarity
+
+
+@njit
+def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, n_lowest=5, factor=5.0):
+    """
+    Apply moving average algorithm to a single mass spectrum using an m/z-based window.
+    This function is optimized with Numba.
+
+    :param mz_array: numpy array of m/z values
+    :param intensity_array: numpy array of intensity values
+    :param mz_window: size of the moving window in Da (default: 100.0)
+    :param n_lowest: number of lowest points to consider in each window (default: 5)
+    :param factor: factor to multiply the mean of the lowest points (default: 5.0)
+    :return: tuple of (filtered_mz_array, filtered_intensity_array)
+    """
+    baseline_array = []
+
+    for i in range(len(mz_array)):
+        mz_min = mz_array[i] - mz_window / 2
+        mz_max = mz_array[i] + mz_window / 2
+
+        window_intensities = intensity_array[(mz_array >= mz_min) & (mz_array <= mz_max)]
+
+        if len(window_intensities) > 0:
+            positive_intensities = window_intensities[window_intensities > 0]
+            if len(positive_intensities) >= n_lowest * 2:
+                sorted_intensities = np.sort(positive_intensities)
+                lowest_n = sorted_intensities[:n_lowest]
+                baseline = factor * np.mean(lowest_n)
+            else:
+                baseline = 0.0
+        else:
+            baseline = 0.0
+
+        baseline_array.append(baseline)
+
+    return np.array(baseline_array)
 
 
 def analyze_intensity_distribution(intensity_matrix):
@@ -161,11 +219,13 @@ def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95
 
 
 if __name__ == '__main__':
-    imzml_file = '../../imaging/mouse_body/wb xenograft in situ metabolomics test - rms_corrected.imzML'
-    mz_values, intensity_matrix, coordinates, ion_mode, _ = process_ms_imaging_data(imzml_file,
-                                                                                    imzml_file.replace('.imzML',
-                                                                                                       '.ibd'),
-                                                                                    mass_detect_int_tol=None)
+    imzml_file = '/Users/shipei/Documents/projects/ms1_id/imaging/mouse_kidney/mouse kidney - root mean square - metaspace.imzML'
+    mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(
+        imzml_file,
+        imzml_file.replace('.imzML', '.ibd'),
+        mass_detect_int_tol=None,
+        noise_reduction='moving_average'
+    )
 
     intensity_stats = analyze_intensity_distribution(intensity_matrix)
     print_intensity_stats(intensity_stats)

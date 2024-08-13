@@ -7,10 +7,10 @@ from _export_msi import write_ms1_id_results
 
 
 def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
-                                  mass_detect_int_tol=None, max_mz=None,
-                                  mz_bin_size=0.01,
-                                  min_overlap=5, min_correlation=0.9, min_cluster_size=6,
-                                  ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3):
+                                  mass_detect_int_tol=None, noise_detection='moving_average',
+                                  mz_bin_size=0.005,
+                                  min_overlap=10, min_correlation=0.7,
+                                  ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4):
     file_dir = os.path.dirname(file_path)
     file_name = os.path.basename(file_path).replace('.imzML', '')
 
@@ -19,12 +19,12 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
     os.makedirs(result_folder, exist_ok=True)
 
     print(f"Processing {file_name}")
-    mz_values, intensity_matrix, coordinates, ion_mode, actual_mass_detect_int_tol = process_ms_imaging_data(
+    mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(
         file_path,
         file_path.replace('.imzML', '.ibd'),
-        mass_detect_int_tol=mass_detect_int_tol,
-        max_mz=max_mz,
         mz_bin_size=mz_bin_size,
+        mass_detect_int_tol=mass_detect_int_tol,
+        noise_detection=noise_detection,
         save=True, save_dir=result_folder
     )
 
@@ -39,7 +39,7 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
     print(f"Generating pseudo MS1 spectra for {file_name}")
     pseudo_ms1 = generate_pseudo_ms1(mz_values, intensity_matrix, cor_matrix,
                                      n_processes=n_processes,
-                                     min_cluster_size=min_cluster_size,
+                                     min_cluster_size=ms1id_min_matched_peak + 1,
                                      save=True,
                                      save_dir=result_folder)
 

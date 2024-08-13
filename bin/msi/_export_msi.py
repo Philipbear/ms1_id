@@ -49,16 +49,17 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
         out_df.to_csv(save_path, index=False, sep='\t')
 
         # save a dereplicated version
-        # sort by score, then matched peak, then spectral_usage
-        out_df = out_df.sort_values(['matched_score', 'matched_peak', 'spectral_usage'],
-                                    ascending=[False, False, False])
+        if 'matched_score' in out_df.columns:
+            # sort by score, then matched peak, then spectral_usage
+            out_df = out_df.sort_values(['matched_score', 'matched_peak', 'spectral_usage'],
+                                        ascending=[False, False, False])
 
-        # dereplicate by [inchikey, rounded precursor mz]  # rounded precursor mz indicating precursor type
-        out_df['rounded_precursor_mz'] = out_df['precursor_mz'].round(1)
-        out_df = out_df.drop_duplicates(['inchikey', 'rounded_precursor_mz'], keep='first')
-        out_df.drop(columns=['rounded_precursor_mz'], inplace=True)
+            # dereplicate by [inchikey, rounded precursor mz]  # rounded precursor mz indicating precursor type
+            out_df['rounded_precursor_mz'] = out_df['precursor_mz'].round(1)
+            out_df = out_df.drop_duplicates(['inchikey', 'rounded_precursor_mz'], keep='first')
+            out_df.drop(columns=['rounded_precursor_mz'], inplace=True)
 
-        out_df.to_csv(save_path.replace('_all.tsv', '_derep.tsv'), index=False, sep='\t')
+            out_df.to_csv(save_path.replace('_all.tsv', '_derep.tsv'), index=False, sep='\t')
 
     return out_df
 

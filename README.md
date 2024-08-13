@@ -31,6 +31,8 @@ This strategy works for both **LC-MS** data and **MS imaging** data.
 - MS imaging data
   - Mouse brain ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
   - Mouse body ([METASPACE link](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))
+  - Mouse kidney ([METASPACE link](https://metaspace2020.eu/dataset/2019-03-28_18h03m06s))
+  - Mouse liver ([METASPACE link](https://metaspace2020.eu/dataset/2017-02-23_09h51m18s))
 
 
 -------------------------------------
