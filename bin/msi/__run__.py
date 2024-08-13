@@ -22,7 +22,7 @@ def exp_1(ms2db):
 def exp_2(ms2db):
     ms1id_single_file_batch(file_dir='../../imaging/mouse_body',
                             library_path=f'../../data/{ms2db}.pkl',
-                            n_processes=48,
+                            n_processes=40,
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.7,
@@ -34,7 +34,7 @@ def exp_2(ms2db):
 def exp_3(ms2db):
     ms1id_single_file_batch(file_dir='../../imaging/mouse_kidney',
                             library_path=f'../../data/{ms2db}.pkl',
-                            n_processes=10,
+                            n_processes=40,
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.7,
@@ -46,7 +46,7 @@ def exp_3(ms2db):
 def exp_4(ms2db):
     ms1id_single_file_batch(file_dir='../../imaging/mouse_liver',
                             library_path=f'../../data/{ms2db}.pkl',
-                            n_processes=10,
+                            n_processes=40,
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.7,
@@ -55,10 +55,10 @@ def exp_4(ms2db):
 
 ##########################################
 if __name__ == '__main__':
-    exp_1('gnps')
+    # exp_1('gnps')
 
-    # exp_2('gnps')
+    exp_2('gnps')
 
     # exp_3('gnps')
 
-    # exp_4('gnps')
+    exp_4('gnps')
