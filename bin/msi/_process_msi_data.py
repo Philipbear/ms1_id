@@ -137,7 +137,8 @@ def process_spectrum(args):
 
 
 @njit
-def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, n_lowest=10, factor=5.0):
+def moving_average_baseline(mz_array, intensity_array, mz_window=100.0,
+                            percentage_lowest=0.10, factor=5.0):
     """
     Apply moving average algorithm to a single mass spectrum using an m/z-based window.
     This function is optimized with Numba.
@@ -145,7 +146,7 @@ def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, n_lowest
     :param mz_array: numpy array of m/z values
     :param intensity_array: numpy array of intensity values
     :param mz_window: size of the moving window in Da (default: 100.0)
-    :param n_lowest: number of lowest points to consider in each window (default: 5)
+    :param percentage_lowest: percentage of lowest points to consider in each window (default: 10%)
     :param factor: factor to multiply the mean of the lowest points (default: 5.0)
     :return: tuple of (filtered_mz_array, filtered_intensity_array)
     """
@@ -159,8 +160,9 @@ def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, n_lowest
 
         if len(window_intensities) > 0:
             positive_intensities = window_intensities[window_intensities > 0]
-            if len(positive_intensities) >= n_lowest:
+            if len(positive_intensities) > 0:
                 sorted_intensities = np.sort(positive_intensities)
+                n_lowest = max(1, int(len(sorted_intensities) * percentage_lowest))
                 lowest_n = sorted_intensities[:n_lowest]
                 baseline = factor * np.mean(lowest_n)
             else:

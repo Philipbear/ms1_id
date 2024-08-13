@@ -170,18 +170,18 @@ def _process_chunk(args):
 
     for spec in chunk:
         matching_result = search_eng.search(
-            precursor_mz=spec.t_mz,
+            precursor_mz=spec.t_mz,  # unused, open search
             peaks=[[mz, intensity] for mz, intensity in zip(spec.mzs, spec.intensities)],
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
-            method="identity",
+            method="open",
             precursor_ions_removal_da=0.5,
             noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.02,
             reverse=True
         )
 
-        score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
+        score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
 
         # filter by matching cutoffs, including scaled score
         v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]

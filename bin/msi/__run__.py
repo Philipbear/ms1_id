@@ -13,7 +13,7 @@ def exp_1(ms2db):
                             n_processes=12,
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             mz_bin_size=0.005,
-                            min_overlap=10, min_correlation=0.75,
+                            min_overlap=10, min_correlation=0.8,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
@@ -25,7 +25,7 @@ def exp_2(ms2db):
                             n_processes=48,
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             mz_bin_size=0.005,
-                            min_overlap=10, min_correlation=0.75,
+                            min_overlap=10, min_correlation=0.8,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
@@ -37,7 +37,7 @@ def exp_3(ms2db):
                             n_processes=12,
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             mz_bin_size=0.005,
-                            min_overlap=10, min_correlation=0.75,
+                            min_overlap=10, min_correlation=0.8,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
@@ -49,14 +49,14 @@ def exp_4(ms2db):
                             n_processes=48,
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             mz_bin_size=0.005,
-                            min_overlap=10, min_correlation=0.75,
+                            min_overlap=10, min_correlation=0.8,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
 ##########################################
 if __name__ == '__main__':
 
-    # exp_1('gnps')
-    exp_2('gnps')
+    exp_1('gnps')
+    # exp_2('gnps')
     # exp_3('gnps')
-    exp_4('gnps')
+    # exp_4('gnps')
