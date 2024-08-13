@@ -17,7 +17,7 @@ def std():
                             ms1id_score_cutoff=0.01, ms1id_min_matched_peak=2,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
-                            out_dir='/Users/shipei/Documents/projects/ms1_id/bin/lcms/analysis/std/output_scale_k10')
+                            out_dir='/Users/shipei/Documents/projects/ms1_id/bin/lcms/analysis/std/output_k10')
 
     ms1id_single_file_batch('/Users/shipei/Documents/projects/ms1_id/data/std_mix/data_1',
                             '/Users/shipei/Documents/projects/ms1_id/data/std_mix/std.pkl',
