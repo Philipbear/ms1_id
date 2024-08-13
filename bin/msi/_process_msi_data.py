@@ -137,7 +137,7 @@ def process_spectrum(args):
 
 
 @njit
-def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, n_lowest=5, factor=5.0):
+def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, n_lowest=10, factor=5.0):
     """
     Apply moving average algorithm to a single mass spectrum using an m/z-based window.
     This function is optimized with Numba.
@@ -159,7 +159,7 @@ def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, n_lowest
 
         if len(window_intensities) > 0:
             positive_intensities = window_intensities[window_intensities > 0]
-            if len(positive_intensities) >= n_lowest * 2:
+            if len(positive_intensities) >= n_lowest:
                 sorted_intensities = np.sort(positive_intensities)
                 lowest_n = sorted_intensities[:n_lowest]
                 baseline = factor * np.mean(lowest_n)
