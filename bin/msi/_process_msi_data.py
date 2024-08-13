@@ -56,7 +56,7 @@ def auto_detect_intensity_threshold(parser, noise_detection, mass_detect_int_tol
     if mass_detect_int_tol is not None:
         return mass_detect_int_tol
 
-    print(f'Auto-detecting intensity threshold using {noise_detection} method.')
+    print(f'Auto-denoising MS spectra using {noise_detection} method.')
 
     if noise_detection == 'percentile':
         return detect_threshold_percentile(parser)

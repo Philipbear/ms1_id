@@ -102,7 +102,6 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
         for job in jobs:
             job.get()  # Wait for the job to complete
 
-    print("Combining results...")
     all_rows = []
     all_cols = []
     all_data = []
@@ -111,7 +110,6 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
         all_cols.extend(result[1])
         all_data.extend(result[2])
 
-    print("Creating sparse matrix...")
     corr_matrix = csr_matrix((all_data, (all_rows, all_cols)), shape=(n_mzs, n_mzs), dtype=np.float64)
     corr_matrix = corr_matrix + corr_matrix.T
     corr_matrix.setdiag(1.0)
@@ -125,17 +123,3 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
     os.unlink(mmap_filename)
 
     return corr_matrix
-
-
-if __name__ == "__main__":
-    import time
-    start = time.time()
-    intensity_matrix = np.random.rand(4000, 100)  # 4000 m/z values, 100 spectra
-
-    # Calculate correlations
-    corr_matrix = calc_all_mz_correlations(intensity_matrix, n_processes=10,
-                                           save=False)
-
-    print(f"Time elapsed: {time.time() - start:.2f} s")
-
-    print(f"Correlation matrix shape: {corr_matrix.shape}")
