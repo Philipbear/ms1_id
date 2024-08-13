@@ -13,7 +13,7 @@ def exp_1(ms2db):
                             n_processes=10,
                             mass_detect_int_tol=None, max_mz=None,
                             mz_bin_size=0.01,
-                            min_overlap=20, min_correlation=0.7, min_cluster_size=5,
+                            min_overlap=10, min_correlation=0.7, min_cluster_size=5,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
@@ -23,9 +23,9 @@ def exp_2(ms2db):
     ms1id_single_file_batch(file_dir='../../imaging/mouse_body',
                             library_path=f'../../data/{ms2db}.pkl',
                             n_processes=48,
-                            mass_detect_int_tol=1e6, max_mz=None,
+                            mass_detect_int_tol=2e6, max_mz=None,
                             mz_bin_size=0.01,
-                            min_overlap=20, min_correlation=0.7, min_cluster_size=5,
+                            min_overlap=10, min_correlation=0.7, min_cluster_size=5,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 

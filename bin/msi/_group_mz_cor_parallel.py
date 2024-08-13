@@ -85,10 +85,7 @@ def _perform_clustering(mz_values, correlation_matrix, n_processes=None,
     # Flatten results
     pseudo_ms1_spectra = [spectrum for chunk_result in results for spectrum in chunk_result]
 
-    # Remove redundant spectra
-    non_redundant_spectra = _remove_redundant_spectra(pseudo_ms1_spectra)
-
-    return non_redundant_spectra
+    return pseudo_ms1_spectra
 
 
 def _assign_intensities(pseudo_ms1_spectra, intensity_matrix):
@@ -107,18 +104,3 @@ def _assign_intensities(pseudo_ms1_spectra, intensity_matrix):
 
         spectrum.intensities = intensities[:, max_spectrum_index].tolist()
 
-
-def _remove_redundant_spectra(pseudo_ms1_spectra):
-    """
-    Remove redundant spectra (equal sets of m/z values).
-    """
-    non_redundant_spectra = []
-    seen_mz_sets = set()
-
-    for spec in tqdm(pseudo_ms1_spectra, desc="Removing redundant spectra"):
-        mz_set = frozenset(spec.mzs)
-        if mz_set not in seen_mz_sets:
-            seen_mz_sets.add(mz_set)
-            non_redundant_spectra.append(spec)
-
-    return non_redundant_spectra
