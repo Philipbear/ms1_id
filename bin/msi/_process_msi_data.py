@@ -5,93 +5,135 @@ import numpy as np
 import pyimzml.ImzMLParser as imzml
 from numba import njit
 from tqdm import tqdm
+import multiprocessing
 
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
                             mz_bin_size=0.005, save=False, save_dir=None,
-                            noise_detection='moving_average'):
-    # noise reduction method: 'percentile' or 'moving_average'
-    assert noise_detection in ['percentile', 'moving_average'], \
-        "Noise reduction method must be 'percentile' or 'moving_average'"
+                            noise_detection='moving_average', n_processes=None):
 
-    if mass_detect_int_tol is None:
-        print(f'No intensity threshold provided. Auto-detecting intensity threshold using {noise_detection} method.')
+    validate_inputs(noise_detection)
 
     parser = imzml.ImzMLParser(imzml_file)
 
-    # check if result files exist
-    if save_dir is not None:
-        mz_values_path = os.path.join(save_dir, 'mz_values.npy')
-        intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
-        coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
+    if save_dir and check_existing_results(save_dir):
+        return load_existing_results(save_dir)
 
-        if os.path.exists(mz_values_path) and os.path.exists(intensity_matrix_path) and os.path.exists(
-                coordinates_path):
-            mz_values = np.load(mz_values_path)
-            intensity_matrix = np.load(intensity_matrix_path)
-            with open(coordinates_path, 'rb') as f:
-                coordinates = pickle.load(f)
+    mass_detect_int_tol = auto_detect_intensity_threshold(parser, noise_detection, mass_detect_int_tol)
 
-            return mz_values, intensity_matrix, coordinates, parser.polarity
+    mz_intensity_dict, coordinates = process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size,
+                                                     n_processes)
 
-    # Create a dictionary to store m/z values and intensities
+    mz_values, intensity_matrix = convert_to_arrays(mz_intensity_dict, coordinates)
+
+    if save and save_dir:
+        save_results(save_dir, mz_values, intensity_matrix, coordinates)
+
+    return mz_values, intensity_matrix, coordinates, parser.polarity
+
+
+def validate_inputs(noise_detection):
+    assert noise_detection in ['percentile', 'moving_average'], \
+        "Noise reduction method must be 'percentile' or 'moving_average'"
+
+
+def check_existing_results(save_dir):
+    mz_values_path = os.path.join(save_dir, 'mz_values.npy')
+    intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
+    coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
+    return all(os.path.exists(path) for path in [mz_values_path, intensity_matrix_path, coordinates_path])
+
+
+def load_existing_results(save_dir):
+    mz_values = np.load(os.path.join(save_dir, 'mz_values.npy'))
+    intensity_matrix = np.load(os.path.join(save_dir, 'intensity_matrix.npy'))
+    with open(os.path.join(save_dir, 'coordinates.pkl'), 'rb') as f:
+        coordinates = pickle.load(f)
+    return mz_values, intensity_matrix, coordinates, None  # Note: parser.polarity is not saved
+
+
+def auto_detect_intensity_threshold(parser, noise_detection, mass_detect_int_tol):
+    if mass_detect_int_tol is not None:
+        return mass_detect_int_tol
+
+    print(f'Auto-detecting intensity threshold using {noise_detection} method.')
+
+    if noise_detection == 'percentile':
+        return detect_threshold_percentile(parser)
+    return None  # For 'moving_average', threshold is determined per spectrum
+
+
+def detect_threshold_percentile(parser):
+    all_intensities = []
+    for idx, _ in enumerate(parser.coordinates):
+        _, intensity = parser.getspectrum(idx)
+        all_intensities.extend(intensity)
+
+    all_intensities = np.array(all_intensities)
+    non_zero_intensities = all_intensities[all_intensities > 0.0]
+    threshold = max(np.min(non_zero_intensities) * 5, np.percentile(non_zero_intensities, 10))
+    print('Auto-detected intensity threshold (percentile method):', threshold)
+    return threshold
+
+
+def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, n_processes):
+    args_list = [(idx, *parser.getspectrum(idx), noise_detection, mass_detect_int_tol, mz_bin_size)
+                 for idx, _ in enumerate(parser.coordinates)]
+
+    n_processes = n_processes or multiprocessing.cpu_count()
+
+    with multiprocessing.Pool(processes=n_processes) as pool:
+        results = list(tqdm(pool.imap(process_spectrum, args_list),
+                            total=len(args_list),
+                            desc="Denoising spectra",
+                            unit="spectrum"))
+
     mz_intensity_dict = defaultdict(lambda: defaultdict(float))
     coordinates = []
-
-    if noise_detection == 'percentile' and mass_detect_int_tol is None:
-        all_intensities = []
-        for idx, (x, y, z) in enumerate(parser.coordinates):
-            mz, intensity = parser.getspectrum(idx)
-            all_intensities.extend(intensity)
-
-        all_intensities = np.array(all_intensities)
-        non_zero_intensities = all_intensities[all_intensities > 0.0]
-        mass_detect_int_tol = max(np.min(non_zero_intensities) * 5, np.percentile(non_zero_intensities, 10))
-        print('Auto-detected intensity threshold (percentile method):', mass_detect_int_tol)
-
-    for idx, (x, y, z) in enumerate(tqdm(parser.coordinates, desc="Denoising spectra", unit="spectrum")):
-        mz, intensity = parser.getspectrum(idx)
-
-        if noise_detection == 'moving_average':
-            baseline = moving_average_baseline(mz, intensity)
-            mask = intensity > baseline
-        else:
-            mask = intensity > mass_detect_int_tol
-
-        # Filter mz and intensity arrays
-        filtered_mz = mz[mask]
-        filtered_intensity = intensity[mask]
-
-        # Bin m/z values and sum intensities within each bin
-        binned_data = defaultdict(float)
-        for m, i in zip(filtered_mz, filtered_intensity):
-            binned_m = round(m / mz_bin_size) * mz_bin_size
-            binned_data[binned_m] += i
-
-        # Update mz_intensity_dict
+    for idx, binned_data in results:
         for binned_m, summed_intensity in binned_data.items():
             mz_intensity_dict[binned_m][idx] = summed_intensity
+        coordinates.append(parser.coordinates[idx][:2])  # Only x and y
 
-        coordinates.append((x, y))
+    return mz_intensity_dict, coordinates
 
-    # Convert to numpy arrays
+
+def convert_to_arrays(mz_intensity_dict, coordinates):
     mz_values = np.array(sorted(mz_intensity_dict.keys()))
     intensity_matrix = np.array([
         [mz_intensity_dict[mz].get(idx, 0.0) for idx in range(len(coordinates))]
         for mz in mz_values
     ])
+    return mz_values, intensity_matrix
 
-    if save and save_dir is not None:
-        mz_values_path = os.path.join(save_dir, 'mz_values.npy')
-        intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
-        coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
-        np.save(mz_values_path, mz_values)
-        np.save(intensity_matrix_path, intensity_matrix)
 
-        with open(coordinates_path, 'wb') as f:
-            pickle.dump(coordinates, f)
+def save_results(save_dir, mz_values, intensity_matrix, coordinates):
+    np.save(os.path.join(save_dir, 'mz_values.npy'), mz_values)
+    np.save(os.path.join(save_dir, 'intensity_matrix.npy'), intensity_matrix)
+    with open(os.path.join(save_dir, 'coordinates.pkl'), 'wb') as f:
+        pickle.dump(coordinates, f)
 
-    return mz_values, intensity_matrix, coordinates, parser.polarity
+
+def process_spectrum(args):
+    idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size = args
+
+    if noise_detection == 'moving_average':
+        baseline = moving_average_baseline(mz, intensity)
+        mask = intensity > baseline
+    else:
+        mask = intensity > mass_detect_int_tol
+
+    # Filter mz and intensity arrays
+    filtered_mz = mz[mask]
+    filtered_intensity = intensity[mask]
+
+    # Bin m/z values and sum intensities within each bin
+    binned_data = defaultdict(float)
+    for m, i in zip(filtered_mz, filtered_intensity):
+        binned_m = round(m / mz_bin_size) * mz_bin_size
+        binned_data[binned_m] += i
+
+    return idx, binned_data
 
 
 @njit
@@ -223,8 +265,7 @@ if __name__ == '__main__':
     mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(
         imzml_file,
         imzml_file.replace('.imzML', '.ibd'),
-        mass_detect_int_tol=None,
-        noise_reduction='moving_average'
+        mass_detect_int_tol=None
     )
 
     intensity_stats = analyze_intensity_distribution(intensity_matrix)
