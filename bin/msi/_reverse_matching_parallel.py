@@ -188,7 +188,7 @@ def _process_chunk(args):
 
         all_matches = []
         nonzero_mask = np.array(spec.intensities) > 0
-        nonzero_mzs = spec.mzs[nonzero_mask]
+        nonzero_mzs = np.array(spec.mzs)[nonzero_mask]
         for idx in v:
             matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
