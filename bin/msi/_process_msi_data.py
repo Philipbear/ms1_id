@@ -122,7 +122,7 @@ def process_spectrum(args):
     idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size = args
 
     if noise_detection == 'moving_average':
-        baseline = moving_average_baseline(mz, intensity, mz_window=50.0, percentage_lowest=0.05, factor=10.0)
+        baseline = moving_average_baseline(mz, intensity)
         mask = intensity > baseline
     else:
         mask = intensity > mass_detect_int_tol
@@ -134,7 +134,7 @@ def process_spectrum(args):
     # Centroid the spectrum
     centroid_mz, centroid_intensity = centroid_spectrum(filtered_mz, filtered_intensity,
                                                         centroid_mode='max',
-                                                        ms2_da=0.005, ms2_ppm=25)
+                                                        width_da=0.005, width_ppm=25)
 
     # Bin m/z values and take max intensity within each bin
     binned_data = {}
@@ -147,7 +147,7 @@ def process_spectrum(args):
 
 
 @njit
-def moving_average_baseline(mz_array, intensity_array, mz_window=50.0, percentage_lowest=0.05, factor=10.0):
+def moving_average_baseline(mz_array, intensity_array, mz_window=50.0, percentage_lowest=0.05, factor=5.0):
     """
     Apply moving average algorithm to a single mass spectrum using an m/z-based window.
     This function is optimized with Numba.
