@@ -6,6 +6,7 @@ import pyimzml.ImzMLParser as imzml
 from numba import njit
 from tqdm import tqdm
 import multiprocessing
+from _centroid_data import centroid_spectrum
 
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
@@ -128,18 +129,24 @@ def process_spectrum(args):
     filtered_mz = mz[mask]
     filtered_intensity = intensity[mask]
 
-    # Bin m/z values and sum intensities within each bin
-    binned_data = defaultdict(float)
-    for m, i in zip(filtered_mz, filtered_intensity):
+    # Centroid the spectrum
+    centroid_mz, centroid_intensity = centroid_spectrum(filtered_mz, filtered_intensity,
+                                                        centroid_mode='max',
+                                                        ms2_da=0.005, ms2_ppm=25)
+
+    # Bin m/z values and take max intensity within each bin
+    binned_data = {}
+    for m, i in zip(centroid_mz, centroid_intensity):
         binned_m = round(m / mz_bin_size) * mz_bin_size
-        binned_data[binned_m] += i
+        if binned_m not in binned_data or i > binned_data[binned_m]:
+            binned_data[binned_m] = i
 
     return idx, binned_data
 
 
 @njit
-def moving_average_baseline(mz_array, intensity_array, mz_window=100.0,
-                            percentage_lowest=0.10, factor=5.0):
+def moving_average_baseline(mz_array, intensity_array, mz_window=50.0,
+                            percentage_lowest=0.05, factor=10.0):
     """
     Apply moving average algorithm to a single mass spectrum using an m/z-based window.
     This function is optimized with Numba.
