@@ -12,9 +12,9 @@ from _centroid_data import centroid_spectrum
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
                             mz_bin_size=0.005,
                             noise_detection='moving_average', sn_factor=5.0,
+                            centroided=True,
                             n_processes=None,
-                            save=False, save_dir=None,):
-
+                            save=False, save_dir=None, ):
     validate_inputs(noise_detection)
 
     parser = imzml.ImzMLParser(imzml_file)
@@ -30,7 +30,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
             mass_detect_int_tol = detect_threshold_percentile(parser, sn_factor)
 
     mz_intensity_dict, coordinates = process_spectra(parser, noise_detection, mass_detect_int_tol,
-                                                     mz_bin_size, sn_factor, n_processes)
+                                                     mz_bin_size, sn_factor, centroided, n_processes)
 
     mz_values, intensity_matrix = convert_to_arrays(mz_intensity_dict, coordinates)
 
@@ -75,8 +75,9 @@ def detect_threshold_percentile(parser, sn_factor=5.0):
     return threshold
 
 
-def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor, n_processes):
-    args_list = [(idx, *parser.getspectrum(idx), noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor)
+def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor, centroided, n_processes):
+    args_list = [(idx, *parser.getspectrum(idx), noise_detection, mass_detect_int_tol,
+                  mz_bin_size, sn_factor, centroided)
                  for idx, _ in enumerate(parser.coordinates)]
 
     n_processes = n_processes or multiprocessing.cpu_count()
@@ -121,7 +122,7 @@ def save_results(save_dir, mz_values, intensity_matrix, coordinates):
 
 
 def process_spectrum(args):
-    idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor = args
+    idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor, centroided = args
 
     if noise_detection == 'moving_average':
         baseline = moving_average_baseline(mz, intensity, factor=sn_factor)
@@ -134,9 +135,10 @@ def process_spectrum(args):
     filtered_intensity = intensity[mask]
 
     # Centroid the spectrum
-    filtered_mz, filtered_intensity = centroid_spectrum(filtered_mz, filtered_intensity,
-                                                        centroid_mode='max',
-                                                        width_da=0.005, width_ppm=25)
+    if not centroided:
+        filtered_mz, filtered_intensity = centroid_spectrum(filtered_mz, filtered_intensity,
+                                                            centroid_mode='max',
+                                                            width_da=0.005, width_ppm=25)
 
     # Bin m/z values and take max intensity within each bin
     binned_data = {}
@@ -158,7 +160,7 @@ def moving_average_baseline(mz_array, intensity_array,
     :param mz_array: numpy array of m/z values
     :param intensity_array: numpy array of intensity values
     :param mz_window: size of the moving window in Da (default: 100.0)
-    :param percentage_lowest: percentage of lowest points to consider in each window (default: 10%)
+    :param percentage_lowest: percentage of lowest points to consider in each window (default: 5%)
     :param factor: factor to multiply the mean of the lowest points (default: 5.0)
     :return: tuple of (filtered_mz_array, filtered_intensity_array)
     """
@@ -185,4 +187,3 @@ def moving_average_baseline(mz_array, intensity_array,
         baseline_array.append(baseline)
 
     return np.array(baseline_array)
-
