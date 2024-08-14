@@ -187,7 +187,7 @@ def _process_chunk(args):
         v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
 
         all_matches = []
-        nonzero_mzs = spec.mzs[spec.intensities > 0]
+        nonzero_mzs = spec.mzs[np.where(np.array(spec.intensities) > 0)[0]]
         for idx in v:
             matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
