@@ -11,7 +11,7 @@ from _centroid_data import centroid_spectrum
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
                             mz_bin_size=0.005,
-                            noise_detection='moving_average', centroided=False,
+                            noise_detection='moving_average', sn_factor=5.0,
                             n_processes=None,
                             save=False, save_dir=None,):
 
@@ -27,10 +27,10 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
     if mass_detect_int_tol is None:
         print(f'Auto-denoising MS spectra using {noise_detection} method.')
         if noise_detection == 'percentile':
-            mass_detect_int_tol = detect_threshold_percentile(parser)
+            mass_detect_int_tol = detect_threshold_percentile(parser, sn_factor)
 
     mz_intensity_dict, coordinates = process_spectra(parser, noise_detection, mass_detect_int_tol,
-                                                     mz_bin_size, centroided, n_processes)
+                                                     mz_bin_size, sn_factor, n_processes)
 
     mz_values, intensity_matrix = convert_to_arrays(mz_intensity_dict, coordinates)
 
@@ -62,7 +62,7 @@ def load_existing_results(save_dir):
     return mz_values, intensity_matrix, coordinates, None  # Note: parser.polarity is not saved
 
 
-def detect_threshold_percentile(parser):
+def detect_threshold_percentile(parser, sn_factor=5.0):
     all_intensities = []
     for idx, _ in enumerate(parser.coordinates):
         _, intensity = parser.getspectrum(idx)
@@ -70,13 +70,13 @@ def detect_threshold_percentile(parser):
 
     all_intensities = np.array(all_intensities)
     non_zero_intensities = all_intensities[all_intensities > 0.0]
-    threshold = max(np.min(non_zero_intensities) * 5, np.percentile(non_zero_intensities, 10))
+    threshold = max(np.min(non_zero_intensities) * sn_factor, np.percentile(non_zero_intensities, 10))
     print('Auto-detected intensity threshold (percentile method):', threshold)
     return threshold
 
 
-def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, centroided, n_processes):
-    args_list = [(idx, *parser.getspectrum(idx), noise_detection, mass_detect_int_tol, mz_bin_size, centroided)
+def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor, n_processes):
+    args_list = [(idx, *parser.getspectrum(idx), noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor)
                  for idx, _ in enumerate(parser.coordinates)]
 
     n_processes = n_processes or multiprocessing.cpu_count()
@@ -121,10 +121,10 @@ def save_results(save_dir, mz_values, intensity_matrix, coordinates):
 
 
 def process_spectrum(args):
-    idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size, centroided = args
+    idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor = args
 
     if noise_detection == 'moving_average':
-        baseline = moving_average_baseline(mz, intensity)
+        baseline = moving_average_baseline(mz, intensity, factor=sn_factor)
         mask = intensity > baseline
     else:
         mask = intensity > mass_detect_int_tol
@@ -134,10 +134,9 @@ def process_spectrum(args):
     filtered_intensity = intensity[mask]
 
     # Centroid the spectrum
-    if not centroided:
-        filtered_mz, filtered_intensity = centroid_spectrum(filtered_mz, filtered_intensity,
-                                                            centroid_mode='max',
-                                                            width_da=0.005, width_ppm=25)
+    filtered_mz, filtered_intensity = centroid_spectrum(filtered_mz, filtered_intensity,
+                                                        centroid_mode='max',
+                                                        width_da=0.005, width_ppm=25)
 
     # Bin m/z values and take max intensity within each bin
     binned_data = {}
@@ -150,7 +149,8 @@ def process_spectrum(args):
 
 
 @njit
-def moving_average_baseline(mz_array, intensity_array, mz_window=100.0, percentage_lowest=0.05, factor=10.0):
+def moving_average_baseline(mz_array, intensity_array,
+                            mz_window=100.0, percentage_lowest=0.05, factor=5.0):
     """
     Apply moving average algorithm to a single mass spectrum using an m/z-based window.
     This function is optimized with Numba.
