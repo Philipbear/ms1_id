@@ -17,16 +17,22 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
 
     parser = imzml.ImzMLParser(imzml_file)
 
+    # Check if results already exist
     if save_dir and check_existing_results(save_dir):
         return load_existing_results(save_dir)
 
-    mass_detect_int_tol = auto_detect_intensity_threshold(parser, noise_detection, mass_detect_int_tol)
+    # Auto-detect intensity threshold if not provided
+    if mass_detect_int_tol is None:
+        print(f'Auto-denoising MS spectra using {noise_detection} method.')
+        if noise_detection == 'percentile':
+            mass_detect_int_tol = detect_threshold_percentile(parser)
 
     mz_intensity_dict, coordinates = process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size,
                                                      n_processes)
 
     mz_values, intensity_matrix = convert_to_arrays(mz_intensity_dict, coordinates)
 
+    # Save results if requested
     if save and save_dir:
         print(f'Saving mz values, intensity matrix, and coordinates...')
         save_results(save_dir, mz_values, intensity_matrix, coordinates)
@@ -54,17 +60,6 @@ def load_existing_results(save_dir):
     return mz_values, intensity_matrix, coordinates, None  # Note: parser.polarity is not saved
 
 
-def auto_detect_intensity_threshold(parser, noise_detection, mass_detect_int_tol):
-    if mass_detect_int_tol is not None:
-        return mass_detect_int_tol
-
-    print(f'Auto-denoising MS spectra using {noise_detection} method.')
-
-    if noise_detection == 'percentile':
-        return detect_threshold_percentile(parser)
-    return None  # For 'moving_average', threshold is determined per spectrum
-
-
 def detect_threshold_percentile(parser):
     all_intensities = []
     for idx, _ in enumerate(parser.coordinates):
@@ -84,11 +79,18 @@ def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, n
 
     n_processes = n_processes or multiprocessing.cpu_count()
 
-    with multiprocessing.Pool(processes=n_processes) as pool:
-        results = list(tqdm(pool.imap(process_spectrum, args_list),
-                            total=len(args_list),
-                            desc="Denoising spectra",
-                            unit="spectrum"))
+    if n_processes == 1:
+        # Non-parallel processing
+        results = []
+        for args in tqdm(args_list, desc="Denoising spectra", unit="spectrum"):
+            results.append(process_spectrum(args))
+    else:
+        # Parallel processing
+        with multiprocessing.Pool(processes=n_processes) as pool:
+            results = list(tqdm(pool.imap(process_spectrum, args_list),
+                                total=len(args_list),
+                                desc="Denoising spectra",
+                                unit="spectrum"))
 
     mz_intensity_dict = defaultdict(lambda: defaultdict(float))
     coordinates = []
@@ -120,7 +122,7 @@ def process_spectrum(args):
     idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size = args
 
     if noise_detection == 'moving_average':
-        baseline = moving_average_baseline(mz, intensity)
+        baseline = moving_average_baseline(mz, intensity, mz_window=50.0, percentage_lowest=0.05, factor=10.0)
         mask = intensity > baseline
     else:
         mask = intensity > mass_detect_int_tol
@@ -145,8 +147,7 @@ def process_spectrum(args):
 
 
 @njit
-def moving_average_baseline(mz_array, intensity_array, mz_window=50.0,
-                            percentage_lowest=0.05, factor=10.0):
+def moving_average_baseline(mz_array, intensity_array, mz_window=50.0, percentage_lowest=0.05, factor=10.0):
     """
     Apply moving average algorithm to a single mass spectrum using an m/z-based window.
     This function is optimized with Numba.
@@ -182,102 +183,3 @@ def moving_average_baseline(mz_array, intensity_array, mz_window=50.0,
 
     return np.array(baseline_array)
 
-
-def analyze_intensity_distribution(intensity_matrix):
-    # Flatten the intensity matrix to get all intensity values
-    all_intensities = intensity_matrix.flatten()
-
-    # Remove zero intensities
-    non_zero_intensities = all_intensities[all_intensities > 0]
-
-    # Calculate percentiles
-    percentiles = [1, 2, 5, 10, 20, 50, 80, 90, 95, 98, 99]
-    intensity_percentiles = np.percentile(non_zero_intensities, percentiles)
-
-    # Create a dictionary of percentiles and their corresponding intensity values
-    percentile_dict = dict(zip(percentiles, intensity_percentiles))
-
-    # Calculate some additional statistics
-    mean_intensity = np.mean(non_zero_intensities)
-    median_intensity = np.median(non_zero_intensities)
-    min_intensity = np.min(non_zero_intensities)
-    max_intensity = np.max(non_zero_intensities)
-
-    return {
-        "percentiles": percentile_dict,
-        "mean": mean_intensity,
-        "median": median_intensity,
-        "min": min_intensity,
-        "max": max_intensity,
-        "total_intensities": len(all_intensities),
-        "non_zero_intensities": len(non_zero_intensities)
-    }
-
-
-def print_intensity_stats(stats):
-    print("Intensity Distribution Analysis:")
-    print(f"Total number of intensity values: {stats['total_intensities']}")
-    print(f"Number of non-zero intensity values: {stats['non_zero_intensities']}")
-    print("\nPercentiles:")
-    for percentile, value in stats['percentiles'].items():
-        print(f"{percentile}th percentile: {value:.2f}")
-    print(f"\nMean intensity: {stats['mean']:.2f}")
-    print(f"Median intensity: {stats['median']:.2f}")
-    print(f"Minimum non-zero intensity: {stats['min']:.2f}")
-    print(f"Maximum intensity: {stats['max']:.2f}")
-
-
-def create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=95):
-    import matplotlib.pyplot as plt
-    # Flatten the intensity matrix to get all intensity values
-    all_intensities = intensity_matrix.flatten()
-
-    # Remove zero intensities
-    non_zero_intensities = all_intensities[all_intensities > 0]
-
-    # Calculate the cutoff value for the x-axis (90th percentile by default)
-    x_max = np.percentile(non_zero_intensities, percentile_cutoff)
-
-    # Create the histogram
-    plt.figure(figsize=(12, 6))
-
-    # Use range parameter to limit x-axis
-    counts, bins, _ = plt.hist(non_zero_intensities, bins=bins, range=(0, x_max), edgecolor='black')
-
-    plt.title(f'Histogram of Non-Zero Intensity Values (First {percentile_cutoff}%)')
-    plt.xlabel('Intensity')
-    plt.ylabel('Frequency')
-
-    # Add vertical lines for percentiles
-    percentiles = [1, 2, 5, 10, 20, 50, 80, 90, 95, 98, 99]
-    colors = ['r', 'g', 'b', 'c', 'm', 'y', 'k', 'orange', 'purple', 'brown', 'pink']
-    for percentile, color in zip(percentiles, colors):
-        value = np.percentile(non_zero_intensities, percentile)
-        if value <= x_max:
-            plt.axvline(value, color=color, linestyle='dashed', linewidth=1)
-            plt.text(value, plt.gca().get_ylim()[1], f'{percentile}th',
-                     rotation=90, va='top', ha='right', color=color)
-
-    # Add text box with statistics
-    stats_text = f"Total values: {len(all_intensities)}\n"
-    stats_text += f"Non-zero values: {len(non_zero_intensities)}\n"
-    stats_text += f"Max shown: {x_max:.2f}"
-    plt.text(0.95, 0.95, stats_text, transform=plt.gca().transAxes,
-             verticalalignment='top', horizontalalignment='right',
-             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-
-    plt.tight_layout()
-    plt.show()
-
-
-if __name__ == '__main__':
-    imzml_file = '/Users/shipei/Documents/projects/ms1_id/imaging/mouse_kidney/mouse kidney - root mean square - metaspace.imzML'
-    mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(
-        imzml_file,
-        imzml_file.replace('.imzML', '.ibd'),
-        mass_detect_int_tol=None
-    )
-
-    intensity_stats = analyze_intensity_distribution(intensity_matrix)
-    print_intensity_stats(intensity_stats)
-    create_intensity_histogram(intensity_matrix, bins=1000, percentile_cutoff=50)

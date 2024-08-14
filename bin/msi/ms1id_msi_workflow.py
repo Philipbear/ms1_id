@@ -25,6 +25,7 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
         mz_bin_size=mz_bin_size,
         mass_detect_int_tol=mass_detect_int_tol,
         noise_detection=noise_detection,
+        n_processes=n_processes,
         save=True, save_dir=result_folder
     )
 

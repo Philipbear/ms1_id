@@ -8,32 +8,26 @@ def centroid_spectrum(mz_list, intensity_list, centroid_mode='max',
     Centroid a spectrum by merging peaks within the +/- ms2_ppm or +/- ms2_da.
     centroid_mode: 'max' or 'sum'
     """
-    # Ensure mz_list and intensity_list are contiguous numpy arrays
-    mz_list = np.ascontiguousarray(mz_list, dtype=np.float32)
-    intensity_list = np.ascontiguousarray(intensity_list, dtype=np.float32)
+    peaks = list(zip(mz_list, intensity_list))
+    peaks = np.asarray(peaks, dtype=np.float32, order="C")
 
-    # Create a 2D array of peaks
-    peaks = np.column_stack((mz_list, intensity_list))
+    if len(peaks) == 0:
+        return mz_list, intensity_list
 
-    # Sort the peaks by m/z
-    peaks = np.ascontiguousarray(peaks[np.argsort(peaks[:, 0])])
-
-    is_centroided = check_centroid(peaks, ms2_da=ms2_da, ms2_ppm=ms2_ppm)
-    while not is_centroided:
-        peaks = centroid_spectrum_inner(peaks, centroid_mode, ms2_da=ms2_da, ms2_ppm=ms2_ppm)
-        is_centroided = check_centroid(peaks, ms2_da=ms2_da, ms2_ppm=ms2_ppm)
-
+    # Sort the peaks by m/z.
+    peaks = peaks[np.argsort(peaks[:, 0])]
+    is_centroided: int = _check_centroid(peaks, ms2_da=ms2_da, ms2_ppm=ms2_ppm)
+    while is_centroided == 0:
+        peaks = _centroid_spectrum(peaks, centroid_mode, ms2_da=ms2_da, ms2_ppm=ms2_ppm)
+        is_centroided = _check_centroid(peaks, ms2_da=ms2_da, ms2_ppm=ms2_ppm)
     return peaks[:, 0], peaks[:, 1]
 
 
 @njit
-def centroid_spectrum_inner(peaks, centroid_mode='max',
-                            ms2_da=0.005, ms2_ppm=25.0):
+def _centroid_spectrum(peaks, centroid_mode='max',
+                       ms2_da=0.005, ms2_ppm=25.0) -> np.ndarray:
     """Centroid a spectrum by merging peaks within the +/- ms2_ppm or +/- ms2_da,
     only merging peaks with lower intensity than the target peak."""
-    # Ensure peaks is contiguous
-    peaks = np.ascontiguousarray(peaks)
-
     # Construct a new spectrum to avoid memory reallocation.
     peaks_new = np.zeros((peaks.shape[0], 2), dtype=np.float32)
     peaks_new_len = 0
@@ -77,23 +71,20 @@ def centroid_spectrum_inner(peaks, centroid_mode='max',
 
     # Return the new spectrum.
     peaks_new = peaks_new[:peaks_new_len]
-    return np.ascontiguousarray(peaks_new[np.argsort(peaks_new[:, 0])])
+    return peaks_new[np.argsort(peaks_new[:, 0])]
 
 
-@njit
-def check_centroid(peaks, ms2_da=0.005, ms2_ppm=25.0):
-    """Check if the spectrum is centroided. Returns True if centroided, False otherwise."""
-    # Ensure peaks is contiguous
-    peaks = np.ascontiguousarray(peaks)
-
+def _check_centroid(peaks, ms2_da=0.005, ms2_ppm=25.0) -> int:
+    """Check if the spectrum is centroided. 0 for False and 1 for True."""
     if peaks.shape[0] <= 1:
-        return True
+        return 1
 
     # Calculate ms2_ppm_in_da
     ms2_ppm_in_da = peaks[1:, 0] * ms2_ppm * 1e-6
 
-    # Use maximum to choose the larger value
+    # Use bitwise OR to choose the maximum
     threshold = np.maximum(ms2_da, ms2_ppm_in_da)
 
     # Check if the spectrum is centroided
-    return np.all(np.diff(peaks[:, 0]) >= threshold)
+    return 1 if np.all(np.diff(peaks[:, 0]) >= threshold) else 0
+

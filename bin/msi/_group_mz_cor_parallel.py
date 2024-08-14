@@ -68,8 +68,7 @@ def _perform_clustering(mz_values, correlation_matrix, n_processes=None,
     if not isinstance(correlation_matrix, csr_matrix):
         correlation_matrix = csr_matrix(correlation_matrix)
 
-    if n_processes is None:
-        n_processes = mp.cpu_count()
+    n_processes = n_processes or mp.cpu_count()
 
     # Prepare chunks
     n_chunks = (len(mz_values) + chunk_size - 1) // chunk_size

@@ -4,6 +4,7 @@ from numba import njit
 from scipy.sparse import csr_matrix, save_npz, load_npz
 import multiprocessing as mp
 import tempfile
+from tqdm import tqdm
 
 
 @njit
@@ -75,8 +76,7 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
 
     n_mzs, n_spectra = intensity_matrix.shape
 
-    if n_processes is None:
-        n_processes = mp.cpu_count()
+    n_processes = n_processes or mp.cpu_count()
 
     # Create a temporary memmap file
     temp_file = tempfile.NamedTemporaryFile(delete=False)
@@ -88,27 +88,47 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
     # Prepare chunks
     chunks = [(i, min(i + chunk_size, n_mzs)) for i in range(0, n_mzs, chunk_size)]
 
-    print(f"Calculating correlations using {n_processes} processes...")
-    manager = mp.Manager()
-    return_dict = manager.dict()
+    print(f"Calculating m/z spatial correlations...")
 
-    with mp.Pool(processes=n_processes) as pool:
-        jobs = [
-            pool.apply_async(worker, (start, end, mmap_filename, intensity_matrix.shape,
-                                      min_overlap, min_cor, return_dict))
-            for start, end in chunks
-        ]
+    if n_processes == 1:
+        # Non-parallel processing
+        all_rows = []
+        all_cols = []
+        all_data = []
+        for start, end in tqdm(chunks, desc="Processing chunks"):
+            rows, cols, data = [], [], []
+            for i in range(start, end):
+                for j in range(i + 1, n_mzs):
+                    corr = mz_correlation_numba(mmap_array[i], mmap_array[j], min_overlap)
+                    if corr >= min_cor:
+                        rows.append(i)
+                        cols.append(j)
+                        data.append(corr)
+            all_rows.extend(rows)
+            all_cols.extend(cols)
+            all_data.extend(data)
+    else:
+        # Parallel processing
+        manager = mp.Manager()
+        return_dict = manager.dict()
 
-        for job in jobs:
-            job.get()  # Wait for the job to complete
+        with mp.Pool(processes=n_processes) as pool:
+            jobs = [
+                pool.apply_async(worker, (start, end, mmap_filename, intensity_matrix.shape,
+                                          min_overlap, min_cor, return_dict))
+                for start, end in chunks
+            ]
 
-    all_rows = []
-    all_cols = []
-    all_data = []
-    for result in return_dict.values():
-        all_rows.extend(result[0])
-        all_cols.extend(result[1])
-        all_data.extend(result[2])
+            for job in tqdm(jobs, desc="Processing chunks"):
+                job.get()  # Wait for the job to complete
+
+        all_rows = []
+        all_cols = []
+        all_data = []
+        for result in return_dict.values():
+            all_rows.extend(result[0])
+            all_cols.extend(result[1])
+            all_data.extend(result[2])
 
     corr_matrix = csr_matrix((all_data, (all_rows, all_cols)), shape=(n_mzs, n_mzs), dtype=np.float64)
     corr_matrix = corr_matrix + corr_matrix.T
