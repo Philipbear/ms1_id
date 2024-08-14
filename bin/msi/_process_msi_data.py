@@ -27,6 +27,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
     mz_values, intensity_matrix = convert_to_arrays(mz_intensity_dict, coordinates)
 
     if save and save_dir:
+        print(f'Saving mz values, intensity matrix, and coordinates...')
         save_results(save_dir, mz_values, intensity_matrix, coordinates)
 
     return mz_values, intensity_matrix, coordinates, parser.polarity

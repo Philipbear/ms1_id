@@ -187,11 +187,17 @@ def _process_chunk(args):
         v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
 
         all_matches = []
+        nonzero_mzs = spec.mzs[spec.intensities > 0]
         for idx in v:
             matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
             this_ion_mode = matched.get('ion_mode', '')
             if ion_mode is not None and ion_mode != this_ion_mode:
+                continue
+
+            # precursor should be in the pseudo MS1 spectrum with intensity > 0
+            precursor_mz = matched.get('precursor_mz', 0)
+            if not any(np.isclose(nonzero_mzs, precursor_mz, atol=mz_tol)):
                 continue
 
             all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))

@@ -75,7 +75,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.
 def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
                       score_cutoff=0.8, min_matched_peak=6,
                       ion_mode=None, refine=True,
-                      rt_tol=0.025, max_prec_rel_int_in_other_ms2=0.05,
+                      max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_path=None):
     """
     Perform ms1 annotation
@@ -85,6 +85,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
     :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
+    :param refine: bool, refine the results
     :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
     :param save: bool, save the results
     :param save_path: str, save directory
@@ -99,8 +100,8 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     if refine:
-        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, rt_tol=rt_tol,
-                                            mz_tol=mz_tol,
+        print('Refining MS1 ID results...')
+        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
                                             max_prec_rel_int=max_prec_rel_int_in_other_ms2)
 
     if save and save_path is not None:
@@ -141,14 +142,14 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
             peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
-            method="identity",
+            method="open",
             precursor_ions_removal_da=0.5,
             noise_threshold=0.0,
             min_ms2_difference_in_da=mz_tol * 2.02,
             reverse=True
         )
 
-        score_arr, matched_peak_arr, spec_usage_arr = matching_result['identity_search']
+        score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
 
         # filter by matching cutoffs, including scaled score
         v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
@@ -159,6 +160,11 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
 
             this_ion_mode = matched.get('ion_mode', '')
             if ion_mode is not None and ion_mode != this_ion_mode:
+                continue
+
+            # precursor should be in the pseudo MS1 spectrum
+            precursor_mz = matched.get('precursor_mz', 0)
+            if not any(np.isclose(sorted_mzs, precursor_mz, atol=mz_tol)):
                 continue
 
             all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
@@ -193,7 +199,58 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
     return ms1_spec_ls
 
 
-def refine_ms1_id_results(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int=0.05):
+def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
+    """
+    Refine MS1 ID results within each pseudo MS1 spectrum using a NumPy-optimized cumulative public spectrum approach.
+
+    :param ms1_spec_ls: List of PseudoMS1-like objects
+    :param mz_tol: m/z tolerance for comparing precursor masses
+    :param max_prec_rel_int: Maximum relative intensity threshold for precursor in public spectrum
+    :return: Refined list of PseudoMS1-like objects
+    """
+    for spec in ms1_spec_ls:
+        if spec.annotated and len(spec.annotation_ls) > 1:
+            # Sort annotations by score in descending order
+            spec.annotation_ls.sort(key=lambda x: x.score, reverse=True)
+
+            public_mz = np.array([])  # Public spectrum, all matched peaks
+            public_intensity = np.array([])
+            to_keep = []
+
+            for annotation in spec.annotation_ls:
+
+                current_precursor_mz = annotation.precursor_mz
+
+                # Check if precursor appears in public spectrum
+                if public_mz.size > 0:
+                    mz_diff = np.abs(public_mz - current_precursor_mz)
+                    min_diff_idx = np.argmin(mz_diff)
+                    if mz_diff[min_diff_idx] <= mz_tol and public_intensity[min_diff_idx] > max_prec_rel_int:
+                        continue
+
+                to_keep.append(annotation)
+
+                # Add the reference spectrum to the public spectrum
+                ref_spectrum = np.array(annotation.matched_spec)
+                max_intensity = np.max(ref_spectrum[:, 1])
+                ref_mz = ref_spectrum[:, 0]
+                ref_intensity = ref_spectrum[:, 1] / max_intensity
+
+                if public_mz.size == 0:
+                    public_mz = ref_mz
+                    public_intensity = ref_intensity
+                else:
+                    # Add peaks
+                    public_mz = np.concatenate([public_mz, ref_mz])
+                    public_intensity = np.concatenate([public_intensity, ref_intensity])
+
+            # Update annotations
+            spec.annotation_ls = to_keep
+
+    return ms1_spec_ls
+
+'''
+def refine_ms1_id_results_for_identity_search(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int=0.05):
     """
     Refine MS1 ID results across pseudo MS1 spectra.
 
@@ -240,7 +297,7 @@ def refine_ms1_id_results(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int
                         nearby_spec.annotated = len(nearby_spec.annotation_ls) > 0
 
     return ms1_spec_ls
-
+'''
 
 if __name__ == "__main__":
     # prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
