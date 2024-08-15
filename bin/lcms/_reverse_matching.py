@@ -6,6 +6,7 @@ from ms_entropy import read_one_spectrum
 
 from _utils import SpecAnnotation
 from flash_cos import FlashCos
+from _centroid_data import centroid_spectrum_for_search
 
 
 def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5):
@@ -132,14 +133,16 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
         search_eng = pickle.load(file)
 
     for spec in ms1_spec_ls:
-        # Sort mzs and intensities in ascending order of mz
-        sorted_indices = np.argsort(spec.mzs)
-        sorted_mzs = np.array(spec.mzs)[sorted_indices]
-        sorted_intensities = np.array(spec.intensities)[sorted_indices]
+
+        peaks = list(zip(spec.mzs, spec.intensities))
+        peaks = np.asarray(peaks, dtype=np.float32, order="C")
+
+        # centroid
+        peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
 
         matching_result = search_eng.search(
             precursor_mz=spec.t_mz,
-            peaks=[[mz, intensity] for mz, intensity in zip(sorted_mzs, sorted_intensities)],
+            peaks=peaks,
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
             method="open",
@@ -164,7 +167,7 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
 
             # precursor should be in the pseudo MS1 spectrum
             precursor_mz = matched.get('precursor_mz', 0)
-            if not any(np.isclose(sorted_mzs, precursor_mz, atol=mz_tol)):
+            if not any(np.isclose(np.array(spec.mzs), precursor_mz, atol=mz_tol)):
                 continue
 
             all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))

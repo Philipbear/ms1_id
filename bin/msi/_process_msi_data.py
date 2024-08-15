@@ -14,7 +14,7 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
                             noise_detection='moving_average', sn_factor=5.0,
                             centroided=True,
                             n_processes=None,
-                            save=False, save_dir=None, ):
+                            save=False, save_dir=None):
     validate_inputs(noise_detection)
 
     parser = imzml.ImzMLParser(imzml_file)

@@ -23,7 +23,7 @@ def centroid_spectrum(mz_list, intensity_list, centroid_mode='max',
 
 
 @njit
-def _centroid_spectrum(peaks, centroid_mode='max',
+def _centroid_spectrum(peaks, centroid_mode='max', peak_height_requirement=True,
                        width_da=0.005, width_ppm=25.0) -> np.ndarray:
     """Centroid a spectrum by merging peaks within the +/- ms2_ppm or +/- ms2_da,
     only merging peaks with lower intensity than the target peak."""
@@ -41,8 +41,11 @@ def _centroid_spectrum(peaks, centroid_mode='max',
             mz_delta_allowed = max(width_da, mz_delta_allowed_ppm_in_da)
 
             # Find indices of peaks to merge.
-            indices = np.where(np.logical_and(np.abs(peaks[:, 0] - peaks[idx, 0]) <= mz_delta_allowed,
-                                              peaks[:, 1] < peaks[idx, 1]))[0]
+            if peak_height_requirement:
+                indices = np.where(np.logical_and(np.abs(peaks[:, 0] - peaks[idx, 0]) <= mz_delta_allowed,
+                                                  peaks[:, 1] < peaks[idx, 1]))[0]
+            else:
+                indices = np.where(np.abs(peaks[:, 0] - peaks[idx, 0]) <= mz_delta_allowed)[0]
 
             if centroid_mode == 'max':
                 # Merge the peaks
@@ -87,3 +90,25 @@ def _check_centroid(peaks, width_da=0.005, width_ppm=25.0) -> int:
     # Check if the spectrum is centroided
     return 1 if np.all(np.diff(peaks[:, 0]) >= threshold) else 0
 
+
+def check_centroid_for_search(peaks, width_da=0.105):
+    """Check if the spectrum is centroided. True for centroided and False for not centroided."""
+
+    # Check if the spectrum is centroided
+    return True if np.all(np.diff(peaks[:, 0]) >= width_da) else False
+
+
+def centroid_spectrum_for_search(peaks, width_da=0.105):
+    """Centroid a spectrum for search."""
+    if len(peaks) == 0:
+        return peaks
+
+    if check_centroid_for_search(peaks, width_da=width_da):
+        return peaks
+
+    # Sort the peaks by m/z.
+    peaks = peaks[np.argsort(peaks[:, 0])]
+
+    # centroid the spectrum
+    peaks = _centroid_spectrum(peaks, centroid_mode='max', width_da=width_da)
+    return peaks

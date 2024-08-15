@@ -8,9 +8,10 @@ from tqdm import tqdm
 
 from _utils_imaging import SpecAnnotation
 from flash_cos import FlashCos
+from _centroid_data import centroid_spectrum_for_search
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -169,9 +170,17 @@ def _process_chunk(args):
     chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak = args
 
     for spec in chunk:
+
+        peaks = list(zip(spec.mzs, spec.intensities))
+        peaks = np.asarray(peaks, dtype=np.float32, order="C")
+
+        # centroid
+        peaks = centroid_spectrum_for_search(peaks, width_da=0.05*2.015)
+
+        # open search
         matching_result = search_eng.search(
             precursor_mz=spec.t_mz,  # unused, open search
-            peaks=[[mz, intensity] for mz, intensity in zip(spec.mzs, spec.intensities)],
+            peaks=peaks,
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
             method="open",
