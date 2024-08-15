@@ -8,7 +8,7 @@ from _utils import SpecAnnotation
 from flash_cos import FlashCos
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5):
     """
     prepare ms2 db using MSP formatted database
     :return: a pickle file
@@ -125,7 +125,7 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, mz_tol: float = 
     :param min_matched_peak: minimum number of matched peaks
     :return: List of updated PseudoMS1-like objects
     """
-    mz_tol = max(mz_tol, 0.02)  # indexed library mz_tol is 0.02
+    mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
 
     # Load the data
     with open(ms2_library, 'rb') as file:
@@ -300,13 +300,11 @@ def refine_ms1_id_results_for_identity_search(ms1_spec_ls, rt_tol=0.1, mz_tol=0.
 '''
 
 if __name__ == "__main__":
-    # prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
-    # prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
-    # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=None, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=None, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.05, peak_scale_k=None, peak_intensity_power=0.5)
 
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
-    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
-    # prepare_ms2_lib(ms2db='../../data/gnps_nist20.msp', mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/nist20.msp', mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5)
 
     # with open('../../data/gnps.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)

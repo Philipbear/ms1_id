@@ -75,7 +75,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.02, peak_scale_k=10, peak_intensity_power=0.
 
 
 def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
-                      mz_tol=0.01,
+                      mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4,
                       ion_mode=None,
                       save=False, save_dir=None,
@@ -126,7 +126,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
 
 
 def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int = None,
-                           mz_tol: float = 0.02,
+                           mz_tol: float = 0.05,
                            ion_mode: str = None,
                            score_cutoff: float = 0.7,
                            min_matched_peak: int = 3,
@@ -144,7 +144,7 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int
     :param chunk_size: number of spectra to process in each parallel task
     :return: List of updated PseudoMS1-like objects
     """
-    mz_tol = max(mz_tol, 0.02)  # indexed library mz_tol is 0.02
+    mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
 
     # Load the data
     with open(ms2_library, 'rb') as file:

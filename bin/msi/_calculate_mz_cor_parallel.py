@@ -15,9 +15,6 @@ def _mz_correlation(intensities1, intensities2, min_overlap=5):
     x = intensities1[non_zero_mask]
     y = intensities2[non_zero_mask]
 
-    if len(x) < min_overlap:
-        return 0.0
-
     n = len(x)
     if n < min_overlap:
         return 0.0

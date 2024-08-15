@@ -16,7 +16,7 @@ def exp_1(ms2db):
                             sn_factor=5.0, centroided=True,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.80,
-                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
+                            ms1id_mz_tol=0.005, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
 ##########################################
@@ -30,7 +30,7 @@ def exp_2(ms2db):
                             sn_factor=10.0, centroided=False,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.8,
-                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
+                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
 ##########################################
@@ -44,7 +44,7 @@ def exp_3(ms2db):
                             sn_factor=10.0, centroided=False,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.8,
-                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
+                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
 ##########################################
@@ -58,13 +58,13 @@ def exp_4(ms2db):
                             sn_factor=10.0, centroided=False,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.8,
-                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
+                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
 
 
 ##########################################
 if __name__ == '__main__':
 
-    # exp_1('gnps')
-    exp_2('gnps')
-    exp_3('gnps')
-    exp_4('gnps')
+    exp_1('gnps')
+    # exp_2('gnps')
+    # exp_3('gnps')
+    # exp_4('gnps')
