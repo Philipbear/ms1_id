@@ -172,7 +172,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
                 if ion_mode is not None and ion_mode != this_ion_mode:
                     continue
 
-                # precursor should be in the pseudo MS1 spectrum
+                # precursor should be in the pseudo MS2 spectrum
                 precursor_mz = matched.get('precursor_mz', 0)
                 if not any(np.isclose(np.array(spec.mzs), precursor_mz, atol=mz_tol)):
                     continue
@@ -205,7 +205,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
 
 def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
     """
-    Refine MS1 ID results within each pseudo MS1 spectrum using a NumPy-optimized cumulative public spectrum approach.
+    Refine MS1 ID results within each pseudo MS2 spectrum using a NumPy-optimized cumulative public spectrum approach.
 
     :param ms1_spec_ls: List of PseudoMS1-like objects
     :param mz_tol: m/z tolerance for comparing precursor masses
@@ -256,7 +256,7 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
 '''
 def refine_ms1_id_results_for_identity_search(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int=0.05):
     """
-    Refine MS1 ID results across pseudo MS1 spectra.
+    Refine MS1 ID results across pseudo MS2 spectra.
 
     :param ms1_spec_ls: List of PseudoMS1-like objects
     :param rt_tol: Retention time tolerance for considering nearby spectra

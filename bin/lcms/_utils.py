@@ -7,7 +7,7 @@ class Spectrum:
         self.annotation_ls = []  # list of SpecAnnotation objects
 
 
-class PseudoMS1:
+class PseudoMS2:
 
     def __init__(self, t_mz, mz_ls, int_ls, roi_ids, file_name, rt):
         self.t_mz = t_mz  # this PseudoMS1 spectrum is generated starting from this mz

@@ -5,7 +5,7 @@ import pandas as pd
 def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
     """
     Output the annotated ms1 spectra
-    :param ms1_spec_ls: a list of PseudoMS1-like object
+    :param ms1_spec_ls: a list of PseudoMS2-like object
     :param save: bool, whether to save the results
     :param save_dir: str, path to save the results
     :return: None
@@ -16,8 +16,8 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
 
     out_list = []
     for spec in ms1_spec_ls:
-        # pseudo_ms1_str: mz1 int1; mz2 int2; ...
-        pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
+        # pseudo_ms2_str: mz1 int1; mz2 int2; ...
+        pseudo_ms2_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
             # remember that the peaks have been preprocessed (precursor, noise, sqrt, etc.)
@@ -39,7 +39,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
                 # 'instrument_type': annotation.instrument_type,
                 'collision_energy': annotation.collision_energy,
                 'db_id': annotation.db_id,
-                'pseudo_ms1': pseudo_ms1_str,
+                'pseudo_ms2': pseudo_ms2_str,
                 # 'matched_ref_spectrum': matched_peak_str
             })
 

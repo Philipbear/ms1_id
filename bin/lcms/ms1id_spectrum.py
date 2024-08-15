@@ -17,14 +17,14 @@ def prepare_ms2_db(msp_path, mz_tol=0.01, peak_scale_k=10, peak_intensity_power=
     return
 
 
-def annotate_ms1_id(ms1_spectra,
+def annotate_ms1_id(spec_ls,
                     library_path,
                     mz_tol=0.01,
                     score_cutoff=0.8,
                     min_matched_peak=6):
     """
     Perform ms1 annotation
-    :param ms1_spectra: a list of PseudoMS1-like object
+    :param spec_ls: a list of PseudoMS2-like object
     :param library_path: path to the msms library
     :param mz_tol: float, mz tolerance
     :param rt_tol: float, rt tolerance
@@ -54,12 +54,12 @@ if __name__ == "__main__":
     ]
 
     # annotate spectra
-    annotated_ms1_spectra = annotate_ms1_id(ms1_spectra=ms1_spectra,
-                                            library_path='data/MSMS.pkl',
-                                            mz_tol=0.01,
-                                            score_cutoff=0.8,
-                                            min_matched_peak=6)
+    annotated_spectra = annotate_ms1_id(spec_ls=ms1_spectra,
+                                        library_path='data/MSMS.pkl',
+                                        mz_tol=0.01,
+                                        score_cutoff=0.8,
+                                        min_matched_peak=6)
 
     # print the results
-    for spec in annotated_ms1_spectra:
+    for spec in annotated_spectra:
         print(spec.annotation_ls)

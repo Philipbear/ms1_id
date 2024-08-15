@@ -1,7 +1,7 @@
 import os
 from _process_msi_data import process_ms_imaging_data
 from _calculate_mz_cor_parallel import calc_all_mz_correlations
-from _group_mz_cor_parallel import generate_pseudo_ms1
+from _group_mz_cor_parallel import generate_pseudo_ms2
 from _reverse_matching_parallel import ms1_id_annotation
 from _export_msi import write_ms1_id_results
 
@@ -40,16 +40,16 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                           save=True,
                                           save_dir=result_folder)
 
-    print(f"Generating pseudo MS1 spectra for {file_name}")
-    pseudo_ms1 = generate_pseudo_ms1(mz_values, intensity_matrix, cor_matrix,
+    print(f"Generating pseudo MS2 spectra for {file_name}")
+    pseudo_ms2 = generate_pseudo_ms2(mz_values, intensity_matrix, cor_matrix,
                                      n_processes=n_processes,
                                      min_cluster_size=ms1id_min_matched_peak + 1,
                                      max_cor_depth=max_cor_depth,
                                      save=True,
                                      save_dir=result_folder)
 
-    print(f"Annotating pseudo MS1 spectra for {file_name}")
-    pseudo_ms1 = ms1_id_annotation(pseudo_ms1, library_path, n_processes=None,
+    print(f"Annotating pseudo MS2 spectra for {file_name}")
+    pseudo_ms2 = ms1_id_annotation(pseudo_ms2, library_path, n_processes=None,
                                    mz_tol=ms1id_mz_tol,
                                    ion_mode=ion_mode,
                                    score_cutoff=ms1id_score_cutoff,
@@ -58,6 +58,6 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                    save_dir=result_folder)
 
     print(f"Writing results for {file_name}")
-    write_ms1_id_results(pseudo_ms1, save=True, save_dir=result_folder)
+    write_ms1_id_results(pseudo_ms2, save=True, save_dir=result_folder)
 
     return

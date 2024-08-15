@@ -13,7 +13,7 @@ from _annotate_adduct import annotate_adduct
 from _annotate_ms2 import annotate_rois
 from _calculate_ppc import calc_all_ppc
 from _export import write_single_file
-from _group_ppc import generate_pseudo_ms1
+from _group_ppc import generate_pseudo_ms2
 from _reverse_matching import ms1_id_annotation
 
 # default parameters
@@ -69,8 +69,8 @@ def main_workflow_single(file_path,
     annotate_isotope(d)
     annotate_adduct(d)
 
-    # generate pseudo ms1 spec for ms1_id
-    pseudo_ms1_spectra = []
+    # generate pseudo ms2 spec for ms1_id
+    pseudo_ms2_spectra = []
     if ms1_id and config.ms1id_library_path is not None:
         print("MS1 ID annotation...")
 
@@ -81,20 +81,20 @@ def main_workflow_single(file_path,
 
         # generate pseudo ms1 spec, for ms1_id
         print('Generating pseudo MS1 spectra...')
-        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix,
+        pseudo_ms2_spectra = generate_pseudo_ms2(d, ppc_matrix,
                                                  min_ppc=min_ppc, roi_min_length=roi_min_length,
                                                  min_cluster_size=ms1id_min_matched_peak)
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
-        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.ms1id_library_path,
+        pseudo_ms2_spectra = ms1_id_annotation(pseudo_ms2_spectra, config.ms1id_library_path,
                                                mz_tol=library_search_mztol,
                                                ion_mode=ion_mode,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
         # # write out raw ms1 id results
-        # write_ms1_id_results(pseudo_ms1_spectra, save=True, out_dir=os.path.dirname(file_path))
+        # write_ms1_id_results(pseudo_ms2_spectra, save=True, out_dir=os.path.dirname(file_path))
 
     # annotate MS2 spectra
     if ms2_id and config.ms2id_library_path is not None:
@@ -111,7 +111,7 @@ def main_workflow_single(file_path,
     if out_dir is None:
         out_dir = os.path.dirname(file_path)
     out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(file_path))[0] + "_feature_table.tsv")
-    write_single_file(d, pseudo_ms1_spectra, ion_mode, out_path)
+    write_single_file(d, pseudo_ms2_spectra, ion_mode, out_path)
 
     return d
 

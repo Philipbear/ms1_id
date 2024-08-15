@@ -7,36 +7,36 @@ from tqdm import tqdm
 from _utils_imaging import PseudoMS1
 
 
-def generate_pseudo_ms1(mz_values, intensity_matrix, correlation_matrix,
+def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
                         n_processes=None, min_cluster_size=6, max_cor_depth=1,
                         save=False, save_dir=None, chunk_size=1000):
     """
-    Generate pseudo MS1 spectra for imaging data using chunked parallel processing
+    Generate pseudo MS2 spectra for imaging data using chunked parallel processing
     """
     # Check if result files exist
     if save_dir:
-        save_path = os.path.join(save_dir, 'pseudo_ms1_spectra.pkl')
+        save_path = os.path.join(save_dir, 'pseudo_ms2_spectra.pkl')
         if os.path.exists(save_path):
-            print("Loading existing pseudo MS1 spectra...")
+            print("Loading existing pseudo MS2 spectra...")
             with open(save_path, 'rb') as f:
                 return pickle.load(f)
 
     # Perform clustering
-    pseudo_ms1_spectra = _perform_clustering(mz_values, correlation_matrix,
+    pseudo_ms2_spectra = _perform_clustering(mz_values, correlation_matrix,
                                              n_processes=n_processes,
                                              max_cor_depth=max_cor_depth,
                                              min_cluster_size=min_cluster_size,
                                              chunk_size=chunk_size)
 
     # Assign intensity values
-    _assign_intensities(pseudo_ms1_spectra, intensity_matrix)
+    _assign_intensities(pseudo_ms2_spectra, intensity_matrix)
 
     if save and save_dir:
-        save_path = os.path.join(save_dir, 'pseudo_ms1_spectra.pkl')
+        save_path = os.path.join(save_dir, 'pseudo_ms2_spectra.pkl')
         with open(save_path, 'wb') as f:
-            pickle.dump(pseudo_ms1_spectra, f)
+            pickle.dump(pseudo_ms2_spectra, f)
 
-    return pseudo_ms1_spectra
+    return pseudo_ms2_spectra
 
 
 def _process_chunk(args):
@@ -53,13 +53,14 @@ def _process_chunk(args):
         row = correlation_matrix[target_idx].toarray().flatten()
 
         if current_depth == 0:
-            correlated_indices = set(np.where((mz_values <= mz_values[target_idx] + 1e-2) & (row > 0))[0]) - visited
+            # correlated_indices = set(np.where((mz_values <= mz_values[target_idx] + 1e-2) & (row > 0))[0]) - visited
+            correlated_indices = set(np.where(row > 0)[0]) - visited
         else:
             # For depth >= 1, apply the correlation threshold with the original target
             original_target_row = correlation_matrix[start_idx].toarray().flatten()
-            correlated_indices = set(np.where((mz_values <= mz_values[target_idx] + 1e-2) &
-                                              (row > 0) &
-                                              (original_target_row >= 0.6))[0]) - visited
+            # correlated_indices = set(np.where((mz_values <= mz_values[target_idx] + 1e-2) &
+            #                                   (row > 0) & (original_target_row >= 0.6))[0]) - visited
+            correlated_indices = set(np.where((row > 0) & (original_target_row >= 0.6))[0]) - visited
 
         if current_depth < max_cor_depth:
             for idx in correlated_indices.copy():
@@ -101,16 +102,16 @@ def _perform_clustering(mz_values, correlation_matrix, n_processes=None,
                             total=len(chunks), desc="Processing chunks"))
 
     # Flatten results
-    pseudo_ms1_spectra = [spectrum for chunk_result in results for spectrum in chunk_result]
+    pseudo_ms2_spectra = [spectrum for chunk_result in results for spectrum in chunk_result]
 
-    return pseudo_ms1_spectra
+    return pseudo_ms2_spectra
 
 
-def _assign_intensities(pseudo_ms1_spectra, intensity_matrix):
+def _assign_intensities(pseudo_ms2_spectra, intensity_matrix):
     """
-    Assign intensity values to pseudo MS1 spectra.
+    Assign intensity values to pseudo MS2 spectra.
     """
-    for spectrum in tqdm(pseudo_ms1_spectra, desc="Assigning intensities"):
+    for spectrum in tqdm(pseudo_ms2_spectra, desc="Assigning intensities"):
         # Get the intensities for all m/z values in this PseudoMS1 object
         intensities = intensity_matrix[spectrum.indices, :]
 

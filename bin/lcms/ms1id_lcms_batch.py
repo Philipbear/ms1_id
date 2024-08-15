@@ -17,7 +17,7 @@ from _annotate_adduct import annotate_adduct
 from _annotate_ms2 import feature_annotation
 from _calculate_ppc import calc_all_ppc
 from _export import write_feature_table
-from _group_ppc import generate_pseudo_ms1, retrieve_pseudo_ms1_spectra
+from _group_ppc import generate_pseudo_ms2, retrieve_pseudo_ms2_spectra
 from _reverse_matching import ms1_id_annotation
 
 # default parameters
@@ -116,7 +116,7 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
     pseudo_ms1_spectra = []
     if ms1_id:
         # get all pre-saved pseudo ms1 spectra
-        pseudo_ms1_spectra = retrieve_pseudo_ms1_spectra(config)
+        pseudo_ms2_spectra = retrieve_pseudo_ms2_spectra(config)
 
     # feature alignment
     print("Aligning features...")
@@ -142,7 +142,7 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
 
     # output feature table
     output_path = os.path.join(config.project_dir, "aligned_feature_table.tsv")
-    write_feature_table(feature_table, pseudo_ms1_spectra, config, output_path)
+    write_feature_table(feature_table, pseudo_ms2_spectra, config, output_path)
 
     print("The workflow is completed.")
 
@@ -332,9 +332,9 @@ def feature_detection(file_name, params=None,
                                   roi_min_length=params.roi_min_length,
                                   save=False)
 
-        print(f"Generating pseudo MS1 spectra for {file_name}...")
-        # generate pseudo ms1 spec, for ms1_id
-        pseudo_ms1_spectra = generate_pseudo_ms1(d, ppc_matrix,
+        print(f"Generating pseudo MS2 spectra for {file_name}...")
+        # generate pseudo ms2 spec, for ms1_id
+        pseudo_ms2_spectra = generate_pseudo_ms2(d, ppc_matrix,
                                                  min_ppc=params.min_ppc,
                                                  roi_min_length=params.roi_min_length,
                                                  min_cluster_size=params.ms1id_min_matched_peak)
@@ -342,7 +342,7 @@ def feature_detection(file_name, params=None,
 
         print(f"Performing MS1 ID annotation for {file_name}...")
         # perform rev cos search
-        ms1_id_annotation(pseudo_ms1_spectra, params.ms1id_library_path,
+        ms1_id_annotation(pseudo_ms2_spectra, params.ms1id_library_path,
                           mz_tol=params.library_search_mztol,
                           ion_mode=params.ion_mode,
                           max_prec_rel_int_in_other_ms2=params.ms1id_max_prec_rel_int_in_other_ms2,
@@ -351,7 +351,7 @@ def feature_detection(file_name, params=None,
                           save=True,
                           save_path=os.path.join(params.single_file_dir,
                                                  os.path.basename(file_name).split(".")[0] + "_pseudoMS1_annotated.pkl"))
-        del pseudo_ms1_spectra
+        del pseudo_ms2_spectra
 
     # output single file to a txt file
     d.output_single_file()

@@ -7,7 +7,7 @@ from _utils import AlignedMS1Annotation
 def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
     """
     Output the annotated ms1 spectra
-    :param ms1_spec_ls: a list of PseudoMS1-like object
+    :param ms1_spec_ls: a list of PseudoMS2-like object
     :param save: bool, whether to save the results
     :param out_dir: output folder
     :return: None
@@ -18,8 +18,8 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
 
     out_list = []
     for spec in ms1_spec_ls:
-        # pseudo_ms1_str: mz1 int1; mz2 int2; ...
-        pseudo_ms1_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
+        # pseudo_ms2_str: mz1 int1; mz2 int2; ...
+        pseudo_ms2_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
 
@@ -44,7 +44,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
                 'instrument_type': annotation.instrument_type,
                 'collision_energy': annotation.collision_energy,
                 'db_id': annotation.db_id,
-                'pseudo_ms1': pseudo_ms1_str,
+                'pseudo_ms2': pseudo_ms2_str,
                 # 'matched_ref_spectrum': matched_peak_str
             })
 
@@ -57,7 +57,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
     return out_df
 
 
-def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save_path=None):
+def write_single_file(msdata, pseudo_ms2_spectra=None, ion_mode='positive', save_path=None):
     """
     Function to generate a report for rois in csv format.
     """
@@ -119,16 +119,16 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
     df['MS1_collision_energy'] = None
     df['MS1_db_name'] = None
     df['MS1_db_id'] = None
-    df['pseudo_ms1'] = None
+    df['pseudo_ms2'] = None
     # df['MS1_matched_ref_spectrum'] = None
 
-    if pseudo_ms1_spectra is not None:
-        ms1_spec_ls = [spec for spec in pseudo_ms1_spectra if spec.annotated]
+    if pseudo_ms2_spectra is not None:
+        ms1_spec_ls = [spec for spec in pseudo_ms2_spectra if spec.annotated]
 
         if len(ms1_spec_ls) > 0:
             for spec in ms1_spec_ls:
 
-                pseudo_ms1_str = ' '.join(
+                pseudo_ms2_str = ' '.join(
                     [f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
                 for annotation in spec.annotation_ls:
@@ -159,7 +159,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                         df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
                         df.loc[idx, 'MS1_db_name'] = annotation.db_name
                         df.loc[idx, 'MS1_db_id'] = annotation.db_id
-                        df.loc[idx, 'pseudo_ms1'] = pseudo_ms1_str
+                        df.loc[idx, 'pseudo_ms2'] = pseudo_ms2_str
                         # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
                     else:
                         ori_prec_type_bool = df.loc[idx, 'MS1_precursor_type'] in common_adduct_list
@@ -182,7 +182,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                                 df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
                                 df.loc[idx, 'MS1_db_name'] = annotation.db_name
                                 df.loc[idx, 'MS1_db_id'] = annotation.db_id
-                                df.loc[idx, 'pseudo_ms1'] = pseudo_ms1_str
+                                df.loc[idx, 'pseudo_ms2'] = pseudo_ms2_str
                                 # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
                         elif new_prec_type_bool:
                             # annotation_peaks = annotation.peaks
@@ -201,18 +201,18 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                             df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
                             df.loc[idx, 'MS1_db_name'] = annotation.db_name
                             df.loc[idx, 'MS1_db_id'] = annotation.db_id
-                            df.loc[idx, 'pseudo_ms1'] = pseudo_ms1_str
+                            df.loc[idx, 'pseudo_ms2'] = pseudo_ms2_str
                             # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
 
     # save the dataframe to csv file
     df.to_csv(save_path, index=False, sep="\t")
 
 
-def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
+def write_feature_table(df, pseudo_ms2_spectra, config, output_path):
     """
     A function to output the aligned feature table.
     :param df: pd.DataFrame, feature table
-    :param pseudo_ms1_spectra: list of PseudoMS1-like object
+    :param pseudo_ms2_spectra: list of PseudoMS2-like object
     :param config: Parameters
     :param output_path: str, output file path
         columns=["ID", "m/z", "RT", "adduct", "is_isotope", "is_in_source_fragment", "Gaussian_similarity", "noise_level",
@@ -229,7 +229,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
     df['similarity'] = df['similarity'].apply(lambda x: round(x, 4))
 
     # refine ms1 id results with feature table. for each feature, choose the most confident annotation
-    ms1_annotation_ls = _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config)
+    ms1_annotation_ls = _refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config)
 
     # add ms1 id results
     df['MS1_annotation'] = None
@@ -261,16 +261,16 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
     df.to_csv(output_path, index=False, sep="\t")
 
 
-def _refine_pseudo_ms1_spectra_list(pseudo_ms1_spectra, df, config):
+def _refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config):
     """
     for each feature, choose the most confident annotation
-    :param pseudo_ms1_spectra: list of PseudoMS1-like object
+    :param pseudo_ms2_spectra: list of PseudoMS2-like object
     :param df: feature table
     :return: AlignedMS1Annotation with selected annotations
     """
 
-    # only reserve annotated pseudo MS1 spectra
-    ms1_spec_ls = [spec for spec in pseudo_ms1_spectra if spec.annotated]
+    # only reserve annotated pseudo MS2 spectra
+    ms1_spec_ls = [spec for spec in pseudo_ms2_spectra if spec.annotated]
 
     all_df_idx_ls = []  # list of indices in the feature table that have been matched
     aligned_ms1_annotation_ls = []  # list of AlignedMS1Annotation objects

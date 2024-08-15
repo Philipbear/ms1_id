@@ -1,7 +1,7 @@
 # Description: This file contains classes that are used in the main pipeline.
 
 
-class PseudoMS1:
+class PseudoMS2:
     def __init__(self, t_mz, t_mz_idx, mz_ls, int_ls, idx_ls):
         self.t_mz = t_mz  # this PseudoMS1 spectrum is generated starting from this mz
         self.t_mz_idx = t_mz_idx  # idx of t_mz in the mz_values

@@ -75,7 +75,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
     return search_engine
 
 
-def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
+def ms1_id_annotation(ms1_spec_ls, library, n_processes=None,
                       mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4,
                       ion_mode=None,
@@ -83,8 +83,8 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                       chunk_size=1000):
     """
     Perform ms1 annotation
-    :param ms1_spec_ls: a list of PseudoMS1-like object
-    :param ms2_library: path to the pickle file, indexed library
+    :param ms1_spec_ls: a list of PseudoMS2-like object
+    :param library: path to the pickle file, indexed library
     :param n_processes: number of processes to use
     :param mz_tol: mz tolerance in Da, for rev cos matching
     :param score_cutoff: for rev cos
@@ -94,12 +94,12 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
     :param save: bool, whether to save the results
     :param save_dir: str, directory to save the results
     :param chunk_size: int, number of spectra to process in each parallel task
-    :return: PseudoMS1-like object
+    :return: PseudoMS2-like object
     """
 
     # check if results are already annotated
     if save_dir:
-        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
+        save_path = os.path.join(save_dir, 'pseudo_ms2_annotated.pkl')
         if os.path.exists(save_path):
             with open(save_path, 'rb') as file:
                 ms1_spec_ls = pickle.load(file)
@@ -114,7 +114,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
     ms1_spec_ls = centroid_all_spectra(ms1_spec_ls, n_processes)
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, n_processes=n_processes,
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, library, n_processes=n_processes,
                                          mz_tol=mz_tol,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
@@ -122,7 +122,7 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
                                          chunk_size=chunk_size)
 
     if save:
-        save_path = os.path.join(save_dir, 'pseudo_ms1_annotated.pkl')
+        save_path = os.path.join(save_dir, 'pseudo_ms2_annotated.pkl')
         with open(save_path, 'wb') as file:
             pickle.dump(ms1_spec_ls, file)
 
@@ -147,16 +147,16 @@ def _centroid_spectrum(spec):
     return spec
 
 
-def ms1_id_revcos_matching(ms1_spec_ls: List, library_ls: str, n_processes: int = None,
-                           mz_tol: float = 0.05,
-                           ion_mode: str = None,
-                           score_cutoff: float = 0.7,
-                           min_matched_peak: int = 3,
-                           chunk_size: int = 500) -> List:
+def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
+                           mz_tol=0.05,
+                           ion_mode=None,
+                           score_cutoff=0.7,
+                           min_matched_peak=3,
+                           chunk_size=500) -> List:
     """
     Perform MS1 annotation using parallel open search for the entire spectrum, with filters similar to identity search.
 
-    :param ms1_spec_ls: a list of PseudoMS1-like objects
+    :param ms1_spec_ls: a list of PseudoMS2-like objects
     :param library_ls: path to the pickle file, indexed library
     :param n_processes: number of processes to use
     :param mz_tol: m/z tolerance in Da, for open matching
@@ -164,7 +164,7 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, library_ls: str, n_processes: int 
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
     :param chunk_size: number of spectra to process in each parallel task
-    :return: List of updated PseudoMS1-like objects
+    :return: List of updated PseudoMS2-like objects
     """
     mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
 
@@ -225,7 +225,7 @@ def _process_chunk(args):
             if ion_mode is not None and ion_mode != this_ion_mode:
                 continue
 
-            # precursor should be in the pseudo MS1 spectrum with intensity > 0
+            # precursor should be in the pseudo MS2 spectrum with intensity > 0
             precursor_mz = matched.get('precursor_mz', 0)
             if not any(np.isclose(nonzero_mzs, precursor_mz, atol=mz_tol)):
                 continue
