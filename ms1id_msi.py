@@ -11,5 +11,5 @@ if __name__ == '__main__':
                             mass_detect_int_tol=None, noise_detection='moving_average',
                             sn_factor=5.0, centroided=True,
                             mz_bin_size=0.005,
-                            min_overlap=10, min_correlation=0.80,
+                            min_overlap=10, min_correlation=0.80, max_cor_depth=1,
                             ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)

@@ -1,23 +1,26 @@
 import os
 import numpy as np
-from numba import njit
 from scipy.sparse import csr_matrix, save_npz, load_npz
 import multiprocessing as mp
 import tempfile
 from tqdm import tqdm
+from numba import njit
 
 
 @njit
-def mz_correlation_numba(intensities1, intensities2, min_overlap=5):
+def _mz_correlation(intensities1, intensities2, min_overlap=5):
 
+    # Remove zero intensities
     non_zero_mask = (intensities1 != 0) & (intensities2 != 0)
-
-    n = len(intensities1[non_zero_mask])
-    if n < min_overlap:
-        return 0.0
-
     x = intensities1[non_zero_mask]
     y = intensities2[non_zero_mask]
+
+    if len(x) < min_overlap:
+        return 0.0
+
+    n = len(x)
+    if n < min_overlap:
+        return 0.0
 
     sum_x = np.sum(x)
     sum_y = np.sum(y)
@@ -43,7 +46,7 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overla
 
     for i in range(start_idx, end_idx):
         for j in range(i + 1, n_mzs):
-            corr = mz_correlation_numba(intensity_matrix[i], intensity_matrix[j], min_overlap)
+            corr = _mz_correlation(intensity_matrix[i], intensity_matrix[j], min_overlap)
             if corr >= min_cor:
                 rows.append(i)
                 cols.append(j)
@@ -99,7 +102,7 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
             rows, cols, data = [], [], []
             for i in range(start, end):
                 for j in range(i + 1, n_mzs):
-                    corr = mz_correlation_numba(mmap_array[i], mmap_array[j], min_overlap)
+                    corr = _mz_correlation(mmap_array[i], mmap_array[j], min_overlap)
                     if corr >= min_cor:
                         rows.append(i)
                         cols.append(j)
