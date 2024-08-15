@@ -16,10 +16,9 @@ def centroid_spectrum(mz_list, intensity_list, centroid_mode='max',
 
     # Sort the peaks by m/z.
     peaks = peaks[np.argsort(peaks[:, 0])]
-    is_centroided: int = _check_centroid(peaks, width_da=width_da, width_ppm=width_ppm)
-    while is_centroided == 0:
-        peaks = _centroid_spectrum(peaks, centroid_mode, width_da=width_da, width_ppm=width_ppm)
-        is_centroided = _check_centroid(peaks, width_da=width_da, width_ppm=width_ppm)
+
+    # centroid the spectrum
+    peaks = _centroid_spectrum(peaks, centroid_mode, width_da=width_da, width_ppm=width_ppm)
     return peaks[:, 0], peaks[:, 1]
 
 
