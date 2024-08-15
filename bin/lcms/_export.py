@@ -31,6 +31,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
             out_list.append({
                 'file_name': spec.file_name,
                 'rt': round(spec.rt, 2) if spec.rt else None,
+                'db_name': annotation.db_name,
                 'name': annotation.name,
                 'precursor_mz': round(annotation.precursor_mz, 4),
                 'matched_score': round(annotation.score, 4),
@@ -116,6 +117,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
     df['MS1_precursor_type'] = None
     df['MS1_inchikey'] = None
     df['MS1_collision_energy'] = None
+    df['MS1_db_name'] = None
     df['MS1_db_id'] = None
     df['pseudo_ms1'] = None
     # df['MS1_matched_ref_spectrum'] = None
@@ -155,6 +157,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                         df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
                         df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
                         df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
+                        df.loc[idx, 'MS1_db_name'] = annotation.db_name
                         df.loc[idx, 'MS1_db_id'] = annotation.db_id
                         df.loc[idx, 'pseudo_ms1'] = pseudo_ms1_str
                         # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
@@ -162,7 +165,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                         ori_prec_type_bool = df.loc[idx, 'MS1_precursor_type'] in common_adduct_list
                         new_prec_type_bool = annotation.precursor_type in common_adduct_list
                         if (ori_prec_type_bool and new_prec_type_bool) or (not ori_prec_type_bool and not new_prec_type_bool):
-                            if annotation.score > df.loc[idx, 'MS1_similarity'] and annotation.matched_peak > df.loc[idx, 'MS1_matched_peak']:
+                            if annotation.score >= df.loc[idx, 'MS1_similarity'] and annotation.matched_peak >= df.loc[idx, 'MS1_matched_peak']:
                                 # annotation_peaks = annotation.peaks
                                 # annotation_peaks = annotation_peaks[
                                 #     annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
@@ -177,6 +180,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                                 df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
                                 df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
                                 df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
+                                df.loc[idx, 'MS1_db_name'] = annotation.db_name
                                 df.loc[idx, 'MS1_db_id'] = annotation.db_id
                                 df.loc[idx, 'pseudo_ms1'] = pseudo_ms1_str
                                 # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
@@ -195,6 +199,7 @@ def write_single_file(msdata, pseudo_ms1_spectra=None, ion_mode='positive', save
                             df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
                             df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
                             df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
+                            df.loc[idx, 'MS1_db_name'] = annotation.db_name
                             df.loc[idx, 'MS1_db_id'] = annotation.db_id
                             df.loc[idx, 'pseudo_ms1'] = pseudo_ms1_str
                             # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
@@ -235,6 +240,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
     df['MS1_precursor_type'] = None
     df['MS1_inchikey'] = None
     df['MS1_collision_energy'] = None
+    df['MS1_db_name'] = None
     df['MS1_db_id'] = None
 
     # add ms1 id results to the feature table
@@ -249,6 +255,7 @@ def write_feature_table(df, pseudo_ms1_spectra, config, output_path):
         df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
         df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
         df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
+        df.loc[idx, 'MS1_db_name'] = annotation.db_name
         df.loc[idx, 'MS1_db_id'] = annotation.db_id
 
     df.to_csv(output_path, index=False, sep="\t")

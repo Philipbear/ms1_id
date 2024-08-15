@@ -52,7 +52,7 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overla
     return_dict[start_idx] = (rows, cols, data)
 
 
-def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.9,
+def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.8,
                              save=True, save_dir=None, n_processes=None, chunk_size=500):
     """
     Calculate m/z correlation matrix for MS imaging data using multiprocessing and numpy memmap

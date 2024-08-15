@@ -13,7 +13,8 @@ class PseudoMS1:
 
 
 class SpecAnnotation:
-    def __init__(self, idx, score, matched_peak):
+    def __init__(self, db_name, idx, score, matched_peak):
+        self.db_name = db_name
         self.search_eng_matched_id = idx  # index of the matched spec in the search engine
         self.score = score
         self.matched_peak = matched_peak
@@ -28,6 +29,7 @@ class SpecAnnotation:
         self.instrument_type = None
         self.collision_energy = None
         self.peaks = None
+        self.centroided_peaks = None
 
     def __str__(self):
         return f"name {self.name}, score {self.score}, matched_peak {self.matched_peak}, db_id {self.db_id}"

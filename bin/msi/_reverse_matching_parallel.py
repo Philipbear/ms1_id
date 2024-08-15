@@ -110,6 +110,9 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
 
     chunk_size = min(chunk_size, len(ms1_spec_ls))
 
+    # Perform centroiding for all spectra before annotation
+    ms1_spec_ls = centroid_all_spectra(ms1_spec_ls, n_processes)
+
     # perform revcos matching
     ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, ms2_library, n_processes=n_processes,
                                          mz_tol=mz_tol,
@@ -126,7 +129,25 @@ def ms1_id_annotation(ms1_spec_ls, ms2_library, n_processes=None,
     return ms1_spec_ls
 
 
-def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int = None,
+def centroid_all_spectra(ms1_spec_ls, n_processes):
+    """
+    Centroid all spectra in parallel
+    """
+    with Pool(processes=n_processes) as pool:
+        ms1_spec_ls = list(tqdm(pool.imap(_centroid_spectrum, ms1_spec_ls),
+                                total=len(ms1_spec_ls),
+                                desc="Centroiding spectra"))
+    return ms1_spec_ls
+
+
+def _centroid_spectrum(spec):
+    peaks = list(zip(spec.mzs, spec.intensities))
+    peaks = np.asarray(peaks, dtype=np.float32, order="C")
+    spec.centroided_peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
+    return spec
+
+
+def ms1_id_revcos_matching(ms1_spec_ls: List, library_ls: str, n_processes: int = None,
                            mz_tol: float = 0.05,
                            ion_mode: str = None,
                            score_cutoff: float = 0.7,
@@ -136,7 +157,7 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int
     Perform MS1 annotation using parallel open search for the entire spectrum, with filters similar to identity search.
 
     :param ms1_spec_ls: a list of PseudoMS1-like objects
-    :param ms2_library: path to the pickle file, indexed library
+    :param library_ls: path to the pickle file, indexed library
     :param n_processes: number of processes to use
     :param mz_tol: m/z tolerance in Da, for open matching
     :param ion_mode: str, ion mode
@@ -147,40 +168,39 @@ def ms1_id_revcos_matching(ms1_spec_ls: List, ms2_library: str, n_processes: int
     """
     mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
 
-    # Load the data
-    with open(ms2_library, 'rb') as file:
-        search_eng = pickle.load(file)
+    # if library_ls is a string, convert to list
+    if isinstance(library_ls, str):
+        library_ls = [library_ls]
 
-    # Prepare chunks
-    chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
+    # Load the database
+    for library in library_ls:
+        with open(library, 'rb') as file:
+            search_eng = pickle.load(file)
+        db_name = os.path.basename(library)
 
-    # Prepare arguments for parallel processing
-    args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak)
-                 for chunk in chunks]
+        # Prepare chunks
+        chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
 
-    # Use multiprocessing to process chunks in parallel
-    with Pool(processes=n_processes) as pool:
-        results = list(tqdm(pool.imap(_process_chunk, args_list), total=len(args_list), desc="Processing chunks"))
+        # Prepare arguments for parallel processing
+        args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, db_name)
+                     for chunk in chunks]
+
+        # Use multiprocessing to process chunks in parallel
+        with Pool(processes=n_processes) as pool:
+            results = list(tqdm(pool.imap(_process_chunk, args_list), total=len(args_list), desc="Annotation: "))
 
     # Flatten results
     return [spec for chunk_result in results for spec in chunk_result]
 
 
 def _process_chunk(args):
-    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak = args
+    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, db_name = args
 
     for spec in chunk:
-
-        peaks = list(zip(spec.mzs, spec.intensities))
-        peaks = np.asarray(peaks, dtype=np.float32, order="C")
-
-        # centroid
-        peaks = centroid_spectrum_for_search(peaks, width_da=0.05*2.015)
-
         # open search
         matching_result = search_eng.search(
             precursor_mz=spec.t_mz,  # unused, open search
-            peaks=peaks,
+            peaks=spec.centroided_peaks,
             ms1_tolerance_in_da=mz_tol,
             ms2_tolerance_in_da=mz_tol,
             method="open",
@@ -214,11 +234,10 @@ def _process_chunk(args):
 
         if all_matches:
             spec.annotated = True
-            spec.annotation_ls = []
             for idx, score, matched_peaks, spectral_usage in all_matches:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
-                annotation = SpecAnnotation(idx, score, matched_peaks)
+                annotation = SpecAnnotation(db_name, idx, score, matched_peaks)
                 annotation.spectral_usage = spectral_usage
 
                 annotation.name = matched.get('name', '')
@@ -234,8 +253,4 @@ def _process_chunk(args):
 
                 spec.annotation_ls.append(annotation)
 
-        else:
-            spec.annotated = False
-
     return chunk
-

@@ -87,7 +87,8 @@ def main_workflow_single(file_path,
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
-        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.ms1id_library_path, mz_tol=library_search_mztol,
+        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.ms1id_library_path,
+                                               mz_tol=library_search_mztol,
                                                ion_mode=ion_mode,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
