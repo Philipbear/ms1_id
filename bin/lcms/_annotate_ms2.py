@@ -3,6 +3,8 @@ import re
 
 import numpy as np
 
+from _centroid_data import centroid_spectrum_for_search
+
 
 def feature_annotation(features, config, num=5):
     """
@@ -21,7 +23,7 @@ def feature_annotation(features, config, num=5):
     # load the MS/MS database
     search_eng = pickle.load(open(config.ms2id_library_path, 'rb'))
 
-    ms2_tol = max(config.mz_tol_ms2, 0.02)  # indexed library mz_tol is 0.02
+    library_search_mztol = max(config.library_search_mztol, 0.05)  # indexed library mz_tol is 0.05
 
     for f in features:
         if len(f.ms2_seq) == 0:
@@ -40,12 +42,12 @@ def feature_annotation(features, config, num=5):
             search_result = search_eng.search(
                 precursor_mz=f.mz,
                 peaks=peaks,
-                ms1_tolerance_in_da=config.mz_tol_ms1,
-                ms2_tolerance_in_da=ms2_tol,
+                ms1_tolerance_in_da=library_search_mztol,
+                ms2_tolerance_in_da=library_search_mztol,
                 method="identity",
                 precursor_ions_removal_da=0.5,
                 noise_threshold=0.0,
-                min_ms2_difference_in_da=ms2_tol * 2.02,
+                min_ms2_difference_in_da=library_search_mztol * 2.02,
                 reverse=False
             )
             score_arr, matched_peak_arr, spec_usage_arr = search_result['identity_search']
@@ -101,7 +103,7 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, ion_mode=
     # load the MS/MS database
     search_eng = pickle.load(open(d.params.ms2id_library_path, 'rb'))
 
-    ms2_tol = max(d.params.mz_tol_ms2, 0.02)  # indexed library mz_tol is 0.02
+    ms2_tol = min(d.params.mz_tol_ms2, 0.05)  # indexed library mz_tol is 0.05
 
     for f in d.rois:
         f.annotation = None
@@ -116,6 +118,11 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, ion_mode=
         f.collision_energy = None
 
         if f.best_ms2 is not None:
+
+            peaks = f.best_ms2.peaks
+
+            # centroid
+            peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
 
             search_result = search_eng.search(
                 precursor_mz=f.mz,

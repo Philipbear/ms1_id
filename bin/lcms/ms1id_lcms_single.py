@@ -24,9 +24,10 @@ tof_mass_detect_int_tol = 500
 def main_workflow_single(file_path,
                          ms1id_library_path=None, ms2id_library_path=None,
                          ms1_id=True, ms2_id=False,
-                         mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
+                         ms1_tol=0.01, ms2_tol=0.015, mass_detect_int_tol=None,
                          peak_cor_rt_tol=0.015,
                          min_ppc=0.8, roi_min_length=3,
+                         library_search_mztol=0.05,
                          ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
                          ms1id_max_prec_rel_int_in_other_ms2=0.01,
                          ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
@@ -42,7 +43,7 @@ def main_workflow_single(file_path,
 
     # init a new config object
     config = init_config_single(ms_type, ion_mode, ms1id_library_path, ms2id_library_path,
-                                mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2,
+                                mz_tol_ms1=ms1_tol, mz_tol_ms2=ms2_tol,
                                 mass_detect_int_tol=mass_detect_int_tol)
 
     # create a MSData object
@@ -86,7 +87,7 @@ def main_workflow_single(file_path,
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
-        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.ms1id_library_path, mz_tol=mz_tol_ms1,
+        pseudo_ms1_spectra = ms1_id_annotation(pseudo_ms1_spectra, config.ms1id_library_path, mz_tol=library_search_mztol,
                                                ion_mode=ion_mode,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)

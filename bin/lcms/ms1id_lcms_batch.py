@@ -30,10 +30,11 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
                   ms1_id=True, ms2_id=False,
                   cpu_ratio=0.9,
                   run_rt_correction=True, run_normalization=False,
-                  mz_tol_ms1=0.01, mz_tol_ms2=0.015, mass_detect_int_tol=None,
+                  ms1_tol=0.01, ms2_tol=0.015, mass_detect_int_tol=None,
                   align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                   peak_cor_rt_tol=0.015,
                   min_ppc=0.6, roi_min_length=3,
+                  library_search_mztol=0.05,
                   ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
                   ms1id_max_prec_rel_int_in_other_ms2=0.01,
                   ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
@@ -72,11 +73,12 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
                          sample_dir,
                          ms1_id=ms1_id, ms2_id=ms2_id,
                          run_rt_correction=run_rt_correction, run_normalization=run_normalization,
-                         mz_tol_ms1=mz_tol_ms1, mz_tol_ms2=mz_tol_ms2, mass_detect_int_tol=mass_detect_int_tol,
+                         mz_tol_ms1=ms1_tol, mz_tol_ms2=ms2_tol, mass_detect_int_tol=mass_detect_int_tol,
                          align_mz_tol=align_mz_tol, align_rt_tol=align_rt_tol,
                          alignment_drop_by_fill_pct_ratio=alignment_drop_by_fill_pct_ratio,
                          peak_cor_rt_tol=peak_cor_rt_tol,
                          min_ppc=min_ppc, roi_min_length=roi_min_length,
+                         library_search_mztol=library_search_mztol,
                          ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
                          ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                          ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
@@ -154,6 +156,7 @@ def init_config(path=None,
                 align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                 peak_cor_rt_tol=0.015,
                 min_ppc=0.6, roi_min_length=3,
+                library_search_mztol=0.05,
                 ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
                 ms1id_max_prec_rel_int_in_other_ms2=0.01,
                 ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6
@@ -243,6 +246,7 @@ def init_config(path=None,
 
     # Parameters for feature annotation
     config.ms1id_library_path = ms1id_library_path
+    config.library_search_mztol = library_search_mztol  # m/z tolerance for MS1 ID, default is 0.05
     config.ms2id_library_path = ms2id_library_path
     config.ms2_sim_tol = 0.7  # MS2 similarity tolerance, default is 0.7
 
@@ -339,7 +343,7 @@ def feature_detection(file_name, params=None,
         print(f"Performing MS1 ID annotation for {file_name}...")
         # perform rev cos search
         ms1_id_annotation(pseudo_ms1_spectra, params.ms1id_library_path,
-                          mz_tol=params.mz_tol_ms1,
+                          mz_tol=params.library_search_mztol,
                           ion_mode=params.ion_mode,
                           max_prec_rel_int_in_other_ms2=params.ms1id_max_prec_rel_int_in_other_ms2,
                           score_cutoff=params.ms1id_score_cutoff,

@@ -73,7 +73,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
     return search_engine
 
 
-def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.01,
+def ms1_id_annotation(ms1_spec_ls, ms2_library, mz_tol=0.05,
                       score_cutoff=0.8, min_matched_peak=6,
                       ion_mode=None, refine=True,
                       max_prec_rel_int_in_other_ms2=0.05,
