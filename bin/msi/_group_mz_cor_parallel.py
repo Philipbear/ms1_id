@@ -4,7 +4,7 @@ import numpy as np
 from scipy.sparse import csr_matrix
 import multiprocessing as mp
 from tqdm import tqdm
-from _utils_imaging import PseudoMS1
+from _utils_imaging import PseudoMS2
 
 
 def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
@@ -75,7 +75,7 @@ def _process_chunk(args):
         if len(correlated_indices) >= min_cluster_size:
             cluster_mzs = mz_values[list(correlated_indices)]
             indices = sorted(correlated_indices)
-            chunk_results.append(PseudoMS1(mz, i, cluster_mzs.tolist(), [0] * len(cluster_mzs), indices))
+            chunk_results.append(PseudoMS2(mz, i, cluster_mzs.tolist(), [0] * len(cluster_mzs), indices))
 
     return chunk_results
 

@@ -62,6 +62,10 @@ def ms1id_single_file_batch(data_dir, ms1id_library_path=None, ms2id_library_pat
         files = [f for f in files if not os.path.exists(
             os.path.join(out_dir, os.path.splitext(os.path.basename(f))[0] + '_feature_table.tsv'))]
 
+    if len(files) == 0:
+        print(f"No files to process in {data_dir}")
+        return
+
     # Create a partial function with the library_path argument
     process_file = partial(ms1id_single_file,
                            ms1id_library_path=ms1id_library_path, ms2id_library_path=ms2id_library_path,
