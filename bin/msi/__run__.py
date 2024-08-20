@@ -7,9 +7,9 @@ from main_msi import ms1id_single_file_batch
 
 ##########################################
 # 1. MTBLS313, brain
-def exp_1(ms2db):
+def exp_1():
     ms1id_single_file_batch(file_dir='../../imaging/MTBLS313',
-                            library_path=f'../../data/{ms2db}.pkl',
+                            library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                             n_processes=12,
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
@@ -21,9 +21,9 @@ def exp_1(ms2db):
 
 ##########################################
 # 2. whole mouse body data
-def exp_2(ms2db):
+def exp_2():
     ms1id_single_file_batch(file_dir='../../imaging/mouse_body',
-                            library_path=f'../../data/{ms2db}.pkl',
+                            library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                             n_processes=48,
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
@@ -35,9 +35,9 @@ def exp_2(ms2db):
 
 ##########################################
 # 3. mouse kidney data
-def exp_3(ms2db):
+def exp_3():
     ms1id_single_file_batch(file_dir='../../imaging/mouse_kidney',
-                            library_path=f'../../data/{ms2db}.pkl',
+                            library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                             n_processes=48,
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
@@ -49,9 +49,9 @@ def exp_3(ms2db):
 
 ##########################################
 # 4. mouse liver data
-def exp_4(ms2db):
+def exp_4():
     ms1id_single_file_batch(file_dir='../../imaging/mouse_liver',
-                            library_path=f'../../data/{ms2db}.pkl',
+                            library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                             n_processes=48,
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
@@ -64,7 +64,7 @@ def exp_4(ms2db):
 ##########################################
 if __name__ == '__main__':
 
-    exp_1('gnps')
-    # exp_2('gnps')
-    # exp_3('gnps')
-    # exp_4('gnps')
+    exp_1()
+    # exp_2()
+    # exp_3()
+    # exp_4()

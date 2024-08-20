@@ -6,7 +6,7 @@ from main_lcms import ms1id_single_file_batch, ms1id_batch_mode
 
 
 def std():
-    # for k in ['_k0', '_k3', '_k5', '_k8', '_k9', '_k10', '_k13', '_k15', '_k18', '_k20']:
+    # for k in ['_k0', '_k3', '_k5', '_k8', '_k9', '_k10', '_k13', '_k15', '_k18']:
     #     ms1id_single_file_batch('/Users/shipei/Documents/projects/ms1_id/data/std_mix/data_1',
     #                             f'/Users/shipei/Documents/projects/ms1_id/data/std_mix/std{k}.pkl',
     #                             parallel=True, num_processes=None,
@@ -62,7 +62,7 @@ def exp_2():
     mass_detection_int_tol = 2e5
     ms1id_single_file_batch(data_dir='../../data/nist/data_2',
                             ms2id_library_path='../../data/gnps.pkl',
-                            parallel=True, num_processes=3,
+                            parallel=True, num_processes=6,
                             ms1_id=False, ms2_id=True,
                             ms1_tol=0.01, ms2_tol=0.02,
                             mass_detect_int_tol=mass_detection_int_tol,
@@ -80,7 +80,7 @@ def exp_2():
 def exp_3():
     mass_detection_int_tol = 2e5
     ms1id_batch_mode(project_path='../../data/MSV000087562/C18_neg_iHMPpool',
-                     ms2id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
+                     ms2id_library_path='../../data/gnps.pkl',
                      sample_dir='data', parallel=True,
                      ms1_id=False, ms2_id=True,
                      cpu_ratio=0.8,
@@ -95,7 +95,7 @@ def exp_3():
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
     ms1id_batch_mode(project_path='../../data/MSV000087562/HILIC_pos_iHMPpool',
-                     ms2id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
+                     ms2id_library_path='../../data/gnps.pkl',
                      sample_dir='data', parallel=True,
                      ms1_id=False, ms2_id=True,
                      cpu_ratio=0.8,
@@ -177,11 +177,11 @@ def exp_4():
 
 if __name__ == '__main__':
 
-    # std()
+    std()
 
     # exp_1()
 
-    exp_2()
+    # exp_2()
 
     # exp_3()
 

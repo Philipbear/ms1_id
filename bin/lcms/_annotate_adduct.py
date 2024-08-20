@@ -41,7 +41,7 @@ def annotate_adduct(d, mz_tol=0.01, rt_tol=0.05):
 
         mol_mass = _calc_exact_mol_mass(r.mz, r.charge_state, d.params.ion_mode.lower())
 
-        _adduct_list = adduct_double_list if r.charge_state == 1 else adduct_single_list
+        _adduct_list = adduct_single_list if r.charge_state == 1 else adduct_double_list
 
         for i, adduct in enumerate(_adduct_list):
             m = (mol_mass * _adduct_list[i]['m'] + _adduct_list[i]['mass']) / _adduct_list[i]['charge']
@@ -64,6 +64,7 @@ def annotate_adduct(d, mz_tol=0.01, rt_tol=0.05):
                 r.adduct_child_roi_id.append(d.rois[v].id)
 
         if len(r.adduct_child_roi_id) > 0:
+            roi_to_label[idx] = False
             r.adduct_type = default_single_adduct if r.charge_state == 1 else default_double_adduct
 
     for r in d.rois:
@@ -86,13 +87,9 @@ def _calc_exact_mol_mass(mz, charge_state, ion_mode):
 
 def _pop_adduct_list(_adduct_pos, _adduct_neg, ion_mode):
     if ion_mode == 'positive':
-        copy_1 = _adduct_pos.copy()
-        copy_2 = _adduct_pos.copy()
-        return copy_1[1:], copy_2[:16] + copy_2[17:]  # Remove first and 17th items
+        return _adduct_pos[1:-5], _adduct_pos[-4:]  # Remove M+H, M+2H
     else:
-        copy_1 = _adduct_neg.copy()
-        copy_2 = _adduct_neg.copy()
-        return copy_1[1:], copy_2[:12] + copy_2[13:]  # Remove first and 13th items
+        return _adduct_neg[1:-3], _adduct_neg[-2:]  # Remove M-H, M-2H
 
 
 _adduct_pos = [

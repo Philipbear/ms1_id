@@ -178,6 +178,8 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
             search_eng = pickle.load(file)
         db_name = os.path.basename(library)
 
+        print(f"Loaded library: {db_name}")
+
         # Prepare chunks
         chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
 

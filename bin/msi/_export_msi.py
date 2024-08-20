@@ -26,7 +26,6 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
             # matched_peak_str = ' '.join([f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
 
             out_list.append({
-                'db_name': annotation.db_name,
                 'name': annotation.name,
                 'precursor_mz': round(annotation.precursor_mz, 4),
                 'matched_score': round(annotation.score, 4),
@@ -38,6 +37,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
                 'inchikey': annotation.inchikey,
                 # 'instrument_type': annotation.instrument_type,
                 'collision_energy': annotation.collision_energy,
+                'db_name': annotation.db_name,
                 'db_id': annotation.db_id,
                 'pseudo_ms2': pseudo_ms2_str,
                 # 'matched_ref_spectrum': matched_peak_str
