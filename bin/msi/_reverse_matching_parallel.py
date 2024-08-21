@@ -75,7 +75,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
     return search_engine
 
 
-def ms1_id_annotation(ms1_spec_ls, library, n_processes=None,
+def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                       mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4,
                       ion_mode=None,
@@ -114,7 +114,7 @@ def ms1_id_annotation(ms1_spec_ls, library, n_processes=None,
     ms1_spec_ls = centroid_all_spectra(ms1_spec_ls, n_processes)
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, library, n_processes=n_processes,
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=n_processes,
                                          mz_tol=mz_tol,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
