@@ -90,30 +90,30 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
 
     # skip the files that have been processed
     txt_files = os.listdir(config.single_file_dir)
-    txt_files = [f.split(".")[0] for f in txt_files if f.lower().endswith(".txt")]
-    txt_files = [f for f in txt_files if not f.startswith(".")]  # for Mac OS
+    txt_files = [f.split(".")[0] for f in txt_files if f.lower().endswith(".txt") and not f.startswith(".")]
     raw_file_names = [f for f in raw_file_names if f.split(".")[0] not in txt_files]
     raw_file_names = [os.path.join(config.sample_dir, f) for f in raw_file_names]
 
     print("\t{} raw file are found, {} files to be processed.".format(total_file_num, len(raw_file_names)))
 
-    # process files by multiprocessing
-    print("Processing individual files for feature detection, evaluation, and grouping...")
+    if len(raw_file_names) > 0:
+        # process files by multiprocessing
+        print("Processing individual files for feature detection, evaluation, and grouping...")
 
-    if parallel:
-        workers = min(int(multiprocessing.cpu_count() * cpu_ratio), len(raw_file_names))
-        print("\t {} CPU cores in total, {} cores used.".format(multiprocessing.cpu_count(), workers))
+        if parallel:
+            workers = min(int(multiprocessing.cpu_count() * cpu_ratio), len(raw_file_names))
+            print("\t {} CPU cores in total, {} cores used.".format(multiprocessing.cpu_count(), workers))
 
-        print(f"Processing all {len(raw_file_names)} files")
-        p = multiprocessing.Pool(workers)
-        p.starmap(feature_detection, [(f, config) for f in raw_file_names])
-        p.close()
-        p.join()
-    else:
-        for i, file_name in enumerate(raw_file_names):
-            feature_detection(file_name, params=config)
+            print(f"Processing all {len(raw_file_names)} files")
+            p = multiprocessing.Pool(workers)
+            p.starmap(feature_detection, [(f, config) for f in raw_file_names])
+            p.close()
+            p.join()
+        else:
+            for i, file_name in enumerate(raw_file_names):
+                feature_detection(file_name, params=config)
 
-    pseudo_ms1_spectra = []
+    pseudo_ms2_spectra = []
     if ms1_id:
         # get all pre-saved pseudo ms1 spectra
         pseudo_ms2_spectra = retrieve_pseudo_ms2_spectra(config)
@@ -350,7 +350,7 @@ def feature_detection(file_name, params=None,
                           min_matched_peak=params.ms1id_min_matched_peak,
                           save=True,
                           save_path=os.path.join(params.single_file_dir,
-                                                 os.path.basename(file_name).split(".")[0] + "_pseudoMS1_annotated.pkl"))
+                                                 os.path.basename(file_name).split(".")[0] + "_pseudoMS2_annotated.pkl"))
         del pseudo_ms2_spectra
 
     # output single file to a txt file
