@@ -16,7 +16,7 @@ def exp_1():
                             sn_factor=5.0, centroided=True,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.80,
-                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
 
 
 ##########################################
@@ -30,7 +30,7 @@ def exp_2():
                             sn_factor=10.0, centroided=False,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.8,
-                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
 
 
 ##########################################
@@ -44,7 +44,7 @@ def exp_3():
                             sn_factor=10.0, centroided=False,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.8,
-                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
 
 
 ##########################################
@@ -58,7 +58,7 @@ def exp_4():
                             sn_factor=10.0, centroided=False,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.8,
-                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
 
 
 ##########################################
