@@ -12,7 +12,7 @@ def ms1id_single_file(file_path, ms1id_library_path=None, ms2id_library_path=Non
                       peak_cor_rt_tol=0.025,
                       min_ppc=0.8, roi_min_length=4,
                       library_search_mztol=0.05,
-                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
+                      ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3, ms1id_min_spec_usage=0.05,
                       ms1id_max_prec_rel_int_in_other_ms2=0.01,
                       ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
                       out_dir=None):
@@ -29,6 +29,7 @@ def ms1id_single_file(file_path, ms1id_library_path=None, ms2id_library_path=Non
         min_ppc=min_ppc, roi_min_length=roi_min_length,
         library_search_mztol=library_search_mztol,
         ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+        ms1id_min_spec_usage=ms1id_min_spec_usage,
         ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
         ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
         out_dir=out_dir)
@@ -44,7 +45,7 @@ def ms1id_single_file_batch(data_dir, ms1id_library_path=None, ms2id_library_pat
                             peak_cor_rt_tol=0.025,
                             min_ppc=0.8, roi_min_length=4,
                             library_search_mztol=0.05,
-                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3, ms1id_min_spec_usage=0.05,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
                             out_dir=None
@@ -76,6 +77,7 @@ def ms1id_single_file_batch(data_dir, ms1id_library_path=None, ms2id_library_pat
                            min_ppc=min_ppc, roi_min_length=roi_min_length,
                            library_search_mztol=library_search_mztol,
                            ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+                           ms1id_min_spec_usage=ms1id_min_spec_usage,
                            ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                            ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
                            out_dir=out_dir)
@@ -107,6 +109,7 @@ def ms1id_single_file_batch(data_dir, ms1id_library_path=None, ms2id_library_pat
                               min_ppc=min_ppc, roi_min_length=roi_min_length,
                               library_search_mztol=library_search_mztol,
                               ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+                              ms1id_min_spec_usage=ms1id_min_spec_usage,
                               ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                               ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak,
                               out_dir=out_dir)
@@ -123,7 +126,7 @@ def ms1id_batch_mode(project_path=None, ms1id_library_path=None, ms2id_library_p
                      align_mz_tol=0.015, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=5, library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=3, ms1id_min_spec_usage=0.05,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3):
     main_workflow(project_path=project_path, ms1id_library_path=ms1id_library_path,
@@ -138,6 +141,7 @@ def ms1id_batch_mode(project_path=None, ms1id_library_path=None, ms2id_library_p
                   peak_cor_rt_tol=peak_cor_rt_tol, min_ppc=min_ppc, roi_min_length=roi_min_length,
                   library_search_mztol=library_search_mztol,
                   ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+                  ms1id_min_spec_usage=ms1id_min_spec_usage,
                   ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                   ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
 

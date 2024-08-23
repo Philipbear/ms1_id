@@ -9,7 +9,10 @@ def ms1id_single_file_batch(file_dir, library_path, n_processes=None,
                             centroided=True,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.80, max_cor_depth=1,
-                            ms1id_mz_tol=0.01, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3):
+                            ms1id_mz_tol=0.01,
+                            ms1id_score_cutoff=0.6,
+                            ms1id_min_matched_peak=3,
+                            ms1id_min_spec_usage=0.0):
     files = [f for f in os.listdir(file_dir) if f.endswith('.imzML')]
     files = [os.path.join(file_dir, f) for f in files]
 
@@ -23,6 +26,7 @@ def ms1id_single_file_batch(file_dir, library_path, n_processes=None,
                                       min_overlap=min_overlap, min_correlation=min_correlation,
                                       max_cor_depth=max_cor_depth,
                                       ms1id_mz_tol=ms1id_mz_tol, ms1id_score_cutoff=ms1id_score_cutoff,
+                                      ms1id_min_spec_usage=ms1id_min_spec_usage,
                                       ms1id_min_matched_peak=ms1id_min_matched_peak)
 
     return

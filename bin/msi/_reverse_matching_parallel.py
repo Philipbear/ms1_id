@@ -77,7 +77,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
 
 def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                       mz_tol=0.05,
-                      score_cutoff=0.6, min_matched_peak=4,
+                      score_cutoff=0.6, min_matched_peak=4, min_spec_usage=0.0,
                       ion_mode=None,
                       save=False, save_dir=None,
                       chunk_size=1000):
@@ -119,6 +119,7 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
                                          min_matched_peak=min_matched_peak,
+                                         min_spec_usage=min_spec_usage,
                                          chunk_size=chunk_size)
 
     if save:
@@ -152,6 +153,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
                            ion_mode=None,
                            score_cutoff=0.7,
                            min_matched_peak=3,
+                           min_spec_usage=0.0,
                            chunk_size=500) -> List:
     """
     Perform MS1 annotation using parallel open search for the entire spectrum, with filters similar to identity search.
@@ -163,6 +165,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
     :param ion_mode: str, ion mode
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
+    :param min_spec_usage: minimum spectral usage
     :param chunk_size: number of spectra to process in each parallel task
     :return: List of updated PseudoMS2-like objects
     """
@@ -184,7 +187,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
         chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
 
         # Prepare arguments for parallel processing
-        args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, db_name)
+        args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage, db_name)
                      for chunk in chunks]
 
         # Use multiprocessing to process chunks in parallel
@@ -196,7 +199,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
 
 
 def _process_chunk(args):
-    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, db_name = args
+    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage, db_name = args
 
     for spec in chunk:
         # open search
@@ -215,7 +218,9 @@ def _process_chunk(args):
         score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
 
         # filter by matching cutoffs, including scaled score
-        v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
+        v = np.where((score_arr >= score_cutoff) &
+                     (matched_peak_arr >= min_matched_peak) &
+                     (spec_usage_arr >= min_spec_usage))[0]
 
         all_matches = []
         nonzero_mask = np.array(spec.intensities) > 0

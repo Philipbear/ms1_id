@@ -28,7 +28,7 @@ def main_workflow_single(file_path,
                          peak_cor_rt_tol=0.015,
                          min_ppc=0.8, roi_min_length=3,
                          library_search_mztol=0.05,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6,
+                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=6, ms1id_min_spec_usage=0.1,
                          ms1id_max_prec_rel_int_in_other_ms2=0.01,
                          ms2id_score_cutoff=0.7, ms2id_min_matched_peak=6,
                          plot_bpc=False, out_dir=None):
@@ -91,7 +91,9 @@ def main_workflow_single(file_path,
                                                mz_tol=library_search_mztol,
                                                ion_mode=ion_mode,
                                                max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
-                                               score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
+                                               score_cutoff=ms1id_score_cutoff,
+                                               min_matched_peak=ms1id_min_matched_peak,
+                                               min_spec_usage=ms1id_min_spec_usage)
 
         # # write out raw ms1 id results
         # write_ms1_id_results(pseudo_ms2_spectra, out_dir=os.path.dirname(file_path))

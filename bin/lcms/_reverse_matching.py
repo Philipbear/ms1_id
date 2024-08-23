@@ -74,7 +74,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
 
 
 def ms1_id_annotation(ms1_spec_ls, library_ls, mz_tol=0.05,
-                      score_cutoff=0.8, min_matched_peak=6,
+                      score_cutoff=0.8, min_matched_peak=6, min_spec_usage=0.05,
                       ion_mode=None, refine=True,
                       max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_path=None):
@@ -85,6 +85,7 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, mz_tol=0.05,
     :param mz_tol: mz tolerance in Da, for rev cos matching
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
+    :param min_spec_usage: for rev cos
     :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
     :param refine: bool, refine the results
     :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
@@ -97,7 +98,8 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, mz_tol=0.05,
     ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=mz_tol,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
-                                         min_matched_peak=min_matched_peak)
+                                         min_matched_peak=min_matched_peak,
+                                         min_spec_usage=min_spec_usage)
 
     # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
     if refine:
@@ -114,7 +116,7 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, mz_tol=0.05,
 
 def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
                            ion_mode=None, score_cutoff=0.7,
-                           min_matched_peak=3):
+                           min_matched_peak=3, min_spec_usage=0.0):
     """
     Perform MS1 annotation using open search for the entire spectrum, with filters similar to identity search.
 
@@ -124,6 +126,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
     :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
+    :param min_spec_usage: minimum spectral usage
     :return: List of updated PseudoMS1-like objects
     """
     mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
@@ -161,8 +164,10 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
 
             score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
 
-            # filter by matching cutoffs, including scaled score
-            v = np.where(np.logical_and(score_arr >= score_cutoff, matched_peak_arr >= min_matched_peak))[0]
+            # filter by matching cutoffs
+            v = np.where((score_arr >= score_cutoff) &
+                         (matched_peak_arr >= min_matched_peak) &
+                         (spec_usage_arr >= min_spec_usage))[0]
 
             all_matches = []
             for idx in v:
@@ -252,6 +257,7 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
             spec.annotation_ls = to_keep
 
     return ms1_spec_ls
+
 
 '''
 def refine_ms1_id_results_for_identity_search(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int=0.05):

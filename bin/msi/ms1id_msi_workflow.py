@@ -11,7 +11,8 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                   sn_factor=5.0, centroided=True,
                                   mz_bin_size=0.005,
                                   min_overlap=10, min_correlation=0.8, max_cor_depth=1,
-                                  ms1id_mz_tol=0.01, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4):
+                                  ms1id_mz_tol=0.01,
+                                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0):
     file_dir = os.path.dirname(file_path)
     file_name = os.path.basename(file_path).replace('.imzML', '')
 
@@ -54,6 +55,7 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                    ion_mode=ion_mode,
                                    score_cutoff=ms1id_score_cutoff,
                                    min_matched_peak=ms1id_min_matched_peak,
+                                   min_spec_usage=ms1id_min_spec_usage,
                                    save=True,
                                    save_dir=result_folder)
 

@@ -35,7 +35,7 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
                   peak_cor_rt_tol=0.015,
                   min_ppc=0.6, roi_min_length=3,
                   library_search_mztol=0.05,
-                  ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+                  ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6, ms1id_min_spec_usage=0.05,
                   ms1id_max_prec_rel_int_in_other_ms2=0.01,
                   ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6):
     """
@@ -50,8 +50,8 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
     :param sample_dir: directory where the raw files are stored
     :param run_rt_correction: whether to perform RT correction
     :param run_normalization: whether to perform normalization
-    :param mz_tol_ms1: m/z tolerance for MS1
-    :param mz_tol_ms2: m/z tolerance for MS2
+    :param ms1_tol: m/z tolerance for MS1
+    :param ms2_tol: m/z tolerance for MS2
     :param mass_detect_int_tol: intensity tolerance for mass detection
     :param align_mz_tol: alignment m/z tolerance
     :param align_rt_tol: alignment RT tolerance
@@ -61,7 +61,6 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
     :param roi_min_length: minimum ROI length for feature grouping
     :param ms1id_score_cutoff: ms1 ID score cutoff
     :param ms1id_min_matched_peak: ms1 ID min matched peak
-    :param ms1id_min_prec_int_sn_ratio: ms1 ID min precursor intensity signal-to-noise ratio
     :param ms1id_max_prec_rel_int_in_other_ms2: ms1 ID, max precursor relative intensity in other MS2
     :param ms2id_score_cutoff: ms2 ID score cutoff
     :param ms2id_min_matched_peak: ms2 ID min matched peak
@@ -80,6 +79,7 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
                          min_ppc=min_ppc, roi_min_length=roi_min_length,
                          library_search_mztol=library_search_mztol,
                          ms1id_score_cutoff=ms1id_score_cutoff, ms1id_min_matched_peak=ms1id_min_matched_peak,
+                         ms1id_min_spec_usage=ms1id_min_spec_usage,
                          ms1id_max_prec_rel_int_in_other_ms2=ms1id_max_prec_rel_int_in_other_ms2,
                          ms2id_score_cutoff=ms2id_score_cutoff, ms2id_min_matched_peak=ms2id_min_matched_peak)
 
@@ -157,7 +157,7 @@ def init_config(path=None,
                 peak_cor_rt_tol=0.015,
                 min_ppc=0.6, roi_min_length=3,
                 library_search_mztol=0.05,
-                ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6,
+                ms1id_score_cutoff=0.8, ms1id_min_matched_peak=6, ms1id_min_spec_usage=0.05,
                 ms1id_max_prec_rel_int_in_other_ms2=0.01,
                 ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6
                 ):
@@ -172,6 +172,7 @@ def init_config(path=None,
     config.roi_min_length = roi_min_length
     config.ms1id_score_cutoff = ms1id_score_cutoff
     config.ms1id_min_matched_peak = ms1id_min_matched_peak
+    config.ms1id_min_spec_usage = ms1id_min_spec_usage
     config.ms1id_max_prec_rel_int_in_other_ms2 = ms1id_max_prec_rel_int_in_other_ms2
     config.ms2id_score_cutoff = ms2id_score_cutoff
     config.ms2id_min_matched_peak = ms2id_min_matched_peak
@@ -348,13 +349,14 @@ def feature_detection(file_name, params=None,
                           max_prec_rel_int_in_other_ms2=params.ms1id_max_prec_rel_int_in_other_ms2,
                           score_cutoff=params.ms1id_score_cutoff,
                           min_matched_peak=params.ms1id_min_matched_peak,
+                          min_spec_usage=params.ms1id_min_spec_usage,
                           save=True,
                           save_path=os.path.join(params.single_file_dir,
-                                                 os.path.basename(file_name).split(".")[0] + "_pseudoMS2_annotated.pkl"))
+                                                 os.path.basename(file_name).split(".")[
+                                                     0] + "_pseudoMS2_annotated.pkl"))
         del pseudo_ms2_spectra
 
     # output single file to a txt file
     d.output_single_file()
 
     return d
-

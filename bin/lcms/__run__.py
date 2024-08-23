@@ -43,7 +43,7 @@ def exp_1():
     mass_detection_int_tol = 2e5
     ms1id_single_file_batch(data_dir='../../data/nist/data_1',
                             ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
-                            parallel=False, num_processes=12,
+                            parallel=True, num_processes=12,
                             ms1_id=True, ms2_id=False,
                             ms1_tol=0.01, ms2_tol=0.02,
                             mass_detect_int_tol=mass_detection_int_tol,
@@ -83,7 +83,7 @@ def exp_2():
                             peak_cor_rt_tol=0.025,
                             min_ppc=0.8, roi_min_length=4,
                             library_search_mztol=0.05,
-                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
                             out_dir='../../data/nist/data_2/output_gnps')
@@ -104,7 +104,7 @@ def exp_3():
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -119,7 +119,7 @@ def exp_3():
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -134,7 +134,7 @@ def exp_3():
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -149,7 +149,7 @@ def exp_3():
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -158,8 +158,8 @@ if __name__ == '__main__':
 
     # std()
 
-    # exp_1()
+    exp_1()
 
     # exp_2()
 
-    exp_3()
+    # exp_3()

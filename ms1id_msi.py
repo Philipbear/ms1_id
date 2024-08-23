@@ -13,4 +13,5 @@ if __name__ == '__main__':
                             sn_factor=5.0, centroided=True,
                             mz_bin_size=0.005,
                             min_overlap=10, min_correlation=0.80, max_cor_depth=1,
-                            ms1id_mz_tol=0.05, ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
+                            ms1id_mz_tol=0.05,
+                            ms1id_score_cutoff=0.6, ms1id_min_matched_peak=3)
