@@ -93,20 +93,20 @@ def exp_2():
 # 3. iHMP pool sample, full scan
 def exp_3():
     mass_detection_int_tol = 5e5
-    ms1id_batch_mode(project_path='../../data/PR000639_data/hilic_pos',
-                     ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
-                     sample_dir='data', parallel=True,
-                     ms1_id=True, ms2_id=False,
-                     cpu_ratio=0.9,
-                     run_rt_correction=True, run_normalization=True,
-                     ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
-                     align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                     peak_cor_rt_tol=0.025,
-                     min_ppc=0.8, roi_min_length=4,
-                     library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                     ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                     ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
+    # ms1id_batch_mode(project_path='../../data/PR000639_data/hilic_pos',
+    #                  ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
+    #                  sample_dir='data', parallel=True,
+    #                  ms1_id=True, ms2_id=False,
+    #                  cpu_ratio=0.9,
+    #                  run_rt_correction=True, run_normalization=True,
+    #                  ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
+    #                  align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+    #                  peak_cor_rt_tol=0.025,
+    #                  min_ppc=0.8, roi_min_length=4,
+    #                  library_search_mztol=0.05,
+    #                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+    #                  ms1id_max_prec_rel_int_in_other_ms2=0.01,
+    #                  ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
     ms1id_batch_mode(project_path='../../data/PR000639_data/c18_neg',
                      ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
