@@ -4,11 +4,10 @@ import numpy as np
 from _utils import AlignedMS1Annotation
 
 
-def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
+def write_ms1_id_results(ms1_spec_ls, out_dir=None):
     """
     Output the annotated ms1 spectra
     :param ms1_spec_ls: a list of PseudoMS2-like object
-    :param save: bool, whether to save the results
     :param out_dir: output folder
     :return: None
     """
@@ -22,11 +21,6 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
         pseudo_ms2_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
-
-            # write ref spectrum, have to square the intensity
-            # annotation_peaks = annotation.peaks
-            # annotation_peaks = annotation_peaks[annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
-            # matched_peak_str = ' '.join([f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
 
             out_list.append({
                 'file_name': spec.file_name,
@@ -45,24 +39,20 @@ def write_ms1_id_results(ms1_spec_ls, save=True, out_dir=None):
                 'collision_energy': annotation.collision_energy,
                 'db_id': annotation.db_id,
                 'pseudo_ms2': pseudo_ms2_str,
-                # 'matched_ref_spectrum': matched_peak_str
             })
 
     out_df = pd.DataFrame(out_list)
 
-    if save:
-        out_path = os.path.join(out_dir, 'ms1_id_results.tsv')
-        out_df.to_csv(out_path, index=False, sep='\t')
+    out_path = os.path.join(out_dir, 'ms1_id_results.tsv')
+    out_df.to_csv(out_path, index=False, sep='\t')
 
     return out_df
 
 
-def write_single_file(msdata, pseudo_ms2_spectra=None, ion_mode='positive', save_path=None):
+def write_single_file(msdata, pseudo_ms2_spectra=None, save_path=None):
     """
     Function to generate a report for rois in csv format.
     """
-    common_adduct_list = ['[M+H]+', 'M+H', '[M+H-H2O]+', 'M+H-H2O', '[M-H2O+H]+', 'M-H2O+H', '[M+NH4]+', 'M+NH4',
-                          '[M]+', 'M+', 'Cat', 'Cat+'] if ion_mode == 'positive' else ['[M-H]-', 'M-H']
 
     result = []
 
@@ -120,13 +110,12 @@ def write_single_file(msdata, pseudo_ms2_spectra=None, ion_mode='positive', save
     df['MS1_db_name'] = None
     df['MS1_db_id'] = None
     df['pseudo_ms2'] = None
-    # df['MS1_matched_ref_spectrum'] = None
 
     if pseudo_ms2_spectra is not None:
-        ms1_spec_ls = [spec for spec in pseudo_ms2_spectra if spec.annotated]
+        spec_ls = [spec for spec in pseudo_ms2_spectra if spec.annotated]
 
-        if len(ms1_spec_ls) > 0:
-            for spec in ms1_spec_ls:
+        if len(spec_ls) > 0:
+            for spec in spec_ls:
 
                 pseudo_ms2_str = ' '.join(
                     [f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
@@ -134,8 +123,8 @@ def write_single_file(msdata, pseudo_ms2_spectra=None, ion_mode='positive', save
                 for annotation in spec.annotation_ls:
                     this_precmz = annotation.precursor_mz
                     # Create a boolean mask for the conditions
-                    mask = ((df['m/z'] - this_precmz).abs() <= msdata.params.mz_tol_ms1) & (
-                                (df['RT'] - spec.rt).abs() <= 1)
+                    mask = (((df['m/z'] - this_precmz).abs() <= msdata.params.mz_tol_ms1) &
+                            ((df['RT'] - spec.rt).abs() <= 0.2))
 
                     if not mask.any():
                         continue
@@ -143,12 +132,7 @@ def write_single_file(msdata, pseudo_ms2_spectra=None, ion_mode='positive', save
                     idx = df.loc[mask, 'RT'].sub(spec.rt).abs().idxmin()
 
                     # if the annotation is better than the previous one, update the row
-                    if df.loc[idx, 'MS1_similarity'] is None:
-                        # annotation_peaks = annotation.peaks
-                        # annotation_peaks = annotation_peaks[annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
-                        # matched_peak_str = ' '.join(
-                        #     [f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
-
+                    if df.loc[idx, 'MS1_similarity'] is None or annotation.score >= df.loc[idx, 'MS1_similarity']:
                         df.loc[idx, 'MS1_annotation'] = annotation.name
                         df.loc[idx, 'MS1_formula'] = annotation.formula
                         df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
@@ -160,49 +144,6 @@ def write_single_file(msdata, pseudo_ms2_spectra=None, ion_mode='positive', save
                         df.loc[idx, 'MS1_db_name'] = annotation.db_name
                         df.loc[idx, 'MS1_db_id'] = annotation.db_id
                         df.loc[idx, 'pseudo_ms2'] = pseudo_ms2_str
-                        # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
-                    else:
-                        ori_prec_type_bool = df.loc[idx, 'MS1_precursor_type'] in common_adduct_list
-                        new_prec_type_bool = annotation.precursor_type in common_adduct_list
-                        if (ori_prec_type_bool and new_prec_type_bool) or (not ori_prec_type_bool and not new_prec_type_bool):
-                            if annotation.score >= df.loc[idx, 'MS1_similarity'] and annotation.matched_peak >= df.loc[idx, 'MS1_matched_peak']:
-                                # annotation_peaks = annotation.peaks
-                                # annotation_peaks = annotation_peaks[
-                                #     annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
-                                # matched_peak_str = ' '.join(
-                                #     [f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
-
-                                df.loc[idx, 'MS1_annotation'] = annotation.name
-                                df.loc[idx, 'MS1_formula'] = annotation.formula
-                                df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
-                                df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
-                                df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
-                                df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
-                                df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
-                                df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
-                                df.loc[idx, 'MS1_db_name'] = annotation.db_name
-                                df.loc[idx, 'MS1_db_id'] = annotation.db_id
-                                df.loc[idx, 'pseudo_ms2'] = pseudo_ms2_str
-                                # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
-                        elif new_prec_type_bool:
-                            # annotation_peaks = annotation.peaks
-                            # annotation_peaks = annotation_peaks[
-                            #     annotation_peaks[:, 1] > 0]  # remove zero intensity peaks
-                            # matched_peak_str = ' '.join(
-                            #     [f"{mz:.4f} {intensity:.4f};" for mz, intensity in annotation_peaks])
-
-                            df.loc[idx, 'MS1_annotation'] = annotation.name
-                            df.loc[idx, 'MS1_formula'] = annotation.formula
-                            df.loc[idx, 'MS1_similarity'] = round(float(annotation.score), 3)
-                            df.loc[idx, 'MS1_matched_peak'] = annotation.matched_peak
-                            df.loc[idx, 'MS1_spectral_usage'] = round(float(annotation.spectral_usage), 4)
-                            df.loc[idx, 'MS1_precursor_type'] = annotation.precursor_type
-                            df.loc[idx, 'MS1_inchikey'] = annotation.inchikey
-                            df.loc[idx, 'MS1_collision_energy'] = annotation.collision_energy
-                            df.loc[idx, 'MS1_db_name'] = annotation.db_name
-                            df.loc[idx, 'MS1_db_id'] = annotation.db_id
-                            df.loc[idx, 'pseudo_ms2'] = pseudo_ms2_str
-                            # df.loc[idx, 'MS1_matched_ref_spectrum'] = matched_peak_str
 
     # save the dataframe to csv file
     df.to_csv(save_path, index=False, sep="\t")
@@ -280,7 +221,7 @@ def _refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config):
         for annotation in spec.annotation_ls:
             this_precmz = annotation.precursor_mz
             # Create a boolean mask for the conditions
-            mask = ((df['m/z'] - this_precmz).abs() <= config.align_mz_tol) & ((df['RT'] - this_rt).abs() <= 1)
+            mask = ((df['m/z'] - this_precmz).abs() <= config.align_mz_tol) & ((df['RT'] - this_rt).abs() <= config.align_rt_tol)
 
             if not mask.any():
                 continue

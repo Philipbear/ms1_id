@@ -79,8 +79,8 @@ def main_workflow_single(file_path,
         ppc_matrix = calc_all_ppc(d, rt_tol=peak_cor_rt_tol, roi_min_length=roi_min_length, min_ppc=min_ppc,
                                   save=False)
 
-        # generate pseudo ms1 spec, for ms1_id
-        print('Generating pseudo MS1 spectra...')
+        # generate pseudo ms2 spec, for ms1_id
+        print('Generating pseudo MS2 spectra...')
         pseudo_ms2_spectra = generate_pseudo_ms2(d, ppc_matrix,
                                                  min_ppc=min_ppc, roi_min_length=roi_min_length,
                                                  min_cluster_size=ms1id_min_matched_peak)
@@ -94,7 +94,7 @@ def main_workflow_single(file_path,
                                                score_cutoff=ms1id_score_cutoff, min_matched_peak=ms1id_min_matched_peak)
 
         # # write out raw ms1 id results
-        # write_ms1_id_results(pseudo_ms2_spectra, save=True, out_dir=os.path.dirname(file_path))
+        # write_ms1_id_results(pseudo_ms2_spectra, out_dir=os.path.dirname(file_path))
 
     # annotate MS2 spectra
     if ms2_id and config.ms2id_library_path is not None:
@@ -111,7 +111,7 @@ def main_workflow_single(file_path,
     if out_dir is None:
         out_dir = os.path.dirname(file_path)
     out_path = os.path.join(out_dir, os.path.splitext(os.path.basename(file_path))[0] + "_feature_table.tsv")
-    write_single_file(d, pseudo_ms2_spectra, ion_mode, out_path)
+    write_single_file(d, pseudo_ms2_spectra, out_path)
 
     return d
 
