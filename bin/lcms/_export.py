@@ -211,12 +211,12 @@ def _refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config):
     """
 
     # only reserve annotated pseudo MS2 spectra
-    ms1_spec_ls = [spec for spec in pseudo_ms2_spectra if spec.annotated]
+    spec_ls = [spec for spec in pseudo_ms2_spectra if spec.annotated]
 
     all_df_idx_ls = []  # list of indices in the feature table that have been matched
     aligned_ms1_annotation_ls = []  # list of AlignedMS1Annotation objects
 
-    for spec in ms1_spec_ls:
+    for spec in spec_ls:
         this_rt = spec.rt
         for annotation in spec.annotation_ls:
             this_precmz = annotation.precursor_mz

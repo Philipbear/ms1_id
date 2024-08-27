@@ -115,7 +115,7 @@ def main_workflow(project_path=None, ms1id_library_path=None, ms2id_library_path
 
     pseudo_ms2_spectra = []
     if ms1_id:
-        # get all pre-saved pseudo ms1 spectra
+        # get all pre-saved pseudo ms2 spectra
         pseudo_ms2_spectra = retrieve_pseudo_ms2_spectra(config)
 
     # feature alignment

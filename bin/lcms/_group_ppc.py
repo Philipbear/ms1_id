@@ -30,7 +30,7 @@ def retrieve_pseudo_ms2_spectra(config):
             except:
                 continue
 
-    return pseudo_ms2_spectra
+    return [spec for spec in pseudo_ms2_spectra if spec.annotated]
 
 
 def generate_pseudo_ms2(msdata, ppc_matrix, min_ppc=0.8, roi_min_length=3,

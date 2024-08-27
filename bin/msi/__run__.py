@@ -14,9 +14,11 @@ def exp_1():
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
                             sn_factor=5.0, centroided=True,
-                            mz_bin_size=0.005,
+                            mz_bin_size=0.01,
                             min_overlap=10, min_correlation=0.80,
-                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_min_spec_usage=0.01)
 
 
 ##########################################
@@ -28,9 +30,11 @@ def exp_2():
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
                             sn_factor=10.0, centroided=False,
-                            mz_bin_size=0.005,
+                            mz_bin_size=0.01,
                             min_overlap=10, min_correlation=0.8,
-                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_min_spec_usage=0.01)
 
 
 ##########################################
@@ -42,9 +46,11 @@ def exp_3():
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
                             sn_factor=10.0, centroided=False,
-                            mz_bin_size=0.005,
+                            mz_bin_size=0.01,
                             min_overlap=10, min_correlation=0.8,
-                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_min_spec_usage=0.01)
 
 
 ##########################################
@@ -56,15 +62,20 @@ def exp_4():
                             mass_detect_int_tol=None,
                             noise_detection='moving_average',
                             sn_factor=10.0, centroided=False,
-                            mz_bin_size=0.005,
+                            mz_bin_size=0.01,
                             min_overlap=10, min_correlation=0.8,
-                            library_search_mztol=0.05, ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4)
+                            library_search_mztol=0.05,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_min_spec_usage=0.01)
 
 
 ##########################################
 if __name__ == '__main__':
 
     exp_1()
+
     # exp_2()
+
     # exp_3()
+
     # exp_4()

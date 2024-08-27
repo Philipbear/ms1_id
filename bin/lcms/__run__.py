@@ -51,6 +51,7 @@ def exp_1():
                             min_ppc=0.8, roi_min_length=4,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_min_spec_usage=0.0,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
                             out_dir='../../data/nist/data_1/output_gnps')
@@ -65,6 +66,7 @@ def exp_1():
                             min_ppc=0.8, roi_min_length=4,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_min_spec_usage=0.0,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
                             out_dir='../../data/nist/data_1/output_gnps_k0')
@@ -83,7 +85,8 @@ def exp_2():
                             peak_cor_rt_tol=0.025,
                             min_ppc=0.8, roi_min_length=4,
                             library_search_mztol=0.05,
-                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
+                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                            ms1id_min_spec_usage=0.0,
                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
                             out_dir='../../data/nist/data_2/output_gnps')
@@ -97,14 +100,15 @@ def exp_3():
                      ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                      sample_dir='data', parallel=True,
                      ms1_id=True, ms2_id=False,
-                     cpu_ratio=0.9,
+                     cpu_ratio=0.95,
                      run_rt_correction=True, run_normalization=True,
                      ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_min_spec_usage=0.20,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -112,14 +116,15 @@ def exp_3():
                      ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                      sample_dir='data', parallel=True,
                      ms1_id=True, ms2_id=False,
-                     cpu_ratio=0.9,
+                     cpu_ratio=0.95,
                      run_rt_correction=True, run_normalization=True,
                      ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_min_spec_usage=0.20,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -127,14 +132,15 @@ def exp_3():
                      ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                      sample_dir='data', parallel=True,
                      ms1_id=True, ms2_id=False,
-                     cpu_ratio=0.9,
+                     cpu_ratio=0.95,
                      run_rt_correction=True, run_normalization=True,
                      ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_min_spec_usage=0.20,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -142,14 +148,15 @@ def exp_3():
                      ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
                      sample_dir='data', parallel=True,
                      ms1_id=True, ms2_id=False,
-                     cpu_ratio=0.9,
+                     cpu_ratio=0.95,
                      run_rt_correction=True, run_normalization=True,
                      ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
                      align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
                      peak_cor_rt_tol=0.025,
                      min_ppc=0.8, roi_min_length=4,
                      library_search_mztol=0.05,
-                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_min_spec_usage=0.20,
                      ms1id_max_prec_rel_int_in_other_ms2=0.01,
                      ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
@@ -158,8 +165,8 @@ if __name__ == '__main__':
 
     # std()
 
-    exp_1()
+    # exp_1()
 
     # exp_2()
 
-    # exp_3()
+    exp_3()
