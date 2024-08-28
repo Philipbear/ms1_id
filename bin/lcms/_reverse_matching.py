@@ -91,7 +91,7 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, mz_tol=0.05,
     :param max_prec_rel_int_in_other_ms2: float, maximum precursor relative intensity in other MS2 spectrum
     :param save: bool, save the results
     :param save_path: str, save directory
-    :return: PseudoMS1-like object
+    :return: PseudoMS2-like object
     """
 
     # perform revcos matching
@@ -127,7 +127,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
     :param min_spec_usage: minimum spectral usage
-    :return: List of updated PseudoMS1-like objects
+    :return: List of updated PseudoMS2-like objects
     """
     mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
 
@@ -212,10 +212,10 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
     """
     Refine MS1 ID results within each pseudo MS2 spectrum using a NumPy-optimized cumulative public spectrum approach.
 
-    :param ms1_spec_ls: List of PseudoMS1-like objects
+    :param ms1_spec_ls: List of PseudoMS2-like objects
     :param mz_tol: m/z tolerance for comparing precursor masses
     :param max_prec_rel_int: Maximum relative intensity threshold for precursor in public spectrum
-    :return: Refined list of PseudoMS1-like objects
+    :return: Refined list of PseudoMS2-like objects
     """
     for spec in ms1_spec_ls:
         if spec.annotated and len(spec.annotation_ls) > 1:
