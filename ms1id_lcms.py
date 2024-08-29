@@ -30,7 +30,7 @@ if __name__ == '__main__':
         library_search_mztol=0.05,
         ms1id_score_cutoff=0.7,
         ms1id_min_matched_peak=4,
-        ms1id_min_spec_usage=0.05,
+        ms1id_min_spec_usage=0.20,
         ms1id_max_prec_rel_int_in_other_ms2=0.01,
         ms2id_score_cutoff=0.7,
         ms2id_min_matched_peak=4

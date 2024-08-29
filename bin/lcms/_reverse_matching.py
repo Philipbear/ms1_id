@@ -151,7 +151,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
         for spec in ms1_spec_ls:
 
             matching_result = search_eng.search(
-                precursor_mz=spec.t_mz,
+                precursor_mz=2000.00,
                 peaks=spec.centroided_peaks,
                 ms1_tolerance_in_da=mz_tol,
                 ms2_tolerance_in_da=mz_tol,

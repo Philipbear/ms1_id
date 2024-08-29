@@ -175,89 +175,91 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
     if isinstance(library_ls, str):
         library_ls = [library_ls]
 
-    # Load the database
+    # Load all libraries
+    search_engines = []
     for library in library_ls:
         with open(library, 'rb') as file:
             search_eng = pickle.load(file)
         db_name = os.path.basename(library)
-
+        search_engines.append((search_eng, db_name))
         print(f"Loaded library: {db_name}")
 
-        # Prepare chunks
-        chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
+    # Prepare chunks
+    chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
 
-        # Prepare arguments for parallel processing
-        args_list = [(chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage, db_name)
-                     for chunk in chunks]
+    # Prepare arguments for parallel processing
+    args_list = [(chunk, search_engines, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage)
+                 for chunk in chunks]
 
-        # Use multiprocessing to process chunks in parallel
-        with Pool(processes=n_processes) as pool:
-            results = list(tqdm(pool.imap(_process_chunk, args_list), total=len(args_list), desc="Annotation: "))
+    # Use multiprocessing to process chunks in parallel
+    with Pool(processes=n_processes) as pool:
+        results = list(tqdm(pool.imap(_process_chunk_multi_lib, args_list), total=len(args_list), desc="Annotation: "))
 
     # Flatten results
     return [spec for chunk_result in results for spec in chunk_result]
 
 
-def _process_chunk(args):
-    chunk, search_eng, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage, db_name = args
+def _process_chunk_multi_lib(args):
+    chunk, search_engines, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage = args
 
     for spec in chunk:
-        # open search
-        matching_result = search_eng.search(
-            precursor_mz=spec.t_mz,  # unused, open search
-            peaks=spec.centroided_peaks,
-            ms1_tolerance_in_da=mz_tol,
-            ms2_tolerance_in_da=mz_tol,
-            method="open",
-            precursor_ions_removal_da=0.5,
-            noise_threshold=0.0,
-            min_ms2_difference_in_da=mz_tol * 2.02,
-            reverse=True
-        )
+        for search_eng, db_name in search_engines:
+            # open search
+            matching_result = search_eng.search(
+                precursor_mz=2000.00,  # unused, open search
+                peaks=spec.centroided_peaks,
+                ms1_tolerance_in_da=mz_tol,
+                ms2_tolerance_in_da=mz_tol,
+                method="open",
+                precursor_ions_removal_da=0.5,
+                noise_threshold=0.0,
+                min_ms2_difference_in_da=mz_tol * 2.02,
+                reverse=True
+            )
 
-        score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
+            score_arr, matched_peak_arr, spec_usage_arr = matching_result['open_search']
 
-        # filter by matching cutoffs, including scaled score
-        v = np.where((score_arr >= score_cutoff) &
-                     (matched_peak_arr >= min_matched_peak) &
-                     (spec_usage_arr >= min_spec_usage))[0]
+            # filter by matching cutoffs
+            v = np.where((score_arr >= score_cutoff) &
+                         (matched_peak_arr >= min_matched_peak) &
+                         (spec_usage_arr >= min_spec_usage))[0]
 
-        all_matches = []
-        nonzero_mask = np.array(spec.intensities) > 0
-        nonzero_mzs = np.array(spec.mzs)[nonzero_mask]
-        for idx in v:
-            matched = {k.lower(): v for k, v in search_eng[idx].items()}
-
-            this_ion_mode = matched.get('ion_mode', '')
-            if ion_mode is not None and ion_mode != this_ion_mode:
-                continue
-
-            # precursor should be in the pseudo MS2 spectrum with intensity > 0
-            precursor_mz = matched.get('precursor_mz', 0)
-            if not any(np.isclose(nonzero_mzs, precursor_mz, atol=mz_tol)):
-                continue
-
-            all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
-
-        if all_matches:
-            spec.annotated = True
-            for idx, score, matched_peaks, spectral_usage in all_matches:
+            all_matches = []
+            nonzero_mask = np.array(spec.intensities) > 0
+            nonzero_mzs = np.array(spec.mzs)[nonzero_mask]
+            for idx in v:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
-                annotation = SpecAnnotation(db_name, idx, score, matched_peaks)
-                annotation.spectral_usage = spectral_usage
+                this_ion_mode = matched.get('ion_mode', '')
+                if ion_mode is not None and ion_mode != this_ion_mode:
+                    continue
 
-                annotation.name = matched.get('name', '')
-                annotation.precursor_mz = matched.get('precursor_mz')
-                annotation.precursor_type = matched.get('precursor_type', None)
-                annotation.formula = matched.get('formula', None)
-                annotation.inchikey = matched.get('inchikey', None)
-                annotation.instrument_type = matched.get('instrument_type', None)
-                annotation.collision_energy = matched.get('collision_energy', None)
-                annotation.peaks = matched.get('peaks', None)
-                annotation.db_id = matched.get('comment', None)
-                annotation.matched_spec = matched.get('peaks', None)
+                # precursor should be in the pseudo MS2 spectrum with intensity > 0
+                precursor_mz = matched.get('precursor_mz', 0)
+                if not any(np.isclose(nonzero_mzs, precursor_mz, atol=mz_tol)):
+                    continue
 
-                spec.annotation_ls.append(annotation)
+                all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))
+
+            if all_matches:
+                spec.annotated = True
+                for idx, score, matched_peaks, spectral_usage in all_matches:
+                    matched = {k.lower(): v for k, v in search_eng[idx].items()}
+
+                    annotation = SpecAnnotation(db_name, idx, score, matched_peaks)
+                    annotation.spectral_usage = spectral_usage
+
+                    annotation.name = matched.get('name', '')
+                    annotation.precursor_mz = matched.get('precursor_mz')
+                    annotation.precursor_type = matched.get('precursor_type', None)
+                    annotation.formula = matched.get('formula', None)
+                    annotation.inchikey = matched.get('inchikey', None)
+                    annotation.instrument_type = matched.get('instrument_type', None)
+                    annotation.collision_energy = matched.get('collision_energy', None)
+                    annotation.peaks = matched.get('peaks', None)
+                    annotation.db_id = matched.get('comment', None)
+                    annotation.matched_spec = matched.get('peaks', None)
+
+                    spec.annotation_ls.append(annotation)
 
     return chunk
