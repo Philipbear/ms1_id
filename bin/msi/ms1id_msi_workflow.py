@@ -9,10 +9,11 @@ from _export_msi import write_ms1_id_results
 def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                   mass_detect_int_tol=None, noise_detection='moving_average',
                                   sn_factor=5.0, centroided=True,
-                                  mz_bin_size=0.005,
-                                  min_overlap=10, min_correlation=0.8, max_cor_depth=1,
-                                  library_search_mztol=0.01,
-                                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4, ms1id_min_spec_usage=0.0):
+                                  mz_bin_size=0.01,
+                                  min_overlap=10, min_correlation=0.85, max_cor_depth=1,
+                                  library_search_mztol=0.05,
+                                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                                  ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05):
     file_dir = os.path.dirname(file_path)
     file_name = os.path.basename(file_path).replace('.imzML', '')
 
@@ -56,6 +57,7 @@ def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                    score_cutoff=ms1id_score_cutoff,
                                    min_matched_peak=ms1id_min_matched_peak,
                                    min_spec_usage=ms1id_min_spec_usage,
+                                   max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2,
                                    save=True,
                                    save_dir=result_folder)
 

@@ -79,6 +79,8 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                       mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4, min_spec_usage=0.0,
                       ion_mode=None,
+                      refine=True,
+                      max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_dir=None,
                       chunk_size=1000):
     """
@@ -91,6 +93,8 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
     :param min_matched_peak: for rev cos
     :param peak_scale_k: for rev cos, peak scaling factor
     :param ion_mode: str, ion mode. If None, all ion modes are considered
+    :param refine: bool, whether to refine the results
+    :param max_prec_rel_int_in_other_ms2: float, maximum relative intensity of precursor in other MS2 spectra
     :param save: bool, whether to save the results
     :param save_dir: str, directory to save the results
     :param chunk_size: int, number of spectra to process in each parallel task
@@ -121,6 +125,12 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                                          min_matched_peak=min_matched_peak,
                                          min_spec_usage=min_spec_usage,
                                          chunk_size=chunk_size)
+
+    # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
+    if refine:
+        print('Refining MS1 ID results...')
+        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
+                                            max_prec_rel_int=max_prec_rel_int_in_other_ms2)
 
     if save:
         save_path = os.path.join(save_dir, 'pseudo_ms2_annotated.pkl')
@@ -263,3 +273,53 @@ def _process_chunk_multi_lib(args):
                     spec.annotation_ls.append(annotation)
 
     return chunk
+
+
+def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
+    """
+    Refine MS1 ID results within each pseudo MS2 spectrum using a cumulative public spectrum approach.
+
+    :param ms1_spec_ls: List of PseudoMS2-like objects
+    :param mz_tol: m/z tolerance for comparing precursor masses
+    :param max_prec_rel_int: Maximum relative intensity threshold for precursor in public spectrum
+    :return: Refined list of PseudoMS2-like objects
+    """
+    for spec in ms1_spec_ls:
+        if spec.annotated and len(spec.annotation_ls) > 1:
+            # Sort annotations by precursor m/z in descending order
+            spec.annotation_ls.sort(key=lambda x: x.precursor_mz, reverse=True)
+
+            public_mz = np.array([])  # Public spectrum, all matched peaks
+            public_intensity = np.array([])
+            to_keep = []
+
+            for annotation in spec.annotation_ls:
+
+                current_precursor_mz = annotation.precursor_mz
+
+                # Check if precursor appears in public spectrum
+                if public_mz.size > 0:
+                    mz_diff = np.abs(public_mz - current_precursor_mz)
+                    min_diff_idx = np.argmin(mz_diff)
+                    if mz_diff[min_diff_idx] <= mz_tol and public_intensity[min_diff_idx] > max_prec_rel_int:
+                        continue
+
+                to_keep.append(annotation)
+
+                # Add the reference spectrum to the public spectrum
+                ref_spectrum = np.array(annotation.matched_spec)
+                ref_mz = ref_spectrum[:, 0]
+                ref_intensity = ref_spectrum[:, 1] / np.max(ref_spectrum[:, 1])
+
+                if public_mz.size == 0:
+                    public_mz = ref_mz
+                    public_intensity = ref_intensity
+                else:
+                    # Add peaks
+                    public_mz = np.concatenate([public_mz, ref_mz])
+                    public_intensity = np.concatenate([public_intensity, ref_intensity])
+
+            # Update annotations
+            spec.annotation_ls = to_keep
+
+    return ms1_spec_ls

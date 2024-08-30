@@ -18,7 +18,8 @@ if __name__ == '__main__':
         min_correlation=0.85,
         max_cor_depth=1,
         library_search_mztol=0.05,
-        ms1id_score_cutoff=0.6,
-        ms1id_min_matched_peak=3,
-        ms1id_min_spec_usage=0.05
+        ms1id_score_cutoff=0.7,
+        ms1id_min_matched_peak=4,
+        ms1id_min_spec_usage=0.05,
+        max_prec_rel_int_in_other_ms2=0.05
     )

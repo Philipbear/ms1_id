@@ -210,7 +210,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
 
 def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
     """
-    Refine MS1 ID results within each pseudo MS2 spectrum using a NumPy-optimized cumulative public spectrum approach.
+    Refine MS1 ID results within each pseudo MS2 spectrum using a cumulative public spectrum approach.
 
     :param ms1_spec_ls: List of PseudoMS2-like objects
     :param mz_tol: m/z tolerance for comparing precursor masses
@@ -219,7 +219,7 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
     """
     for spec in ms1_spec_ls:
         if spec.annotated and len(spec.annotation_ls) > 1:
-            # Sort annotations by score in descending order
+            # Sort annotations by precursor m/z in descending order
             spec.annotation_ls.sort(key=lambda x: x.precursor_mz, reverse=True)
 
             public_mz = np.array([])  # Public spectrum, all matched peaks
@@ -241,9 +241,8 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
 
                 # Add the reference spectrum to the public spectrum
                 ref_spectrum = np.array(annotation.matched_spec)
-                max_intensity = np.max(ref_spectrum[:, 1])
                 ref_mz = ref_spectrum[:, 0]
-                ref_intensity = ref_spectrum[:, 1] / max_intensity
+                ref_intensity = ref_spectrum[:, 1] / np.max(ref_spectrum[:, 1])
 
                 if public_mz.size == 0:
                     public_mz = ref_mz

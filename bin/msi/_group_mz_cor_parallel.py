@@ -59,8 +59,8 @@ def _process_chunk(args):
             # For depth >= 1, apply the correlation threshold with the original target
             original_target_row = correlation_matrix[start_idx].toarray().flatten()
             # correlated_indices = set(np.where((mz_values <= mz_values[target_idx] + 1e-2) &
-            #                                   (row > 0) & (original_target_row >= 0.6))[0]) - visited
-            correlated_indices = set(np.where((row > 0) & (original_target_row >= 0.6))[0]) - visited
+            #                                   (row > 0) & (original_target_row >= 0.70))[0]) - visited
+            correlated_indices = set(np.where((row > 0) & (original_target_row >= 0.70))[0]) - visited
 
         if current_depth < max_cor_depth:
             for idx in correlated_indices.copy():

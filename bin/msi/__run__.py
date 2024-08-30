@@ -18,7 +18,7 @@ def exp_1():
                             min_overlap=10, min_correlation=0.85,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.05)
+                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05)
 
 
 ##########################################
@@ -34,7 +34,7 @@ def exp_2():
                             min_overlap=10, min_correlation=0.85,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.05)
+                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05)
 
 
 ##########################################
@@ -50,7 +50,7 @@ def exp_3():
                             min_overlap=10, min_correlation=0.85,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.05)
+                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05)
 
 
 ##########################################
@@ -66,7 +66,7 @@ def exp_4():
                             min_overlap=10, min_correlation=0.85,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.05)
+                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05)
 
 
 ##########################################
