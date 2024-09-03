@@ -22,7 +22,8 @@ class SpecAnnotation:
         self.matched_spec = None  # the matched spectrum in the search engine
         self.db_id = None
         self.name = None
-        self.precursor_mz = None
+        self.mz = None  # mz in PseudoMS2
+        self.precursor_mz = None  # precursor mz of matched spec
         self.precursor_type = None
         self.formula = None
         self.inchikey = None

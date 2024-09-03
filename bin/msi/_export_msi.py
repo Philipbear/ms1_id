@@ -23,11 +23,12 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
 
             out_list.append({
                 'name': annotation.name,
-                'precursor_mz': round(annotation.precursor_mz, 4),
+                'mz': round(annotation.mz, 4),
                 'matched_score': round(annotation.score, 4),
                 'matched_peak': annotation.matched_peak,
                 'spectral_usage': round(annotation.spectral_usage, 4) if annotation.spectral_usage else None,
                 # 'search_eng_matched_id': annotation.search_eng_matched_id,
+                'precursor_mz': round(annotation.precursor_mz, 4),
                 'precursor_type': annotation.precursor_type,
                 'formula': annotation.formula,
                 'inchikey': annotation.inchikey,

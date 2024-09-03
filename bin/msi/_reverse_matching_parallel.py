@@ -260,7 +260,11 @@ def _process_chunk_multi_lib(args):
                     annotation.spectral_usage = spectral_usage
 
                     annotation.name = matched.get('name', '')
-                    annotation.precursor_mz = matched.get('precursor_mz')
+
+                    matched_spec_precursor_mz = matched.get('precursor_mz')
+                    annotation.precursor_mz = matched_spec_precursor_mz
+                    annotation.mz = min(nonzero_mzs, key=lambda x: abs(x - matched_spec_precursor_mz))
+
                     annotation.precursor_type = matched.get('precursor_type', None)
                     annotation.formula = matched.get('formula', None)
                     annotation.inchikey = matched.get('inchikey', None)
