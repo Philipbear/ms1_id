@@ -79,7 +79,7 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                       mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4, min_spec_usage=0.0,
                       ion_mode=None,
-                      refine=True,
+                      refine=False,
                       max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_dir=None,
                       chunk_size=1000):
