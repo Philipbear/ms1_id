@@ -1,11 +1,11 @@
 from bin.lcms.main_lcms import ms1id_batch_mode
 
 if __name__ == '__main__':
-    project_path = '../../data/MSV000087562/C18_neg_iHMPpool'
-    library_path1 = '../../data/gnps_k10.pkl'
-    library_path2 = '../../data/gnps.pkl'
+    project_path = 'project_path/'
+    library_path1 = 'data/gnps_k10.pkl'
+    library_path2 = 'data/gnps.pkl'
 
-    # mzML/mzXML files should be in '{project_path}/{sample_dir}' directory
+    # mzML/mzXML files should be in '{project_path}/{sample_dir}' directory ({project_path}/data)
 
     ms1id_batch_mode(
         project_path=project_path,
