@@ -24,7 +24,7 @@ Example annotations
 ```bash
  pip install -r requirements.txt
 ```
-- Run `ms1id_lcms.py` for LC-MS data, and `ms1id_msi.py` for MS imaging data.
+- Run [`ms1id_lcms.py`](https://github.com/Philipbear/ms1_id/blob/main/ms1id_lcms.py) for LC-MS data, and [`ms1id_msi.py`](https://github.com/Philipbear/ms1_id/blob/main/ms1id_msi.py) for MS imaging data.
 
 Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1).
 
