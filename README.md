@@ -1,4 +1,4 @@
-# MS1-based structural annotation
+## Full-scan structure annotation
 
 In mass spectrometry analysis, compounds can be fragmented in- or post-ion source, resulting in fragment ions detected in MS1 spectra.
 
@@ -6,7 +6,7 @@ Here we provide a streamlined workflow to annotate MS1 spectra. This strategy wo
 
 ----------------
 
-## MS1 annotation
+### MS1 annotation
 Workflow
 ![Annotation workflow](fig/workflow.png)
 
@@ -15,7 +15,7 @@ Example annotations
 
 ----------------
 
-## Run the workflow
+### Run the workflow
 - Clone the repository.
 ```bash
  git clone git@github.com:Philipbear/ms1_id.git
@@ -30,7 +30,7 @@ Indexed libraries are needed for the workflow. You can download the indexed GNPS
 
 ----------------
 
-## Data
+### Data
 - MS/MS library
   - GNPS: [ALL_GNPS_NO_PROPOGATED.msp](https://external.gnps2.org/gnpslibrary), downloaded on July 17, 2024
     - indexed version [available here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1)
@@ -50,7 +50,7 @@ Indexed libraries are needed for the workflow. You can download the indexed GNPS
 
 ----------------
 
-## Citation
+### Citation
 ``
 add citation
 ``
