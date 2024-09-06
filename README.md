@@ -5,12 +5,14 @@ In mass spectrometry analysis, compounds can be fragmented in- or post-ion sourc
 Here we provide a streamlined workflow to annotate MS1 spectra. This strategy works for both **LC-MS** data and **MS imaging** data.
 
 ----------------
+
 ## MS1 annotation
 Workflow
 ![Annotation workflow](fig/workflow.png)
 
 Example annotations
 ![Example annotation](fig/eg_annotation.png)
+
 ----------------
 
 ## Run the workflow
