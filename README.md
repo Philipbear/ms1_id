@@ -1,8 +1,7 @@
 ## Full-scan structure annotation
 
-In mass spectrometry analysis, compounds can be fragmented in- or post-ion source, resulting in fragment ions detected in MS1 spectra.
-
-Here we provide a streamlined workflow to annotate MS1 spectra. This strategy works for both **LC-MS** data and **MS imaging** data.
+Full-scan mass spectrometry (MS) data from both liquid chromatography and MS imaging capture multiple ion forms, including their in-source fragments. 
+Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
 
 ----------------
 
