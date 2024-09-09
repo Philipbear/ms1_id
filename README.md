@@ -31,10 +31,9 @@ Indexed libraries are needed for the workflow. You can download the indexed GNPS
 ----------------
 
 ### Data
-- MS/MS library
-  - GNPS: [ALL_GNPS_NO_PROPOGATED.msp](https://external.gnps2.org/gnpslibrary), downloaded on July 17, 2024
-    - indexed version [available here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1)
-  - NIST20 (commercially available)
+- GNPS MS/MS library
+  - [ALL_GNPS_NO_PROPOGATED.msp](https://external.gnps2.org/gnpslibrary), downloaded on July 17, 2024
+  - indexed version [available here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1)
 
 - LC-MS data
   - Chemical standard data (links: [GNPS/MassIVE MSV000095789](https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=361b126b35f64bb89a99e7a9974cf8a7))
