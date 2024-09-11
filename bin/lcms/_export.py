@@ -170,7 +170,7 @@ def write_feature_table(df, pseudo_ms2_spectra, config, output_path):
     df['similarity'] = df['similarity'].apply(lambda x: round(x, 4))
 
     # refine ms1 id results with feature table. for each feature, choose the most confident annotation
-    ms1_annotation_ls = _refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config)
+    aligned_ms1_annotation_ls = _refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config)
 
     # add ms1 id results
     df['MS1_annotation'] = None
@@ -185,7 +185,7 @@ def write_feature_table(df, pseudo_ms2_spectra, config, output_path):
     df['MS1_db_id'] = None
 
     # add ms1 id results to the feature table
-    for aligned_ms1_annotation in ms1_annotation_ls:
+    for aligned_ms1_annotation in aligned_ms1_annotation_ls:
         idx = aligned_ms1_annotation.df_idx
         annotation = aligned_ms1_annotation.selected_annotation
         df.loc[idx, 'MS1_annotation'] = annotation.name
@@ -245,6 +245,8 @@ def _refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config):
                 # create an AlignedMS1Annotation object
                 aligned_ms1_annotation = AlignedMS1Annotation(idx)
                 aligned_ms1_annotation.annotation_ls.append(annotation)
+
+                # add the object to the total list
                 aligned_ms1_annotation_ls.append(aligned_ms1_annotation)
 
     # find the one with the highest similarity score

@@ -41,55 +41,62 @@ def std():
 # 1. NIST pool sample, full scan, 0eV, 10 eV, 20 eV
 def exp_1():
     mass_detection_int_tol = 2e5
-    ms1id_single_file_batch(data_dir='../../data/nist/data_1',
-                            ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
-                            parallel=True, num_processes=12,
-                            ms1_id=True, ms2_id=False,
-                            ms1_tol=0.01, ms2_tol=0.02,
-                            mass_detect_int_tol=mass_detection_int_tol,
-                            peak_cor_rt_tol=0.025,
-                            min_ppc=0.8, roi_min_length=4,
-                            library_search_mztol=0.05,
-                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.20,
-                            ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                            ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
-                            out_dir='../../data/nist/data_1/output_gnps')
-
-    ms1id_single_file_batch(data_dir='../../data/nist/data_1',
-                            ms1id_library_path=['../../data/gnps.pkl'],
-                            parallel=True, num_processes=12,
-                            ms1_id=True, ms2_id=False,
-                            ms1_tol=0.01, ms2_tol=0.02,
-                            mass_detect_int_tol=mass_detection_int_tol,
-                            peak_cor_rt_tol=0.025,
-                            min_ppc=0.8, roi_min_length=4,
-                            library_search_mztol=0.05,
-                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.20,
-                            ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                            ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
-                            out_dir='../../data/nist/data_1/output_gnps_k0')
+    # Full scan, MS1 annotation
+    for ev in [0, 10, 20]:
+        ms1id_batch_mode(project_path=f'../../data/nist/fullscan_{ev}ev',
+                         ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
+                         sample_dir='data', parallel=True,
+                         ms1_id=True, ms2_id=False,
+                         cpu_ratio=0.90,
+                         run_rt_correction=True, run_normalization=True,
+                         ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
+                         align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+                         peak_cor_rt_tol=0.025,
+                         min_ppc=0.8, roi_min_length=4,
+                         library_search_mztol=0.05,
+                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                         ms1id_min_spec_usage=0.20,
+                         ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
 
 ##########################################
 # 2. NIST pool sample, DDA
 def exp_2():
     mass_detection_int_tol = 2e5
-    ms1id_single_file_batch(data_dir='../../data/nist/data_2',
-                            ms2id_library_path='../../data/gnps.pkl',
-                            parallel=True, num_processes=6,
-                            ms1_id=False, ms2_id=True,
-                            ms1_tol=0.01, ms2_tol=0.02,
-                            mass_detect_int_tol=mass_detection_int_tol,
-                            peak_cor_rt_tol=0.025,
-                            min_ppc=0.8, roi_min_length=4,
-                            library_search_mztol=0.05,
-                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.0,
-                            ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                            ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4,
-                            out_dir='../../data/nist/data_2/output_gnps')
+    # DDA, MS/MS annotation
+    ms1id_batch_mode(project_path='../../data/nist/dda_ms2',
+                     ms2id_library_path='../../data/gnps.pkl',
+                     sample_dir='data', parallel=True,
+                     ms1_id=False, ms2_id=True,
+                     cpu_ratio=0.90,
+                     run_rt_correction=True, run_normalization=True,
+                     ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
+                     align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+                     peak_cor_rt_tol=0.025,
+                     min_ppc=0.8, roi_min_length=4,
+                     library_search_mztol=0.05,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_min_spec_usage=0.20,
+                     ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                     ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
+
+    # DDA, MS1 annotation
+    ms1id_batch_mode(project_path='../../data/nist/dda_ms1',
+                     ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
+                     sample_dir='data', parallel=True,
+                     ms1_id=True, ms2_id=False,
+                     cpu_ratio=0.90,
+                     run_rt_correction=True, run_normalization=True,
+                     ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
+                     align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+                     peak_cor_rt_tol=0.025,
+                     min_ppc=0.8, roi_min_length=4,
+                     library_search_mztol=0.05,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_min_spec_usage=0.20,
+                     ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                     ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
 
 ##########################################
@@ -163,10 +170,10 @@ def exp_3():
 
 if __name__ == '__main__':
 
-    std()
+    # std()
 
     exp_1()
 
-    exp_2()
+    # exp_2()
 
-    exp_3()
+    # exp_3()
