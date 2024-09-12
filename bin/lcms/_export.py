@@ -303,12 +303,11 @@ def refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config):
                 # add the object to the total list
                 aligned_ms1_annotation_ls.append(aligned_ms1_annotation)
 
-    # find the one with the highest pseudo_ms2_precursor_intensity
+    # find the one with the highest similarity score
     for aligned_ms1_annotation in aligned_ms1_annotation_ls:
         if len(aligned_ms1_annotation.annotated_pseudo_ms2_list) > 1:
             aligned_ms1_annotation.selected_annotated_pseudo_ms2 = (
-                max(aligned_ms1_annotation.annotated_pseudo_ms2_list,
-                    key=lambda x: x.annotation.pseudo_ms2_precursor_intensity))
+                max(aligned_ms1_annotation.annotated_pseudo_ms2_list, key=lambda x: x.annotation.score))
         else:
             aligned_ms1_annotation.selected_annotated_pseudo_ms2 = aligned_ms1_annotation.annotated_pseudo_ms2_list[0]
 
