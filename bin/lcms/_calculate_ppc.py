@@ -11,6 +11,7 @@ import os
 import numpy as np
 from numba import njit
 from scipy.sparse import csr_matrix, save_npz
+from scipy.signal import savgol_filter
 
 
 @njit
@@ -81,10 +82,11 @@ def calc_all_ppc(d, rt_tol=0.1, roi_min_length=3, min_ppc=0.8, save=True, path=N
 
     roi_ids = np.array([roi.id for roi in rois], dtype=np.int32)
     roi_rts = np.array([roi.rt for roi in rois], dtype=np.float64)
-
     roi_lengths = np.array([len(roi.scan_idx_seq) for roi in rois], dtype=np.int32)
     roi_scan_idx_seqs = np.concatenate([np.array(roi.scan_idx_seq, dtype=np.int32) for roi in rois])
-    roi_int_seqs = np.concatenate([np.array(roi.int_seq, dtype=np.float64) for roi in rois])
+
+    # smoothing
+    roi_int_seqs = np.concatenate([peak_smooth(np.array(roi.int_seq, dtype=np.float64)) for roi in rois])
 
     rows, cols, data = calc_ppc_numba(
         roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi_lengths, rt_tol, roi_min_length, min_ppc
@@ -100,3 +102,28 @@ def calc_all_ppc(d, rt_tol=0.1, roi_min_length=3, min_ppc=0.8, save=True, path=N
         save_npz(path, ppc_matrix)
 
     return ppc_matrix
+
+
+def peak_smooth(int_array, window_length=5, poly_order=2):
+    """
+    Smoothing the intensity sequence using Savitzky-Golay filter.
+    If the sequence is shorter than the window length, adjust the window size accordingly.
+
+    Parameters:
+    - int_array (array-like): The intensity sequence to smooth.
+    - window_length (int): The length of the filter window (must be odd).
+    - polyorder (int): The order of the polynomial used to fit the samples.
+
+    Returns:
+    - smoothed_seq (numpy array): Smoothed version of the input intensity sequence.
+    """
+    int_len = len(int_array)
+
+    if int_len <= poly_order:  # poly_order must be larger than 1
+        return int_array
+
+    # Ensure window_length is at most the length of int_seq and make it odd if necessary
+    if window_length > int_len:
+        window_length = int_len if int_len % 2 == 1 else int_len - 1
+
+    return savgol_filter(int_array, window_length, poly_order)

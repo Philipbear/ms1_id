@@ -6,20 +6,20 @@ from main_lcms import ms1id_single_file_batch, ms1id_batch_mode
 
 
 def std():
-    for k in ['_k0', '_k3', '_k5', '_k8', '_k9', '_k10', '_k13', '_k15', '_k18']:
-        ms1id_single_file_batch('../../data/std_mix/data_1',
-                                f'../../data/std_mix/std{k}.pkl',
-                                parallel=True, num_processes=None,
-                                ms1_id=True, ms2_id=False,
-                                ms1_tol=0.01, ms2_tol=0.015,
-                                mass_detect_int_tol=30000,
-                                peak_cor_rt_tol=0.025,
-                                min_ppc=0.8, roi_min_length=4,
-                                library_search_mztol=0.05,
-                                ms1id_score_cutoff=0.01, ms1id_min_matched_peak=2,
-                                ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                                ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
-                                out_dir=f'../../bin/lcms/analysis/std/output{k}')
+    # for k in ['_k0', '_k3', '_k5', '_k8', '_k9', '_k10', '_k13', '_k15', '_k18']:
+    #     ms1id_single_file_batch('../../data/std_mix/data_1',
+    #                             f'../../data/std_mix/std{k}.pkl',
+    #                             parallel=True, num_processes=None,
+    #                             ms1_id=True, ms2_id=False,
+    #                             ms1_tol=0.01, ms2_tol=0.015,
+    #                             mass_detect_int_tol=30000,
+    #                             peak_cor_rt_tol=0.025,
+    #                             min_ppc=0.8, roi_min_length=4,
+    #                             library_search_mztol=0.05,
+    #                             ms1id_score_cutoff=0.01, ms1id_min_matched_peak=2,
+    #                             ms1id_max_prec_rel_int_in_other_ms2=0.01,
+    #                             ms2id_score_cutoff=0.7, ms2id_min_matched_peak=3,
+    #                             out_dir=f'../../bin/lcms/analysis/std/output{k}')
 
     ms1id_single_file_batch('../../data/std_mix/data_1',
                             ['../../data/std_mix/std_k0.pkl',
@@ -40,7 +40,7 @@ def std():
 ##########################################
 # 1. NIST pool sample, full scan, 0eV, 10 eV, 20 eV
 def exp_1():
-    mass_detection_int_tol = 2e5
+    mass_detection_int_tol = 1.5e5
     # Full scan, MS1 annotation
     for ev in [0, 10, 20]:
         ms1id_batch_mode(project_path=f'../../data/nist/fullscan_{ev}ev',
@@ -63,7 +63,7 @@ def exp_1():
 ##########################################
 # 2. NIST pool sample, DDA
 def exp_2():
-    mass_detection_int_tol = 2e5
+    mass_detection_int_tol = 1.5e5
     # DDA, MS/MS annotation
     ms1id_batch_mode(project_path='../../data/nist/dda_ms2',
                      ms2id_library_path='../../data/gnps.pkl',

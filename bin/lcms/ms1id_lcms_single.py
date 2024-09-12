@@ -60,6 +60,9 @@ def main_workflow_single(file_path,
     # cut ROIs
     d.cut_rois()
 
+    # remove ROIs with peak height lower than 3 times of the noise level
+    d.rois = [roi for roi in d.rois if roi.peak_height > 3 * config.int_tol]
+
     # label short ROIs, find the best MS2, and sort ROIs by m/z
     print('Summarizing ROIs...')
     d.summarize_roi()

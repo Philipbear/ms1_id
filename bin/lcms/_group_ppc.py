@@ -36,7 +36,7 @@ def retrieve_pseudo_ms2_spectra(config):
 def generate_pseudo_ms2(msdata, ppc_matrix,
                         mz_tol=0.01,
                         min_ppc=0.8, roi_min_length=3,
-                        roi_max_rt_range=1.0):
+                        roi_max_rt_range=0.8):
     """
     Generate pseudo MS2 spectra for a single file
     :param msdata: MSData object

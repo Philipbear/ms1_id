@@ -243,7 +243,7 @@ def init_config(path=None,
     config.align_rt_tol = align_rt_tol  # RT tolerance, default is 0.2
     config.alignment_drop_by_fill_pct_ratio = alignment_drop_by_fill_pct_ratio  # Drop by fill percentage ratio, default is 0.1
     config.run_rt_correction = run_rt_correction  # Whether to perform RT correction, default is True
-    config.min_scan_num_for_alignment = 10  # Minimum scan number a feature to be aligned, default is 6
+    config.min_scan_num_for_alignment = 6  # Minimum scan number a feature to be aligned, default is 6
 
     # Parameters for feature annotation
     config.ms1id_library_path = ms1id_library_path
@@ -312,6 +312,9 @@ def feature_detection(file_name, params=None,
     # cut ROIs
     if cut_roi:
         d.cut_rois()
+
+    # remove ROIs with peak height lower than 3 times of the noise level
+    d.rois = [roi for roi in d.rois if roi.peak_height > 3 * params.int_tol]
 
     print(f"Summarizing features from {file_name}...")
     # label short ROIs, find the best MS2, and sort ROIs by m/z
