@@ -1,6 +1,5 @@
 import os
 import pickle
-from typing import List
 import numpy as np
 from ms_entropy import read_one_spectrum
 
@@ -75,7 +74,7 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
 
 def ms1_id_annotation(ms1_spec_ls, library_ls, mz_tol=0.05,
                       score_cutoff=0.8, min_matched_peak=6, min_spec_usage=0.05,
-                      ion_mode=None, refine=True,
+                      ion_mode=None, refine=False,
                       max_prec_rel_int_in_other_ms2=0.05,
                       save=False, save_path=None):
     """
@@ -120,7 +119,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
     """
     Perform MS1 annotation using open search for the entire spectrum, with filters similar to identity search.
 
-    :param ms1_spec_ls: a list of PseudoMS1-like objects
+    :param ms1_spec_ls: a list of PseudoMS2-like objects
     :param library: path to the pickle file, indexed library
     :param mz_tol: m/z tolerance in Da, for open matching
     :param ion_mode: str, ion mode, can be None (default), 'positive', or 'negative'
@@ -189,11 +188,10 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
                 for idx, score, matched_peaks, spectral_usage in all_matches:
                     matched = {k.lower(): v for k, v in search_eng[idx].items()}
 
-                    annotation = SpecAnnotation(db_name, idx, score, matched_peaks)
-                    annotation.spectral_usage = spectral_usage
+                    annotation = SpecAnnotation(spec.mzs, spec.intensities, matched.get('precursor_mz'),
+                                                db_name, idx, score, matched_peaks, spectral_usage, mz_tol)
 
                     annotation.name = matched.get('name', '')
-                    annotation.precursor_mz = matched.get('precursor_mz')
                     annotation.precursor_type = matched.get('precursor_type', None)
                     annotation.formula = matched.get('formula', None)
                     annotation.inchikey = matched.get('inchikey', None)
@@ -257,56 +255,6 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
 
     return ms1_spec_ls
 
-
-'''
-def refine_ms1_id_results_for_identity_search(ms1_spec_ls, rt_tol=0.1, mz_tol=0.01, max_prec_rel_int=0.05):
-    """
-    Refine MS1 ID results across pseudo MS2 spectra.
-
-    :param ms1_spec_ls: List of PseudoMS1-like objects
-    :param rt_tol: Retention time tolerance for considering nearby spectra
-    :param mz_tol: m/z tolerance for comparing precursor masses
-    :param max_prec_rel_int: Maximum relative intensity threshold for precursor in reference spectra
-    :return: Refined list of PseudoMS1-like objects
-    """
-    for i, spec in enumerate(ms1_spec_ls):
-        # Check if the spectrum has annotations and all have the same InChIKey
-        if spec.annotated and spec.annotation_ls:
-            inchikeys = {ann.inchikey for ann in spec.annotation_ls if ann.inchikey}
-            if len(inchikeys) == 1:
-                unique_inchikey = next(iter(inchikeys))
-                unique_rt = spec.rt
-
-                # Use only the first reference spectrum in the annotation_ls
-                unique_ref_spectrum = spec.annotation_ls[0].peaks
-                if unique_ref_spectrum is None:
-                    continue  # Skip if there's no reference spectrum
-
-                max_intensity = max(peak[1] for peak in unique_ref_spectrum)
-
-                # Find nearby spectra
-                for j, nearby_spec in enumerate(ms1_spec_ls):
-                    if i != j and abs(nearby_spec.rt - unique_rt) <= rt_tol:
-                        to_remove = []
-                        for k, annotation in enumerate(nearby_spec.annotation_ls):
-                            # Check if the precursor of this annotation appears in the unique reference spectrum
-                            precursor_intensity = next(
-                                (peak[1] for peak in unique_ref_spectrum if
-                                 abs(peak[0] - annotation.precursor_mz) <= mz_tol),
-                                0
-                            )
-                            if precursor_intensity / max_intensity > max_prec_rel_int:
-                                to_remove.append(k)
-
-                        # Remove flagged annotations
-                        for index in sorted(to_remove, reverse=True):
-                            del nearby_spec.annotation_ls[index]
-
-                        # Update annotation status
-                        nearby_spec.annotated = len(nearby_spec.annotation_ls) > 0
-
-    return ms1_spec_ls
-'''
 
 if __name__ == "__main__":
     prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=None, peak_intensity_power=0.5)

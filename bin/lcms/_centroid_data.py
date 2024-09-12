@@ -63,7 +63,7 @@ def check_centroid_for_search(peaks, width_da=0.105):
     return True if np.all(np.diff(peaks[:, 0]) >= width_da) else False
 
 
-def centroid_spectrum_for_search(peaks, width_da=0.105):
+def centroid_spectrum_for_search(peaks, width_da=0.105, width_ppm=25.0):
     """Centroid a spectrum for search."""
     if len(peaks) == 0:
         return peaks
@@ -75,5 +75,22 @@ def centroid_spectrum_for_search(peaks, width_da=0.105):
     peaks = peaks[np.argsort(peaks[:, 0])]
 
     # centroid the spectrum
-    peaks = _centroid_spectrum(peaks, centroid_mode='max', width_da=width_da)
+    peaks = _centroid_spectrum(peaks, centroid_mode='max', width_da=width_da, width_ppm=width_ppm)
+    return peaks
+
+
+def consensus_spectrum(peaks, width_da=0.025, width_ppm=25.0):
+    """Centroid a spectrum for search."""
+    if len(peaks) == 0:
+        return peaks
+
+    if check_centroid_for_search(peaks, width_da=width_da):
+        return peaks
+
+    # Sort the peaks by m/z.
+    peaks = peaks[np.argsort(peaks[:, 0])]
+
+    # centroid the spectrum
+    peaks = _centroid_spectrum(peaks, centroid_mode='sum', peak_height_requirement=False,
+                               width_da=width_da, width_ppm=width_ppm)
     return peaks

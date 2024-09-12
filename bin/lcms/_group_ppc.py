@@ -30,36 +30,45 @@ def retrieve_pseudo_ms2_spectra(config):
             except:
                 continue
 
-    return [spec for spec in pseudo_ms2_spectra if spec.annotated]
+    return pseudo_ms2_spectra
 
 
-def generate_pseudo_ms2(msdata, ppc_matrix, min_ppc=0.8, roi_min_length=3,
-                        min_cluster_size=6):
+def generate_pseudo_ms2(msdata, ppc_matrix,
+                        mz_tol=0.01,
+                        min_ppc=0.8, roi_min_length=3,
+                        roi_max_rt_range=1.0):
     """
     Generate pseudo MS2 spectra for a single file
     :param msdata: MSData object
     :param ppc_matrix: sparse matrix of PPC scores
     :param roi_min_length: minimum length of ROIs to consider for clustering
+    :param roi_max_rt_range: maximum RT range of ROIs to consider for clustering
+    :param mz_tol: m/z tolerance
     :param min_ppc: minimum PPC score for clustering
     :param min_cluster_size: minimum number of ROIs in a cluster
     :param save: whether to save the pseudo MS2 spectra
     :param save_dir: directory to save the pseudo MS2 spectra
     """
 
-    pseudo_ms2_spectra = _perform_clustering(msdata, ppc_matrix, min_ppc=min_ppc,
-                                             min_cluster_size=min_cluster_size, roi_min_length=roi_min_length)
+    pseudo_ms2_spectra = _perform_clustering(msdata, ppc_matrix,
+                                             mz_tol=mz_tol,
+                                             min_ppc=min_ppc,
+                                             roi_min_length=roi_min_length,
+                                             roi_max_rt_range=roi_max_rt_range)
 
     return pseudo_ms2_spectra
 
 
-def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
-                        min_cluster_size=6, roi_min_length=3):
+def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8,
+                        roi_min_length=3, roi_max_rt_range=1.0):
     """
     Perform clustering on ROIs based on PPC scores and m/z values,
     considering only m/z values smaller than the target m/z for each ROI.
     """
     # Filter ROIs based on minimum length and isotope status using a generator expression
-    valid_rois = (roi for roi in msdata.rois if roi.length >= roi_min_length and not roi.is_isotope)
+    valid_rois = (roi for roi in msdata.rois if roi.length >= roi_min_length
+                  and (max(roi.rt_seq) - min(roi.rt_seq) <= roi_max_rt_range)
+                  and not roi.is_isotope)
 
     # Sort ROIs by m/z values and create a mapping
     sorted_rois = sorted(valid_rois, key=lambda roi: roi.mz)
@@ -72,23 +81,25 @@ def _perform_clustering(msdata, ppc_matrix, min_ppc=0.8,
 
     for i, roi in enumerate(sorted_rois):
         t_mz = roi.mz  # Set the target m/z as the current ROI's m/z
+        t_rt = roi.rt  # Set the target RT as the current ROI's RT
 
-        # Find all ROIs with PPC scores above the threshold and m/z smaller than t_mz
+        # Find all ROIs with PPC scores above the threshold
         cluster_indices = new_ppc_matrix[i].nonzero()[1]
         cluster_scores = new_ppc_matrix[i, cluster_indices].toarray().flatten()
+
         # cluster_indices = cluster_indices[(cluster_scores >= min_ppc) &
         #                                   (np.array([sorted_rois[idx].mz for idx in cluster_indices]) <= t_mz + 1e-2)]
         cluster_indices = cluster_indices[cluster_scores >= min_ppc]
 
-        if len(cluster_indices) >= min_cluster_size:
+        if len(cluster_indices) > 1:
             # Form a pseudo MS2 spectrum
             cluster_rois = [sorted_rois[idx] for idx in cluster_indices]
+
             mz_ls = [roi.mz for roi in cluster_rois]
             int_ls = [roi.peak_height for roi in cluster_rois]
             roi_ids = [roi.id for roi in cluster_rois]
-            avg_rt = np.mean([roi.rt for roi in cluster_rois])
 
-            pseudo_ms2_spectra.append((t_mz, mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt))
+            pseudo_ms2_spectra.append((t_mz, mz_ls, int_ls, roi_ids, msdata.file_name, t_rt, mz_tol))
 
     # Convert to PseudoMS2 objects after all processing
     pseudo_ms2_spectra = [PseudoMS2(*spec) for spec in pseudo_ms2_spectra]

@@ -172,8 +172,8 @@ if __name__ == '__main__':
 
     # std()
 
-    exp_1()
+    # exp_1()
 
-    # exp_2()
+    exp_2()
 
     # exp_3()

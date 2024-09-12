@@ -82,8 +82,8 @@ def main_workflow_single(file_path,
         # generate pseudo ms2 spec, for ms1_id
         print('Generating pseudo MS2 spectra...')
         pseudo_ms2_spectra = generate_pseudo_ms2(d, ppc_matrix,
-                                                 min_ppc=min_ppc, roi_min_length=roi_min_length,
-                                                 min_cluster_size=ms1id_min_matched_peak)
+                                                 mz_tol=ms1_tol,
+                                                 min_ppc=min_ppc, roi_min_length=roi_min_length)
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')
