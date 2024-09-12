@@ -1,6 +1,6 @@
-## Full-scan structure annotation
+## Structure annotation of full-scan MS data
 
-Full-scan mass spectrometry (MS) data from both liquid chromatography and MS imaging capture multiple ion forms, including their in-source fragments. 
+Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in-source fragments. 
 Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
 
 ----------------
