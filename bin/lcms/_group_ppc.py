@@ -70,7 +70,7 @@ def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8, min_cluste
     """
     # Filter ROIs based on minimum length and isotope status using a generator expression
     valid_rois = (roi for roi in msdata.rois if roi.length >= roi_min_length
-                  and (max(roi.rt_seq) - min(roi.rt_seq) <= roi_max_rt_range)
+                  # and (max(roi.rt_seq) - min(roi.rt_seq) <= roi_max_rt_range)
                   and not roi.is_isotope)
 
     # Sort ROIs by m/z values and create a mapping
@@ -84,7 +84,6 @@ def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8, min_cluste
 
     for i, roi in enumerate(sorted_rois):
         t_mz = roi.mz  # Set the target m/z as the current ROI's m/z
-        t_rt = roi.rt  # Set the target RT as the current ROI's RT
 
         # Find all ROIs with PPC scores above the threshold
         cluster_indices = new_ppc_matrix[i].nonzero()[1]
@@ -101,8 +100,9 @@ def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8, min_cluste
             mz_ls = [roi.mz for roi in cluster_rois]
             int_ls = [roi.peak_height for roi in cluster_rois]
             roi_ids = [roi.id for roi in cluster_rois]
+            avg_rt = np.mean([roi.rt for roi in cluster_rois])
 
-            pseudo_ms2_spectra.append((t_mz, mz_ls, int_ls, roi_ids, msdata.file_name, t_rt, mz_tol))
+            pseudo_ms2_spectra.append((t_mz, mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt, mz_tol))
 
     # Convert to PseudoMS2 objects after all processing
     pseudo_ms2_spectra = [PseudoMS2(*spec) for spec in pseudo_ms2_spectra]
