@@ -39,25 +39,24 @@ def std():
 
 ##########################################
 # 1. NIST pool sample, full scan, 0eV, 10 eV, 20 eV
-def exp_1():
+def exp_1(ev=0):
     mass_detection_int_tol = 2e5
     # Full scan, MS1 annotation
-    for ev in [0, 10, 20]:
-        ms1id_batch_mode(project_path=f'../../data/nist/fullscan_{ev}ev',
-                         ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
-                         sample_dir='data', parallel=True,
-                         ms1_id=True, ms2_id=False,
-                         cpu_ratio=0.90,
-                         run_rt_correction=True, run_normalization=True,
-                         ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
-                         align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
-                         peak_cor_rt_tol=0.025,
-                         min_ppc=0.8, roi_min_length=4,
-                         library_search_mztol=0.05,
-                         ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                         ms1id_min_spec_usage=0.20,
-                         ms1id_max_prec_rel_int_in_other_ms2=0.01,
-                         ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
+    ms1id_batch_mode(project_path=f'../../data/nist/fullscan_{ev}ev',
+                     ms1id_library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
+                     sample_dir='data', parallel=True,
+                     ms1_id=True, ms2_id=False,
+                     cpu_ratio=0.90,
+                     run_rt_correction=True, run_normalization=True,
+                     ms1_tol=0.01, ms2_tol=0.02, mass_detect_int_tol=mass_detection_int_tol,
+                     align_mz_tol=0.01, align_rt_tol=0.2, alignment_drop_by_fill_pct_ratio=0.1,
+                     peak_cor_rt_tol=0.025,
+                     min_ppc=0.8, roi_min_length=4,
+                     library_search_mztol=0.05,
+                     ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                     ms1id_min_spec_usage=0.20,
+                     ms1id_max_prec_rel_int_in_other_ms2=0.01,
+                     ms2id_score_cutoff=0.7, ms2id_min_matched_peak=4)
 
 
 ##########################################
@@ -172,7 +171,9 @@ if __name__ == '__main__':
 
     # std()
 
-    # exp_1()
+    exp_1(0)
+    exp_1(10)
+    exp_1(20)
 
     exp_2()
 
