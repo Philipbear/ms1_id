@@ -237,7 +237,6 @@ def init_config(path=None,
     # config.int_tol = 30000  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments
     config.roi_gap = 30  # Gap within a feature, default is 30 (i.e. 30 consecutive scans without signal), integer
     config.ppr = 0.7  # Peak-peak correlation threshold for feature grouping, default is 0.7
-    config.max_peak_width_rt = 1.0  # Maximum peak width in RT, default is 1.0 min
 
     # Parameters for feature alignment
     config.align_mz_tol = align_mz_tol  # m/z tolerance for MS1, default is 0.01
@@ -313,10 +312,6 @@ def feature_detection(file_name, params=None,
     # cut ROIs
     if cut_roi:
         d.cut_rois()
-
-    # remove ROIs with peak height lower than 3 times of the noise level, or RT range larger than 1 min
-    d.rois = [roi for roi in d.rois if (roi.peak_height > 3 * params.int_tol)
-              and (max(roi.rt_seq) - min(roi.rt_seq) < params.max_peak_width_rt)]
 
     print(f"Summarizing features from {file_name}...")
     # label short ROIs, find the best MS2, and sort ROIs by m/z

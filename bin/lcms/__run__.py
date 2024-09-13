@@ -40,7 +40,7 @@ def std():
 ##########################################
 # 1. NIST pool sample, full scan, 0eV, 10 eV, 20 eV
 def exp_1():
-    mass_detection_int_tol = 1.5e5
+    mass_detection_int_tol = 2e5
     # Full scan, MS1 annotation
     for ev in [0, 10, 20]:
         ms1id_batch_mode(project_path=f'../../data/nist/fullscan_{ev}ev',
@@ -63,7 +63,7 @@ def exp_1():
 ##########################################
 # 2. NIST pool sample, DDA
 def exp_2():
-    mass_detection_int_tol = 1.5e5
+    mass_detection_int_tol = 2e5
     # DDA, MS/MS annotation
     ms1id_batch_mode(project_path='../../data/nist/dda_ms2',
                      ms2id_library_path='../../data/gnps.pkl',

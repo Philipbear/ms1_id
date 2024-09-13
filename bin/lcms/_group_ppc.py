@@ -91,7 +91,7 @@ def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8,
         #                                   (np.array([sorted_rois[idx].mz for idx in cluster_indices]) <= t_mz + 1e-2)]
         cluster_indices = cluster_indices[cluster_scores >= min_ppc]
 
-        if len(cluster_indices) > 1:
+        if len(cluster_indices) >= 4:
             # Form a pseudo MS2 spectrum
             cluster_rois = [sorted_rois[idx] for idx in cluster_indices]
 

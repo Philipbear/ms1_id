@@ -84,9 +84,10 @@ def calc_all_ppc(d, rt_tol=0.1, roi_min_length=3, min_ppc=0.8, save=True, path=N
     roi_rts = np.array([roi.rt for roi in rois], dtype=np.float64)
     roi_lengths = np.array([len(roi.scan_idx_seq) for roi in rois], dtype=np.int32)
     roi_scan_idx_seqs = np.concatenate([np.array(roi.scan_idx_seq, dtype=np.int32) for roi in rois])
+    roi_int_seqs = np.concatenate([np.array(roi.int_seq, dtype=np.float64) for roi in rois])
 
     # smoothing
-    roi_int_seqs = np.concatenate([peak_smooth(np.array(roi.int_seq, dtype=np.float64)) for roi in rois])
+    # roi_int_seqs = np.concatenate([peak_smooth(np.array(roi.int_seq, dtype=np.float64)) for roi in rois])
 
     rows, cols, data = calc_ppc_numba(
         roi_ids, roi_rts, roi_scan_idx_seqs, roi_int_seqs, roi_lengths, rt_tol, roi_min_length, min_ppc

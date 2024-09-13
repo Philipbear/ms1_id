@@ -60,10 +60,6 @@ def main_workflow_single(file_path,
     # cut ROIs
     d.cut_rois()
 
-    # remove ROIs with peak height lower than 3 times of the noise level, or RT range larger than 1 min
-    d.rois = [roi for roi in d.rois if (roi.peak_height > 3 * config.int_tol)
-              and (max(roi.rt_seq) - min(roi.rt_seq) < config.max_peak_width_rt)]
-
     # label short ROIs, find the best MS2, and sort ROIs by m/z
     print('Summarizing ROIs...')
     d.summarize_roi()
@@ -161,7 +157,6 @@ def init_config_single(ms_type, ion_mode, ms1id_library_path, ms2id_library_path
     # config.int_tol = 30000  # Intensity tolerance, default is 30000 for Orbitrap and 1000 for other instruments, integer
     config.roi_gap = 30  # Gap within a feature, default is 30 (i.e. 30 consecutive scans without signal), integer
     config.ppr = 0.8  # Peak-peak correlation threshold for feature grouping, default is 0.7
-    config.max_peak_width_rt = 1  # Maximum peak width in RT, default is 1
 
     # Parameters for feature alignment
     config.align_mz_tol = 0.01  # m/z tolerance for MS1, default is 0.01
