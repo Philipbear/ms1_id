@@ -35,8 +35,10 @@ def retrieve_pseudo_ms2_spectra(config):
 
 def generate_pseudo_ms2(msdata, ppc_matrix,
                         mz_tol=0.01,
-                        min_ppc=0.8, roi_min_length=3,
-                        roi_max_rt_range=0.8):
+                        min_ppc=0.8,
+                        min_cluster_size=4,
+                        roi_min_length=3,
+                        roi_max_rt_range=2.0):
     """
     Generate pseudo MS2 spectra for a single file
     :param msdata: MSData object
@@ -53,13 +55,14 @@ def generate_pseudo_ms2(msdata, ppc_matrix,
     pseudo_ms2_spectra = _perform_clustering(msdata, ppc_matrix,
                                              mz_tol=mz_tol,
                                              min_ppc=min_ppc,
+                                             min_cluster_size=min_cluster_size,
                                              roi_min_length=roi_min_length,
                                              roi_max_rt_range=roi_max_rt_range)
 
     return pseudo_ms2_spectra
 
 
-def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8,
+def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8, min_cluster_size=4,
                         roi_min_length=3, roi_max_rt_range=1.0):
     """
     Perform clustering on ROIs based on PPC scores and m/z values,
@@ -91,7 +94,7 @@ def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8,
         #                                   (np.array([sorted_rois[idx].mz for idx in cluster_indices]) <= t_mz + 1e-2)]
         cluster_indices = cluster_indices[cluster_scores >= min_ppc]
 
-        if len(cluster_indices) >= 4:
+        if len(cluster_indices) >= min_cluster_size:
             # Form a pseudo MS2 spectrum
             cluster_rois = [sorted_rois[idx] for idx in cluster_indices]
 
