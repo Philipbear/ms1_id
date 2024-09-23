@@ -171,10 +171,10 @@ if __name__ == '__main__':
 
     # std()
 
-    exp_1(0)
-    exp_1(10)
-    exp_1(20)
+    # exp_1(0)
+    # exp_1(10)
+    # exp_1(20)
 
-    exp_2()
+    # exp_2()
 
-    # exp_3()
+    exp_3()

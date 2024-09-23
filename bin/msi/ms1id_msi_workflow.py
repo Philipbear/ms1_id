@@ -8,7 +8,7 @@ from _export_msi import write_ms1_id_results
 
 def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
                                   mass_detect_int_tol=None, noise_detection='moving_average',
-                                  sn_factor=5.0, centroided=True,
+                                  sn_factor=5.0, centroided=False,
                                   mz_bin_size=0.01,
                                   min_overlap=10, min_correlation=0.85, max_cor_depth=1,
                                   library_search_mztol=0.05,

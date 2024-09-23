@@ -12,7 +12,7 @@ from _centroid_data import centroid_spectrum
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
                             mz_bin_size=0.005,
                             noise_detection='moving_average', sn_factor=5.0,
-                            centroided=True,
+                            centroided=False,
                             n_processes=None,
                             save=False, save_dir=None):
     validate_inputs(noise_detection)
