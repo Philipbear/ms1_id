@@ -6,7 +6,7 @@ from main_msi import ms1id_single_file_batch
 
 
 ##########################################
-# 1. MTBLS313, brain
+# 1. MTBLS313, mouse brain
 def exp_1():
     ms1id_single_file_batch(file_dir='../../imaging/MTBLS313/centroid',
                             library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
