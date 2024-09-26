@@ -206,7 +206,6 @@ def _process_chunk_multi_lib(args):
                     annotation.inchikey = matched.get('inchikey', None)
                     annotation.instrument_type = matched.get('instrument_type', None)
                     annotation.collision_energy = matched.get('collision_energy', None)
-                    annotation.peaks = matched.get('peaks', None)
                     annotation.db_id = matched.get('comment', None)
                     annotation.matched_spec = matched.get('peaks', None)
 

@@ -29,7 +29,6 @@ class SpecAnnotation:
         self.inchikey = None
         self.instrument_type = None
         self.collision_energy = None
-        self.peaks = None
         self.centroided_peaks = None
 
     def __str__(self):

@@ -8,16 +8,26 @@ from flash_cos import FlashCos
 from _centroid_data import centroid_spectrum_for_search
 
 
-def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5):
+def prepare_ms2_lib(ms2db,
+                    mz_tol: float = 0.05,
+                    peak_scale_k: float = None,
+                    peak_intensity_power: float = 0.5):
     """
-    prepare ms2 db using MSP formatted database
+    prepare ms2 db using MSP or MGF formatted database
+    :param ms2db: path to the MSP formatted database
+    :param mz_tol: mz tolerance
+    :param peak_scale_k: peak scaling factor, None for no scaling
+    :param peak_intensity_power: peak intensity power, 0.5 for square root
     :return: a pickle file
     """
+
     replace_keys = {'precursormz': 'precursor_mz',
+                    'pepmass': 'precursor_mz',
                     'precursortype': 'precursor_type',
                     'ionmode': 'ion_mode',
-                    # 'instrumenttype': 'instrument_type',
-                    'collisionenergy': 'collision_energy'}
+                    'instrumenttype': 'instrument_type',
+                    'collisionenergy': 'collision_energy',
+                    'spectrumid': 'comment'}
 
     db = []
     for a in read_one_spectrum(ms2db):
@@ -34,10 +44,10 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
 
         # ion_mode, harmonize
         if 'ion_mode' in a:
-            a['ion_mode'] = a['ion_mode'].lower().strip()
-            if a['ion_mode'] in ['p', 'positive']:
+            ion_mode = a['ion_mode'].lower().strip()
+            if ion_mode in ['p', 'positive']:
                 a['ion_mode'] = 'positive'
-            elif a['ion_mode'] in ['n', 'negative']:
+            elif ion_mode in ['n', 'negative']:
                 a['ion_mode'] = 'negative'
             else:
                 a['ion_mode'] = 'unknown'
@@ -63,9 +73,9 @@ def prepare_ms2_lib(ms2db, mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.
         new_path = os.path.splitext(ms2db)[0] + '.pkl'
     else:
         new_path = os.path.splitext(ms2db)[0] + f'_k{peak_scale_k}.pkl'
+
     # save as pickle
     with open(new_path, 'wb') as file:
-        # Dump the data into the file
         pickle.dump(search_engine, file)
 
     print(f"Pickle file saved to: {new_path}")
@@ -197,7 +207,6 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
                     annotation.inchikey = matched.get('inchikey', None)
                     annotation.instrument_type = matched.get('instrument_type', None)
                     annotation.collision_energy = matched.get('collision_energy', None)
-                    annotation.peaks = matched.get('peaks', None)
                     annotation.db_id = matched.get('comment', None)
                     annotation.matched_spec = matched.get('peaks', None)
 
@@ -257,9 +266,11 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
 
 
 if __name__ == "__main__":
+    ######### prepare the search engine #########
     prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=None, peak_intensity_power=0.5)
     prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5)
 
+    ######### load the search engine #########
     # with open('../../data/gnps.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)
     #
