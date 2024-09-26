@@ -222,7 +222,7 @@ def _process_chunk_multi_lib(args):
                 ms2_tolerance_in_da=mz_tol,
                 method="open",
                 precursor_ions_removal_da=0.5,
-                noise_threshold=0.01,
+                noise_threshold=0.0,
                 min_ms2_difference_in_da=mz_tol * 2.02,
                 reverse=True
             )
