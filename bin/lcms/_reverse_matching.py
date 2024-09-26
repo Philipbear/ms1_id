@@ -258,7 +258,7 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
 
 if __name__ == "__main__":
     prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=None, peak_intensity_power=0.5)
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=8, peak_intensity_power=0.5)
 
     # with open('../../data/gnps.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)
