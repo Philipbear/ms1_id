@@ -711,7 +711,7 @@ class FlashCos:
                               relative_intensity_cutoff=noise_threshold,
                               min_ms2_difference_in_da=min_ms2_difference_in_da,
                               min_ms2_difference_in_ppm=-1,
-                              top6_every_50da=False,
+                              top6_every_50da=True,
                               peak_scale_k=peak_scale_k,
                               peak_intensity_power=peak_intensity_power,
                               peak_norm='sum_sq')
