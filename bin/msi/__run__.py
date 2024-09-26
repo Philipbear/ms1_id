@@ -51,7 +51,7 @@ def exp_2():
 
 if __name__ == '__main__':
 
-    exp_1()
+    # exp_1()
 
-    # exp_2()
+    exp_2()
 
