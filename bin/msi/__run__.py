@@ -18,7 +18,7 @@ def exp_1():
                             min_overlap=10, min_correlation=0.85,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05)
+                            ms1id_min_spec_usage=0.05, max_prec_rel_int_in_other_ms2=0.05)
 
     ms1id_single_file_batch(file_dir='../../imaging/MTBLS313/non_centroid',
                             library_path=['../../data/gnps.pkl', '../../data/gnps_k10.pkl'],
@@ -30,7 +30,7 @@ def exp_1():
                             min_overlap=10, min_correlation=0.85,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05)
+                            ms1id_min_spec_usage=0.05, max_prec_rel_int_in_other_ms2=0.05)
 
 
 ##########################################
@@ -46,12 +46,12 @@ def exp_2():
                             min_overlap=10, min_correlation=0.85,
                             library_search_mztol=0.05,
                             ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05)
+                            ms1id_min_spec_usage=0.05, max_prec_rel_int_in_other_ms2=0.05)
 
 
 if __name__ == '__main__':
 
-    # exp_1()
+    exp_1()
 
-    exp_2()
+    # exp_2()
 
