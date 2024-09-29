@@ -165,5 +165,7 @@ cython_debug/
 /data/
 /imaging/
 /repo/
+/bin/lcms/__run__.py
+/bin/msi/__run__.py
 /bin/deprecated/
 /fig/
