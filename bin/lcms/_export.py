@@ -145,6 +145,9 @@ def write_single_file(msdata, pseudo_ms2_spectra=None, save_path=None):
                         df.loc[idx, 'MS1_db_id'] = annotation.db_id
                         df.loc[idx, 'pseudo_ms2'] = pseudo_ms2_str
 
+        # # for unannotated features, fill in the pseudo MS2 spectra
+        # df = fill_pseudo_ms2_spectra_for_unannotated_features(df, pseudo_ms2_spectra, msdata.params)
+
     # save the dataframe to csv file
     df.to_csv(save_path, index=False, sep="\t")
 
