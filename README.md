@@ -44,12 +44,9 @@ To build your own indexed library, run [`bin/lcms/_reverse_matching.py`](https:/
   - Mouse brain ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
   - Mouse body ([METASPACE dataset](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))
 
-[//]: # (  - Mouse kidney &#40;links: [METASPACE dataset]&#40;https://metaspace2020.eu/dataset/2019-03-28_18h03m06s&#41;&#41;)
-[//]: # (  - Mouse liver &#40;links: [METASPACE dataset]&#40;https://metaspace2020.eu/dataset/2017-02-23_09h51m18s&#41;&#41;)
-
 ----------------
 
 ### Citation
 ``
-add citation
+to be added
 ``
