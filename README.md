@@ -3,15 +3,16 @@
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
 
-Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in-source fragments. 
+Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in/post-source fragments. 
 Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
 
 
 ## MS1 annotation
-Workflow
+#### Workflow
 ![Annotation workflow](fig/workflow.png)
 
-Example annotations
+
+#### Example annotations
 ![Example annotation](fig/eg_annotation.png)
 
 
