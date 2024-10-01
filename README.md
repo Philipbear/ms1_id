@@ -6,7 +6,6 @@
 Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in-source fragments. 
 Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
 
-----------------
 
 ## MS1 annotation
 Workflow
@@ -15,7 +14,6 @@ Workflow
 Example annotations
 ![Example annotation](fig/eg_annotation.png)
 
-----------------
 
 ## Run the workflow
 - Clone the repository.
@@ -31,7 +29,6 @@ Example annotations
 Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
 To build your own indexed library, run [`bin/lcms/_reverse_matching.py`](https://github.com/Philipbear/ms1_id/blob/main/bin/lcms/_reverse_matching.py).
 
-----------------
 
 ## Data
 - GNPS MS/MS library
@@ -47,14 +44,12 @@ To build your own indexed library, run [`bin/lcms/_reverse_matching.py`](https:/
   - Mouse brain ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
   - Mouse body ([METASPACE dataset](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))
 
-----------------
 
 ## Citation
 ``
 to be added
 ``
 
-----------------
 
 ## License
 This project is licensed under the Apache 2.0 License.
