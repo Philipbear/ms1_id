@@ -17,7 +17,7 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 
 
 ## Run the workflow
-- Clone the repository.
+- Clone the GitHub repository.
 ```bash
  git clone git@github.com:Philipbear/ms1_id.git
 ```
@@ -40,7 +40,7 @@ to be added
 ## Data
 - GNPS MS/MS library
   - [ALL_GNPS_NO_PROPOGATED.msp](https://external.gnps2.org/gnpslibrary), downloaded on July 17, 2024
-  - indexed version [available here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1)
+  - Indexed version [available here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1)
 - LC-MS data
   - Chemical standard data ([GNPS/MassIVE MSV000095789](https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=361b126b35f64bb89a99e7a9974cf8a7))
   - NIST human feces data ([GNPS/MassIVE MSV000095787](https://massive.ucsd.edu/ProteoSAFe/dataset.jsp?task=fa2bf73306ef4e7d89a3e3d3a4cb76d1))
