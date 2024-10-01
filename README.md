@@ -1,4 +1,7 @@
 ## Structure annotation of full-scan MS data
+[![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-yellowgreen?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
+![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
+![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
 
 Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in-source fragments. 
 Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
@@ -19,7 +22,7 @@ Example annotations
 ```bash
  git clone git@github.com:Philipbear/ms1_id.git
 ```
-- Install the dependencies.
+- Install the dependencies (Python 3.9+ required).
 ```bash
  pip install -r requirements.txt
 ```
