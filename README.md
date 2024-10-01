@@ -1,4 +1,4 @@
-## Structure annotation of full-scan MS data
+# Structure annotation of full-scan MS data
 [![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-yellowgreen?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
@@ -8,7 +8,7 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 
 ----------------
 
-### MS1 annotation
+## MS1 annotation
 Workflow
 ![Annotation workflow](fig/workflow.png)
 
@@ -17,7 +17,7 @@ Example annotations
 
 ----------------
 
-### Run the workflow
+## Run the workflow
 - Clone the repository.
 ```bash
  git clone git@github.com:Philipbear/ms1_id.git
@@ -33,7 +33,7 @@ To build your own indexed library, run [`bin/lcms/_reverse_matching.py`](https:/
 
 ----------------
 
-### Data
+## Data
 - GNPS MS/MS library
   - [ALL_GNPS_NO_PROPOGATED.msp](https://external.gnps2.org/gnpslibrary), downloaded on July 17, 2024
   - indexed version [available here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1)
@@ -49,7 +49,12 @@ To build your own indexed library, run [`bin/lcms/_reverse_matching.py`](https:/
 
 ----------------
 
-### Citation
+## Citation
 ``
 to be added
 ``
+
+----------------
+
+## License
+This project is licensed under the Apache 2.0 License.
