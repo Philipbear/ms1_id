@@ -3,9 +3,9 @@ import pickle
 import numpy as np
 from ms_entropy import read_one_spectrum
 
-from _utils import SpecAnnotation
-from flash_cos import FlashCos
-from _centroid_data import centroid_spectrum_for_search
+from ._utils import SpecAnnotation
+from .flash_cos import FlashCos
+from ._centroid_data import centroid_spectrum_for_search
 
 
 def prepare_ms2_lib(ms2db,

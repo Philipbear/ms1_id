@@ -9,12 +9,12 @@ from masscube.feature_grouping import annotate_isotope
 from masscube.params import Params, find_ms_info
 from masscube.raw_data_utils import MSData
 
-from _annotate_adduct import annotate_adduct
-from _annotate_ms2 import annotate_rois
-from _calculate_ppc import calc_all_ppc
-from _export import write_single_file
-from _group_ppc import generate_pseudo_ms2
-from _reverse_matching import ms1_id_annotation
+from ._annotate_adduct import annotate_adduct
+from ._annotate_ms2 import annotate_rois
+from ._calculate_ppc import calc_all_ppc
+from ._export import write_single_file
+from ._group_ppc import generate_pseudo_ms2
+from ._reverse_matching import ms1_id_annotation
 
 # default parameters
 orbitrap_mass_detect_int_tol = 10000

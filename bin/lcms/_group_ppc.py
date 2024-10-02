@@ -9,7 +9,7 @@ import pickle
 # import networkx as nx
 import numpy as np
 
-from _utils import PseudoMS2
+from ._utils import PseudoMS2
 
 
 def retrieve_pseudo_ms2_spectra(config):

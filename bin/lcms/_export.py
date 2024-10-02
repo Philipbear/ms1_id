@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import numpy as np
-from _utils import AlignedMS1Annotation, AnnotatedPseudoMS2
-from _centroid_data import consensus_spectrum
+from ._utils import AlignedMS1Annotation, AnnotatedPseudoMS2
+from ._centroid_data import consensus_spectrum
 
 
 # def write_ms1_id_results(ms1_spec_ls, out_dir=None):

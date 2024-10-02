@@ -3,7 +3,7 @@ import re
 
 import numpy as np
 
-from _centroid_data import centroid_spectrum_for_search
+from ._centroid_data import centroid_spectrum_for_search
 
 
 def feature_annotation(features, config, num=5):

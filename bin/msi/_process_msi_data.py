@@ -1,12 +1,14 @@
+import multiprocessing
+import os
 import pickle
 from collections import defaultdict
-import os
+
 import numpy as np
 import pyimzml.ImzMLParser as imzml
 from numba import njit
 from tqdm import tqdm
-import multiprocessing
-from _centroid_data import centroid_spectrum
+
+from ._centroid_data import centroid_spectrum
 
 
 def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,

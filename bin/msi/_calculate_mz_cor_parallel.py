@@ -1,15 +1,15 @@
-import os
-import numpy as np
-from scipy.sparse import csr_matrix, save_npz, load_npz
 import multiprocessing as mp
+import os
 import tempfile
-from tqdm import tqdm
+
+import numpy as np
 from numba import njit
+from scipy.sparse import csr_matrix, save_npz, load_npz
+from tqdm import tqdm
 
 
 @njit
 def _mz_correlation(intensities1, intensities2, min_overlap=5):
-
     # Remove zero intensities
     non_zero_mask = (intensities1 != 0) & (intensities2 != 0)
     x = intensities1[non_zero_mask]
@@ -33,7 +33,6 @@ def _mz_correlation(intensities1, intensities2, min_overlap=5):
 
 def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overlap,
            min_cor, return_dict):
-
     intensity_matrix = np.memmap(mmap_filename, dtype=np.float64, mode='r', shape=intensity_matrix_shape)
     n_mzs = intensity_matrix_shape[0]
 

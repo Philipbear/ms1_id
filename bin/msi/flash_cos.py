@@ -11,7 +11,7 @@ from typing import Union, List
 
 import numpy as np
 
-from _preprocess_ms2 import preprocess_ms2
+from ._preprocess_ms2 import preprocess_ms2
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -138,7 +138,8 @@ class FlashCosCore:
         # Calculate the similarity for this matched peak
         similarity_arr = np.zeros(self.total_spectra_num, dtype=np.float32)
         matched_cnt_arr = np.zeros(self.total_spectra_num, dtype=np.uint32)
-        spec_usage_arr = np.zeros(self.total_spectra_num, dtype=np.float32)  # sum(matched peaks intensity) / sum(query peaks intensity)
+        spec_usage_arr = np.zeros(self.total_spectra_num,
+                                  dtype=np.float32)  # sum(matched peaks intensity) / sum(query peaks intensity)
 
         # a large empty 2D array to record matched peak pairs in query spectrum
         match_table_q = np.zeros((peaks.shape[0], self.total_spectra_num), dtype=np.float32)
@@ -944,6 +945,7 @@ if __name__ == "__main__":
 
     def cosine_similarity(v1, v2):
         return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+
 
     # load spectral library
     spectral_library = [{

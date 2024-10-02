@@ -1,10 +1,12 @@
+import multiprocessing as mp
 import os
 import pickle
+
 import numpy as np
 from scipy.sparse import csr_matrix
-import multiprocessing as mp
 from tqdm import tqdm
-from _utils_imaging import PseudoMS2
+
+from ._utils_imaging import PseudoMS2
 
 
 def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
@@ -122,4 +124,3 @@ def _assign_intensities(pseudo_ms2_spectra, intensity_matrix):
         max_spectrum_index = np.argmax(t_mz_intensities)
 
         spectrum.intensities = intensities[:, max_spectrum_index].tolist()
-

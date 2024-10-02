@@ -33,4 +33,3 @@ class SpecAnnotation:
 
     def __str__(self):
         return f"name {self.name}, score {self.score}, matched_peak {self.matched_peak}, db_id {self.db_id}"
-

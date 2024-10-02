@@ -1,4 +1,5 @@
 import os
+
 import pandas as pd
 
 
@@ -20,7 +21,6 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
         pseudo_ms2_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
-
             out_list.append({
                 'name': annotation.name,
                 'mz': round(annotation.mz, 4),
@@ -59,4 +59,3 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
             out_df.to_csv(save_path.replace('_all.tsv', '_derep.tsv'), index=False, sep='\t')
 
     return out_df
-
