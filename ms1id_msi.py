@@ -1,7 +1,7 @@
 from bin.msi.main_msi import ms1id_single_file_batch
 
 if __name__ == '__main__':
-    file_dir = 'imaging/trial'  # file directory containing imzML & ibd files
+    file_dir = 'project_path'  # file directory containing imzML & ibd files
     library_path1 = 'data/gnps_k10.pkl'
     library_path2 = 'data/gnps.pkl'
 

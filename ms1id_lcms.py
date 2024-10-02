@@ -1,7 +1,7 @@
 from bin.lcms.main_lcms import ms1id_batch_mode
 
 if __name__ == '__main__':
-    project_path = '/project_path'
+    project_path = 'project_path'
     library_path1 = 'data/gnps_k10.pkl'
     library_path2 = 'data/gnps.pkl'
 
