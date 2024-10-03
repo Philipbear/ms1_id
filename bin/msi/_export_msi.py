@@ -47,8 +47,8 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
 
         # save a dereplicated version
         if 'matched_score' in out_df.columns:
-            # sort by score, then matched peak, then spectral_usage
-            out_df = out_df.sort_values(['matched_score', 'matched_peak', 'spectral_usage'],
+            # sort
+            out_df = out_df.sort_values(['spectral_usage', 'matched_score', 'matched_peak'],
                                         ascending=[False, False, False])
 
             # dereplicate by [inchikey, rounded precursor mz]  # rounded precursor mz indicating precursor type
