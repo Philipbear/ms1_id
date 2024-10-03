@@ -10,6 +10,23 @@ from ._centroid_data import centroid_spectrum_for_search
 from ._utils_imaging import SpecAnnotation
 
 
+def validate_library_path(library_path):
+    """
+    Validate the library path
+    :param library_path: str or list of str
+    :return: list of str
+    """
+    # if library_ls is a string, convert to list
+    if isinstance(library_path, str):
+        library_path = [library_path]
+
+    for path in library_path:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Library file not found: {path}")
+
+    return library_path
+
+
 def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                       mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4, min_spec_usage=0.0,
@@ -115,10 +132,6 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
     :return: List of updated PseudoMS2-like objects
     """
     mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
-
-    # if library_ls is a string, convert to list
-    if isinstance(library_ls, str):
-        library_ls = [library_ls]
 
     # Load all libraries
     search_engines = []

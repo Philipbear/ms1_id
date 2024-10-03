@@ -4,19 +4,22 @@ from ._calculate_mz_cor_parallel import calc_all_mz_correlations
 from ._export_msi import write_ms1_id_results
 from ._group_mz_cor_parallel import generate_pseudo_ms2
 from ._process_msi_data import process_ms_imaging_data
-from ._reverse_matching_parallel import ms1_id_annotation
+from ._reverse_matching_parallel import validate_library_path, ms1_id_annotation
 
 
-def ms1id_imaging_single_workflow(file_path, library_path, n_processes=None,
-                                  mass_detect_int_tol=None, noise_detection='moving_average',
-                                  sn_factor=5.0, centroided=False,
-                                  mz_bin_size=0.01,
-                                  min_overlap=10, min_correlation=0.85, max_cor_depth=1,
-                                  library_search_mztol=0.05,
-                                  ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                                  ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05):
+def ms1id_imaging_workflow(file_path, library_path, n_processes=None,
+                           mass_detect_int_tol=None, noise_detection='moving_average',
+                           sn_factor=5.0, centroided=False,
+                           mz_bin_size=0.01,
+                           min_overlap=10, min_correlation=0.85, max_cor_depth=1,
+                           library_search_mztol=0.05,
+                           ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
+                           ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05):
     file_dir = os.path.dirname(file_path)
     file_name = os.path.basename(file_path).replace('.imzML', '')
+
+    # validate library_path
+    library_path = validate_library_path(library_path)
 
     # make a result folder of file_name
     result_folder = os.path.join(file_dir, file_name)
