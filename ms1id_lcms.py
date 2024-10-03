@@ -5,7 +5,7 @@ if __name__ == '__main__':
     library_path1 = 'data/gnps_k10.pkl'
     library_path2 = 'data/gnps.pkl'
 
-    # mzML/mzXML files should be in '{project_path}/{sample_dir}' directory ({project_path}/data)
+    # mzML or mzXML files should be in '{project_path}/{sample_dir}' directory (in this case: 'project_path/data')
 
     ms1id_batch_mode(
         project_path=project_path,
@@ -15,7 +15,7 @@ if __name__ == '__main__':
         parallel=True,
         ms1_id=True,
         ms2_id=False,
-        cpu_ratio=0.8,
+        cpu_ratio=0.9,
         run_rt_correction=True,
         run_normalization=True,
         ms1_tol=0.01,
@@ -25,7 +25,7 @@ if __name__ == '__main__':
         align_rt_tol=0.2,
         alignment_drop_by_fill_pct_ratio=0.1,
         peak_cor_rt_tol=0.025,
-        min_ppc=0.8,
+        min_ppc=0.80,
         roi_min_length=5,
         library_search_mztol=0.05,
         ms1id_score_cutoff=0.7,

@@ -11,7 +11,7 @@ if __name__ == '__main__':
         n_processes=None,
         mass_detect_int_tol=None,
         noise_detection='moving_average',
-        sn_factor=5.0,
+        sn_factor=3.0,
         centroided=False,
         mz_bin_size=0.01,
         min_overlap=10,
