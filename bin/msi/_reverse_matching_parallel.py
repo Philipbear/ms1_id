@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from ._centroid_data import centroid_spectrum_for_search
 from ._utils_imaging import SpecAnnotation
+from .flash_cos import FlashCos
 
 
 def validate_library_path(library_path):
