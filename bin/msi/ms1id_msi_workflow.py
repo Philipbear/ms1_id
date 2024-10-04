@@ -50,6 +50,7 @@ def ms1id_imaging_workflow(file_path, library_path, n_processes=None,
     pseudo_ms2 = generate_pseudo_ms2(mz_values, intensity_matrix, cor_matrix,
                                      n_processes=n_processes,
                                      min_cluster_size=ms1id_min_matched_peak + 1,
+                                     min_cor=min_correlation,
                                      max_cor_depth=max_cor_depth,
                                      save=True,
                                      save_dir=result_folder)

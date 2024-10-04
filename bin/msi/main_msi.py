@@ -16,7 +16,7 @@ def ms1id_single_file_batch(file_dir, library_path, n_processes=None,
                             ms1id_min_spec_usage=0.10,
                             max_prec_rel_int_in_other_ms2=0.05
                             ):
-    files = [f for f in os.listdir(file_dir) if f.endswith('.imzML')]
+    files = [f for f in os.listdir(file_dir) if f.lower().endswith('.imzml')]
     files = [os.path.join(file_dir, f) for f in files]
 
     for file in files:

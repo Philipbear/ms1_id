@@ -115,7 +115,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
                            mz_tol=0.05,
                            ion_mode=None,
                            score_cutoff=0.7,
-                           min_matched_peak=3,
+                           min_matched_peak=4,
                            min_spec_usage=0.0,
                            chunk_size=500) -> List:
     """
