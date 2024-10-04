@@ -10,7 +10,7 @@ from masscube.alignment import feature_alignment, gap_filling
 from masscube.feature_grouping import annotate_isotope
 from masscube.feature_table_utils import convert_features_to_df
 from masscube.normalization import sample_normalization
-from masscube.params import Params, find_ms_info
+from masscube.params import Params
 from masscube.raw_data_utils import MSData
 
 from ._annotate_adduct import annotate_adduct
@@ -19,6 +19,7 @@ from ._calculate_ppc import calc_all_ppc
 from ._export import write_feature_table
 from ._group_ppc import generate_pseudo_ms2, retrieve_pseudo_ms2_spectra
 from ._reverse_matching import ms1_id_annotation
+from ._utils import find_ms_info
 
 # default parameters
 orbitrap_mass_detect_int_tol = 10000

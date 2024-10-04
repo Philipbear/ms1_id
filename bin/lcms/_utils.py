@@ -1,5 +1,6 @@
 # Description: This file contains classes that are used in the main pipeline.
 import numpy as np
+import os
 
 
 class Spectrum:
@@ -83,3 +84,26 @@ class AlignedMS1Annotation:
         self.df_idx = idx  # index of the matched feature in the feature table
         self.annotated_pseudo_ms2_list = []  # list of AnnotatedPseudoMS2 objects
         self.selected_annotated_pseudo_ms2 = None
+
+
+def find_ms_info(file_name):
+    """
+    Find the type of MS and ion mode from the raw file.
+    """
+
+    ms_type = 'tof'
+    ion_mode = 'positive'
+    centroid = False
+
+    with open(file_name, 'r') as f:
+        for i, line in enumerate(f):
+            if 'orbitrap' in line.lower() or 'Q Exactive' in line.lower():
+                ms_type = 'orbitrap'
+            if 'negative' in line.lower() or 'polarity="-"' in line.lower():
+                ion_mode = 'negative'
+            if "centroid spectrum" in line.lower() or 'centroided="1"' in line.lower():
+                centroid = True
+            if i > 200:
+                break
+
+    return ms_type, ion_mode, centroid
