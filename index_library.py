@@ -16,7 +16,7 @@ prepare_ms2_lib(
 )
 
 ######### load the search engine #########
-# with open('../../data/gnps.pkl', 'rb') as file:
+# with open('data/gnps.pkl', 'rb') as file:
 #     search_eng = pickle.load(file)
 #
 # print(search_eng)
