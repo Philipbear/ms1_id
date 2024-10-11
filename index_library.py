@@ -14,3 +14,9 @@ prepare_ms2_lib(
     peak_scale_k=10,
     peak_intensity_power=0.5
 )
+
+######### load the search engine #########
+# with open('../../data/gnps.pkl', 'rb') as file:
+#     search_eng = pickle.load(file)
+#
+# print(search_eng)
