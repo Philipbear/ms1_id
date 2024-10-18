@@ -32,9 +32,9 @@ To build your own indexed library, run [`index_library.py`](https://github.com/P
 
 
 ## Citation
-``
-to be added
-``
+
+> Shipei Xing, Vincent Charron-Lamoureux, Yasin El Abiead, Pieter C. Dorrestein. Annotating full-scan MS data using tandem MS libraries. [biorxiv 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618269v1).
+
 
 
 ## Data
