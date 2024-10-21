@@ -736,11 +736,16 @@ class FlashCos:
         elif isinstance(method, str):
             method = {method}
 
+        if precursor_ions_removal_da is not None:
+            _max_mz = precursor_mz - precursor_ions_removal_da
+        else:
+            _max_mz = None
+
         # do not normalize the intensity here, as the intensity will be normalized after alignment
         peaks = preprocess_ms2(peaks=peaks,
                                prec_mz=precursor_mz,
                                min_mz=-1,
-                               max_mz=precursor_mz - precursor_ions_removal_da,
+                               max_mz=_max_mz,
                                relative_intensity_cutoff=noise_threshold,
                                min_ms2_difference_in_da=min_ms2_difference_in_da,
                                min_ms2_difference_in_ppm=-1,
