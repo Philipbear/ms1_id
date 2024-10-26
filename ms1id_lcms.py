@@ -22,9 +22,9 @@ def parse_arguments():
 
     # Library and sample directory arguments
     parser.add_argument('--ms1_id_libs', type=str, nargs='*', default=None,
-                        help='Optional: One or more paths to MS1 ID library files. Paths with spaces should be quoted.')
+                        help='Optional: One or more paths to MS1 ID library files (.pkl). Paths with spaces should be quoted.')
     parser.add_argument('--ms2_id_libs', type=str, nargs='*', default=None,
-                        help='Optional: One or more paths to MS2 ID library files. Paths with spaces should be quoted.')
+                        help='Optional: One or more paths to MS2 ID library files (.pkl). Paths with spaces should be quoted.')
     parser.add_argument('--sample_dir', type=str, default='data',
                         help='Directory containing mzML/mzXML files (default: data)')
 

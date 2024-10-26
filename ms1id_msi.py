@@ -22,7 +22,7 @@ def parse_arguments():
 
     # Library paths
     parser.add_argument('--libs', type=str, nargs='*', default=None,
-                        help='Optional: One or more paths to library files. Paths with spaces should be quoted.')
+                        help='Optional: One or more paths to library files (.pkl). Paths with spaces should be quoted.')
 
     # Processing mode parameters
     parser.add_argument('--n_processes', type=int, default=None,

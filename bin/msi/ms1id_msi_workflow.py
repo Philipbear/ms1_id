@@ -16,7 +16,7 @@ def ms1id_imaging_workflow(file_path, library_path, n_processes=None,
                            ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
                            ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05):
     file_dir = os.path.dirname(file_path)
-    file_name = os.path.basename(file_path).replace('.imzML', '')
+    file_name = os.path.splitext(os.path.basename(file_path))[0]
 
     # validate library_path
     library_path = validate_library_path(library_path)
@@ -28,7 +28,7 @@ def ms1id_imaging_workflow(file_path, library_path, n_processes=None,
     print(f"Processing {file_name}")
     mz_values, intensity_matrix, coordinates, ion_mode = process_ms_imaging_data(
         file_path,
-        file_path.replace('.imzML', '.ibd'),
+        os.path.splitext(file_path)[0] + '.ibd',
         mz_bin_size=mz_bin_size,
         mass_detect_int_tol=mass_detect_int_tol,
         noise_detection=noise_detection,
