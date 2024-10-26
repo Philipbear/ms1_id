@@ -179,21 +179,18 @@ def init_config(path=None,
     config.ms2id_min_matched_peak = ms2id_min_matched_peak
 
     # obtain the working directory
-    if path is not None:
-        config.project_dir = path
-    else:
-        config.project_dir = os.getcwd()
+    config.project_dir = path
+    print("Project directory: " + config.project_dir)
 
     config.sample_dir = os.path.join(config.project_dir, sample_dir)
-    config.single_file_dir = os.path.join(config.project_dir, "single_files")
+    print("Sample directory: " + config.sample_dir)
 
     # check if the required files are prepared
     if not os.path.exists(config.sample_dir) or len(os.listdir(config.sample_dir)) == 0:
-        raise ValueError("No raw MS data is found in the project directory.")
+        raise ValueError("No raw MS data is found in the sample directory.")
 
-    # create the output directories if not exist
-    if not os.path.exists(config.single_file_dir):
-        os.makedirs(config.single_file_dir)
+    config.single_file_dir = os.path.join(config.project_dir, "single_files")
+    os.makedirs(config.single_file_dir, exist_ok=True)
 
     # determine the type of MS and ion mode
     file_names = os.listdir(config.sample_dir)

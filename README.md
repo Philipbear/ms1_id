@@ -19,16 +19,25 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 ## Run the workflow
 - Clone the GitHub repository.
 ```bash
- git clone git@github.com:Philipbear/ms1_id.git
+git clone git@github.com:Philipbear/ms1_id.git
 ```
 - Install the dependencies (Python 3.9+ required).
 ```bash
- pip install -r requirements.txt
+pip install -r requirements.txt
 ```
-- Run [`ms1id_lcms.py`](https://github.com/Philipbear/ms1_id/blob/main/ms1id_lcms.py) for LC-MS data, and [`ms1id_msi.py`](https://github.com/Philipbear/ms1_id/blob/main/ms1id_msi.py) for MS imaging data.
+- Run `ms1id_lcms.py` for LC-MS data, and `ms1id_msi.py` for MS imaging data.
+  - An example command for LC-MS data (mzML or mzXML files in `lc_ms/nist/data` folder):
+    ```bash
+    python ms1id_lcms.py --project_dir lc_ms/nist --sample_dir data --ms1_id --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl
+    ```
+  - An example command for MS imaging data (imzML and ibd files in `msi/data` folder):
+    ```bash
+    python ms1id_msi.py --project_dir msi/data --libs data/gnps.pkl data/gnps_k10.pkl
+    ```
+  - For more options, run `python ms1id_lcms.py --help` or `python ms1id_msi.py --help`.
 
 Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
-To build your own indexed library, run [`index_library.py`](https://github.com/Philipbear/ms1_id/blob/main/index_library.py).
+To build your own indexed library, run `index_library.py`.
 
 
 ## Citation
