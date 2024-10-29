@@ -26,13 +26,13 @@ git clone git@github.com:Philipbear/ms1_id.git
 pip install -r requirements.txt
 ```
 - Run `ms1id_lcms.py` for LC-MS data, and `ms1id_msi.py` for MS imaging data.
-  - An example command for LC-MS data (mzML or mzXML files in `lc_ms/nist/data` folder):
+  - An example command for LC-MS data (mzML or mzXML files in `lc_ms/data` folder):
     ```bash
-    python ms1id_lcms.py --project_dir lc_ms/nist --sample_dir data --ms1_id --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl
+    python ms1id_lcms.py --project_dir lc_ms --sample_dir data --ms1_id --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl
     ```
-  - An example command for MS imaging data (imzML and ibd files in `msi/data` folder):
+  - An example command for MS imaging data (imzML and ibd files in `msi` folder):
     ```bash
-    python ms1id_msi.py --project_dir msi/data --libs data/gnps.pkl data/gnps_k10.pkl
+    python ms1id_msi.py --project_dir msi --libs data/gnps.pkl data/gnps_k10.pkl
     ```
   - For more options, run `python ms1id_lcms.py --help` or `python ms1id_msi.py --help`.
 
