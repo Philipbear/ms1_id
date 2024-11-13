@@ -17,11 +17,13 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 
 
 ## Run the workflow
+This workflow requires Python 3.9+. It has been tested on macOS (14.6, M2 Max) and Linux (Ubuntu 20.04).
+
 - Clone the GitHub repository.
 ```bash
 git clone git@github.com:Philipbear/ms1_id.git
 ```
-- Install the dependencies (Python 3.9+ required).
+- Install the dependencies. Typical installation time is < 3 min.
 ```bash
 pip install -r requirements.txt
 ```
@@ -35,9 +37,15 @@ pip install -r requirements.txt
     python ms1id_msi.py --project_dir msi --libs data/gnps.pkl data/gnps_k10.pkl
     ```
   - For more options, run `python ms1id_lcms.py --help` or `python ms1id_msi.py --help`.
+- Output files will be in the project directory. MS1 annotations can be accessed from:
+  - LC/MS data: `aligned_feature_table.tsv`
+  - MS imaging data: `ms1_id_annotations_derep.tsv`
 
-Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
+Expected runtime is < 1 min for a single LC-MS file and < 5 min for a single MS imaging dataset.
+
+Note: Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
 To build your own indexed library, run `index_library.py`.
+
 
 
 ## Citation
