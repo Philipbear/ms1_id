@@ -38,7 +38,7 @@ pip install -r requirements.txt
     ```
   - For more options, run `python ms1id_lcms.py --help` or `python ms1id_msi.py --help`.
 - Output files will be in the project directory. MS1 annotations can be accessed from:
-  - LC/MS data: `aligned_feature_table.tsv`
+  - LC-MS data: `aligned_feature_table.tsv`
   - MS imaging data: `ms1_id_annotations_derep.tsv`
 
 Expected runtime is < 1 min for a single LC-MS file and < 5 min for a single MS imaging dataset.
