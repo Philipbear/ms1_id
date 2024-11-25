@@ -23,7 +23,7 @@ This workflow requires Python 3.9+. It has been tested on macOS (14.6, M2 Max) a
 ```bash
 git clone git@github.com:Philipbear/ms1_id.git
 ```
-- Install the dependencies. Typical installation time is < 3 min.
+- Install the dependencies. Typical installation time is <2 min.
 ```bash
 pip install -r requirements.txt
 ```
@@ -41,7 +41,7 @@ pip install -r requirements.txt
   - LC-MS data: `aligned_feature_table.tsv`
   - MS imaging data: `ms1_id_annotations_derep.tsv`
 
-Expected runtime is < 1 min for a single LC-MS file and < 5 min for a single MS imaging dataset.
+Expected runtime is <1 min for a single LC-MS file and <5 min for a single MS imaging dataset.
 
 Note: Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
 To build your own indexed library, run `index_library.py`.
