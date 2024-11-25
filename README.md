@@ -69,4 +69,4 @@ To build your own indexed library, run `index_library.py`.
 
 
 ## License
-This project is licensed under the Apache 2.0 License.
+This project is licensed under the Apache 2.0 License (Copyright 2024 Shipei Xing).
