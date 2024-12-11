@@ -73,8 +73,8 @@ def parse_arguments():
     # MS1 identification parameters
     parser.add_argument('--ms1id_score_cutoff', type=float, default=0.7,
                         help='MS1 ID matching score cutoff (default: 0.7)')
-    parser.add_argument('--ms1id_min_matched_peak', type=int, default=4,
-                        help='MS1 ID minimum matched peaks (default: 4)')
+    parser.add_argument('--ms1id_min_matched_peak', type=int, default=3,
+                        help='MS1 ID minimum matched peaks (default: 3)')
     parser.add_argument('--ms1id_min_spec_usage', type=float, default=0.20,
                         help='MS1 ID minimum spectrum usage (default: 0.20)')
     parser.add_argument('--ms1id_max_prec_rel_int_in_other_ms2', type=float, default=0.01,
@@ -83,8 +83,8 @@ def parse_arguments():
     # MS2 identification parameters
     parser.add_argument('--ms2id_score_cutoff', type=float, default=0.7,
                         help='MS2 ID score cutoff (default: 0.7)')
-    parser.add_argument('--ms2id_min_matched_peak', type=int, default=4,
-                        help='MS2 ID minimum matched peaks (default: 4)')
+    parser.add_argument('--ms2id_min_matched_peak', type=int, default=3,
+                        help='MS2 ID minimum matched peaks (default: 3)')
 
     return parser.parse_args()
 

@@ -54,8 +54,8 @@ def parse_arguments():
                         help='Library search m/z tolerance (default: 0.05)')
     parser.add_argument('--ms1id_score_cutoff', type=float, default=0.7,
                         help='MS1 ID matching score cutoff (default: 0.7)')
-    parser.add_argument('--ms1id_min_matched_peak', type=int, default=4,
-                        help='MS1 ID minimum matched peaks (default: 4)')
+    parser.add_argument('--ms1id_min_matched_peak', type=int, default=3,
+                        help='MS1 ID minimum matched peaks (default: 3)')
     parser.add_argument('--ms1id_min_spec_usage', type=float, default=0.05,
                         help='MS1 ID minimum spectrum usage (default: 0.05)')
 
