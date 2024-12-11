@@ -71,8 +71,8 @@ def parse_arguments():
                         help='Library search m/z tolerance (default: 0.05)')
 
     # MS1 identification parameters
-    parser.add_argument('--ms1id_score_cutoff', type=float, default=0.8,
-                        help='MS1 ID matching score cutoff (default: 0.8)')
+    parser.add_argument('--ms1id_score_cutoff', type=float, default=0.7,
+                        help='MS1 ID matching score cutoff (default: 0.7)')
     parser.add_argument('--ms1id_min_matched_peak', type=int, default=4,
                         help='MS1 ID minimum matched peaks (default: 4)')
     parser.add_argument('--ms1id_min_spec_usage', type=float, default=0.20,
@@ -81,8 +81,8 @@ def parse_arguments():
                         help='MS1 ID: maximum allowed precursor relative intensity in other MS2 (default: 0.01)')
 
     # MS2 identification parameters
-    parser.add_argument('--ms2id_score_cutoff', type=float, default=0.8,
-                        help='MS2 ID score cutoff (default: 0.8)')
+    parser.add_argument('--ms2id_score_cutoff', type=float, default=0.7,
+                        help='MS2 ID score cutoff (default: 0.7)')
     parser.add_argument('--ms2id_min_matched_peak', type=int, default=4,
                         help='MS2 ID minimum matched peaks (default: 4)')
 
@@ -109,7 +109,7 @@ def main():
 
     # Run the analysis
     ms1id_batch_mode(
-        project_path=args.project_dir,  # Note: parameter name differs from argument name
+        project_path=args.project_dir,
         ms1id_library_path=ms1_libs,
         ms2id_library_path=ms2_libs,
         sample_dir=args.sample_dir,

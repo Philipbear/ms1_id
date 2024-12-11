@@ -7,6 +7,7 @@ from scipy.sparse import csr_matrix
 from tqdm import tqdm
 
 from ._utils_imaging import PseudoMS2
+from ._export_msi import write_pseudoms2_to_mgf
 
 
 def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
@@ -36,9 +37,12 @@ def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
     _assign_intensities(pseudo_ms2_spectra, intensity_matrix)
 
     if save and save_dir:
-        save_path = os.path.join(save_dir, 'pseudo_ms2_spectra.pkl')
-        with open(save_path, 'wb') as f:
+        pkl_path = os.path.join(save_dir, 'pseudo_ms2_spectra.pkl')
+        with open(pkl_path, 'wb') as f:
             pickle.dump(pseudo_ms2_spectra, f)
+
+        mgf_path = os.path.join(save_dir, 'pseudo_ms2_spectra.mgf')
+        write_pseudoms2_to_mgf(pseudo_ms2_spectra, mgf_path)
 
     return pseudo_ms2_spectra
 

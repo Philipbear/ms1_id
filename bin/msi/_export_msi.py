@@ -59,3 +59,23 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
             out_df.to_csv(save_path.replace('_all.tsv', '_derep.tsv'), index=False, sep='\t')
 
     return out_df
+
+
+def write_pseudoms2_to_mgf(pseudo_ms2_spectra, mgf_path):
+    """
+    Write pseudo MS2 spectra to an MGF file
+    :param pseudo_ms2_spectra: list of PseudoMS2 objects
+    :param mgf_path: str, path to save the MGF file
+    :return: None
+    """
+    with open(mgf_path, 'w') as f:
+        idx = 1
+        for spec in pseudo_ms2_spectra:
+            f.write(f"BEGIN IONS\n")
+            f.write(f"PEPMASS={round(spec.t_mz, 5)}\n")
+            f.write(f"SCANS={idx}\n")
+            for mz, intensity in zip(spec.mzs, spec.intensities):
+                f.write(f"{mz:.5f} {intensity:.0f}\n")
+            f.write(f"END IONS\n\n")
+            idx += 1
+    return None

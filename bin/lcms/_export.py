@@ -315,3 +315,26 @@ def refine_pseudo_ms2_spectra_list(pseudo_ms2_spectra, df, config):
             aligned_ms1_annotation.selected_annotated_pseudo_ms2 = aligned_ms1_annotation.annotated_pseudo_ms2_list[0]
 
     return aligned_ms1_annotation_ls
+
+
+def write_pseudoms2_to_mgf(pseudoms2_ls, save_dir, file_name):
+    """
+    Write pseudo MS2 spectra to MGF file
+    """
+
+    mgf_path = os.path.join(save_dir, f"{file_name}_pseudo_ms2.mgf")
+
+    with open(mgf_path, 'w') as f:
+        idx = 1
+        for spec in pseudoms2_ls:
+            f.write(f"BEGIN IONS\n")
+            f.write(f"PEPMASS={round(spec.t_mz, 5)}\n")
+            f.write(f"SCANS={idx}\n")
+            f.write(f"RTINSECONDS={spec.rt * 60}\n")
+
+            for i in range(len(spec.mzs)):
+                f.write(f"{spec.mzs[i]:.5f} {spec.intensities[i]:.0f}\n")
+
+            f.write(f"END IONS\n\n")
+            idx += 1
+    return

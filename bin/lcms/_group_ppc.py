@@ -3,13 +3,10 @@ This is to get all features with high PPCs, generate pseudo MS1 for a single fil
 """
 import os
 import pickle
-
-# import matplotlib.colors as mcolors
-# import matplotlib.pyplot as plt
-# import networkx as nx
 import numpy as np
 
 from ._utils import PseudoMS2
+from ._export import write_pseudoms2_to_mgf
 
 
 def retrieve_pseudo_ms2_spectra(config):
@@ -38,7 +35,8 @@ def generate_pseudo_ms2(msdata, ppc_matrix,
                         min_ppc=0.8,
                         min_cluster_size=4,
                         roi_min_length=3,
-                        roi_max_rt_range=2.0):
+                        roi_max_rt_range=2.0,
+                        save_dir=None):
     """
     Generate pseudo MS2 spectra for a single file
     :param msdata: MSData object
@@ -48,7 +46,6 @@ def generate_pseudo_ms2(msdata, ppc_matrix,
     :param mz_tol: m/z tolerance
     :param min_ppc: minimum PPC score for clustering
     :param min_cluster_size: minimum number of ROIs in a cluster
-    :param save: whether to save the pseudo MS2 spectra
     :param save_dir: directory to save the pseudo MS2 spectra
     """
 
@@ -58,6 +55,8 @@ def generate_pseudo_ms2(msdata, ppc_matrix,
                                              min_cluster_size=min_cluster_size,
                                              roi_min_length=roi_min_length,
                                              roi_max_rt_range=roi_max_rt_range)
+
+    write_pseudoms2_to_mgf(pseudo_ms2_spectra, save_dir, msdata.file_name)
 
     return pseudo_ms2_spectra
 
@@ -100,9 +99,10 @@ def _perform_clustering(msdata, ppc_matrix, mz_tol=0.01, min_ppc=0.8, min_cluste
             mz_ls = [roi.mz for roi in cluster_rois]
             int_ls = [roi.peak_height for roi in cluster_rois]
             roi_ids = [roi.id for roi in cluster_rois]
-            avg_rt = np.mean([roi.rt for roi in cluster_rois])
+            # rt = np.mean([roi.rt for roi in cluster_rois])
+            rt = roi.rt
 
-            pseudo_ms2_spectra.append((t_mz, mz_ls, int_ls, roi_ids, msdata.file_name, avg_rt, mz_tol))
+            pseudo_ms2_spectra.append((t_mz, mz_ls, int_ls, roi_ids, msdata.file_name, rt, mz_tol))
 
     # Convert to PseudoMS2 objects after all processing
     pseudo_ms2_spectra = [PseudoMS2(*spec) for spec in pseudo_ms2_spectra]

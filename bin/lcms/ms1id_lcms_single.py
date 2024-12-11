@@ -85,7 +85,8 @@ def main_workflow_single(file_path,
                                                  mz_tol=ms1_tol,
                                                  min_ppc=min_ppc,
                                                  min_cluster_size=ms1id_min_matched_peak,
-                                                 roi_min_length=roi_min_length)
+                                                 roi_min_length=roi_min_length,
+                                                 save_dir=os.path.dirname(file_path))
 
         # perform rev cos search
         print('Performing MS1 ID annotation...')

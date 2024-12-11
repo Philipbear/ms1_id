@@ -331,13 +331,14 @@ def feature_detection(file_name, params=None,
                                   roi_min_length=params.roi_min_length,
                                   save=False)
 
-        print(f"Generating pseudo MS2 spectra for {file_name}...")
+        print(f"Generating and saving pseudo MS2 spectra for {file_name}...")
         # generate pseudo ms2 spec, for ms1_id
         pseudo_ms2_spectra = generate_pseudo_ms2(d, ppc_matrix,
                                                  mz_tol=params.mz_tol_ms1,
                                                  min_ppc=params.min_ppc,
                                                  min_cluster_size=params.ms1id_min_matched_peak,
-                                                 roi_min_length=params.roi_min_length)
+                                                 roi_min_length=params.roi_min_length,
+                                                 save_dir=params.single_file_dir)
         del ppc_matrix
 
         print(f"Performing MS1 ID annotation for {file_name}...")
