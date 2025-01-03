@@ -47,8 +47,8 @@ def parse_arguments():
                         help='MS1 tolerance (default: 0.01)')
     parser.add_argument('--ms2_tol', type=float, default=0.02,
                         help='MS2 tolerance (default: 0.02)')
-    parser.add_argument('--mass_detect_int_tol', type=float, default=3e5,
-                        help='Mass detection intensity tolerance (default: 3e5)')
+    parser.add_argument('--mass_detect_int_tol', type=float, default=None,
+                        help='Mass detection intensity tolerance (default: None, 1e5 for Orbitraps, 5e2 for Q-TOFs)')
 
     # Alignment parameters
     parser.add_argument('--align_mz_tol', type=float, default=0.01,
