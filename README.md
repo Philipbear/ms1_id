@@ -1,4 +1,4 @@
-# ms1_id: Structure annotation of full-scan MS data
+# ms1_id
 [![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-orange?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
@@ -7,10 +7,10 @@ Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, inc
 Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
 
 `ms1_id` is a Python package that annotates full-scan MS data using tandem MS libraries, specifically:
-- annotate LC-MS data: mzML or mzXML files
-- annotate MS imaging data: imzML and ibd files
-- annotate pseudo-MS/MS spectra: mgf files
-- build indexed MS/MS libraries from mgf or msp files (see [Flash entropy](https://github.com/YuanyueLi/FlashEntropySearch) for more details)
+- annotate LC-MS data: **mzML** or **mzXML** files
+- annotate MS imaging data: **imzML** and **ibd** files
+- annotate pseudo-MS/MS spectra: **mgf** files
+- build indexed MS/MS libraries from **mgf** or **msp** files (see [Flash entropy](https://github.com/YuanyueLi/FlashEntropySearch) for more details)
 
 ## MS1 annotation
 #### Workflow
@@ -29,31 +29,65 @@ Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (U
 
 ## Example usage
 
-- Run `ms1id_lcms.py` for LC-MS data, and `ms1id_msi.py` for MS imaging data.
-  - An example command for LC-MS data (mzML or mzXML files in `lc_ms/data` folder):
-    ```bash
-    python ms1id_lcms.py --project_dir lc_ms --sample_dir data --ms1_id --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl
-    ```
-  - An example command for MS imaging data (imzML and ibd files in `msi` folder):
-    ```bash
-    python ms1id_msi.py --project_dir msi --libs data/gnps.pkl data/gnps_k10.pkl
-    ```
-  - For more options, run `python ms1id_lcms.py --help` or `python ms1id_msi.py --help`.
+### Annotate pseudo MS/MS spectra
+If you have pseudo MS/MS spectra in **mgf** format, you can directly annotate them:
+  ```bash
+  ms1_id annotate --input_file pseudo_msms.mgf --libs data/gnps.pkl data/gnps_k10.pkl --min_score 0.7 --min_matched_peak 3
+  ```
+  For more options, run:
+  ```bash
+  ms1_id annotate --help
+  ```
+
+### Annotate LC-MS data
+To annotate LC-MS data, here is an example command:
+  ```bash
+  ms1_id lcms --project_dir lc_ms --sample_dir data --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl --ms2_id_libs data/gnps.pkl
+  ```
+Here, `lc_ms` is the project directory. Raw mzML or mzXML files are stored in the `lc_ms/data` folder, and both MS1 and MS/MS annotations will be performed.
+
+For more options, run:
+  ```bash
+  ms1_id lcms --help
+  ```
+
+Expected runtime is <1 min for a single LC-MS file.
+
+### Annotate MS imaging data
+To annotate MS imaging data, here is an example command:
+  ```bash
+  ms1_id msi --project_dir msi --libs data/gnps.pkl data/gnps_k10.pkl --n_cores 12
+  ```
+Here, `msi` is the project directory. Raw imzML and ibd files are stored in the `msi` folder, and 12 cores will be used for parallel processing.
+
+For more options, run:
+  ```bash
+  ms1_id msi --help
+  ```
+
 - Output files will be in the project directory. MS1 annotations can be accessed from:
   - LC-MS data: `aligned_feature_table.tsv`
   - MS imaging data: `ms1_id_annotations_derep.tsv`
 
-Expected runtime is <1 min for a single LC-MS file and <5 min for a single MS imaging dataset.
+Expected runtime <5 min for a single MS imaging dataset.
 
-Note: Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
-To build your own indexed library, run `index_library.py`.
 
+### Build indexed MS/MS libraries
+Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
+
+To build your own indexed library, run:
+  ```bash
+  ms1_id index --ms2db library.msp --peak_scale_k 10 --peak_intensity_power 0.5
+  ```
+
+For more options, run:
+  ```bash
+  ms1_id index --help
+  ```
 
 
 ## Citation
-
 > Shipei Xing, Vincent Charron-Lamoureux, Yasin El Abiead, Huaxu Yu, Oliver Fiehn, Theodore Alexandrov, Pieter C. Dorrestein. Annotating full-scan MS data using tandem MS libraries. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618269v1).
-
 
 
 ## Data

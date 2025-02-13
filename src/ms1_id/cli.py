@@ -42,7 +42,7 @@ def annotate_spectra(args):
     print(f"Annotating spectra from: {args.input_file}")
     print(f"Using libraries: {args.libs}")
     print(f"m/z tolerance: {args.mz_tol}")
-    print(f"Score cutoff: {args.score_cutoff}")
+    print(f"Score cutoff: {args.min_score}")
     print(f"Minimum matched peak: {args.min_matched_peak}")
     print(f"Minimum spectral usage: {args.min_spec_usage}")
     if args.output_folder is None:
@@ -54,7 +54,7 @@ def annotate_spectra(args):
         ms2_file_path=args.input_file,
         library_ls=lib_ls,
         mz_tol=args.mz_tol,
-        score_cutoff=args.score_cutoff,
+        score_cutoff=args.min_score,
         min_matched_peak=args.min_matched_peak,
         min_spec_usage=args.min_spec_usage,
         save_dir=args.output_folder
@@ -71,19 +71,21 @@ def run_lcms(args):
     ms1_libs = _verify_paths(args.ms1_id_libs)
     ms2_libs = _verify_paths(args.ms2_id_libs)
 
-    # If no libraries are provided, set corresponding ID flags to False
-    if not ms1_libs:
-        args.ms1_id = False
-    if not ms2_libs:
-        args.ms2_id = False
-
     print(f"Running LC-MS data analysis in project directory: {args.project_dir}")
     print(f"Sample directory: {args.sample_dir}")
-    print(f"Using MS1 ID libraries: {ms1_libs}")
-    print(f"Using MS2 ID libraries: {ms2_libs}")
+
+    if ms1_libs:
+        print("MS1 ID enabled")
+        print(f"Using MS1 ID libraries: {ms1_libs}")
+    else:
+        print("MS1 ID disabled, as no MS1 ID libraries are provided")
+    if ms2_libs:
+        print("MS2 ID enabled")
+        print(f"Using MS2 ID libraries: {ms2_libs}")
+    else:
+        print("MS2 ID disabled, as no MS2 ID libraries are provided")
+
     print(f"Parallel processing: {args.parallel}")
-    print(f"MS1 ID enabled: {args.ms1_id}")
-    print(f"MS2 ID enabled: {args.ms2_id}")
     print(f"CPU ratio: {args.cpu_ratio}")
 
     # Run the analysis
@@ -93,8 +95,8 @@ def run_lcms(args):
         ms2id_library_path=ms2_libs,
         sample_dir=args.sample_dir,
         parallel=args.parallel,
-        ms1_id=args.ms1_id,
-        ms2_id=args.ms2_id,
+        ms1_id=True if args.ms1_libs else False,
+        ms2_id=True if args.ms2_libs else False,
         cpu_ratio=args.cpu_ratio,
         run_rt_correction=args.run_rt_correction,
         run_normalization=args.run_normalization,
@@ -128,13 +130,13 @@ def run_msi(args):
 
     print(f"Running MS imaging data analysis in project directory: {args.project_dir}")
     print(f"Using libraries: {library_paths}")
-    print(f"Number of processes: {args.n_processes}")
+    print(f"Number of cores used: {args.n_cores}")
 
     # Run the analysis
     ms1id_msi(
         file_dir=args.project_dir,
         library_path=library_paths,
-        n_processes=args.n_processes,
+        n_processes=args.n_cores,
         mass_detect_int_tol=args.mass_detect_int_tol,
         noise_detection=args.noise_detection,
         sn_factor=args.sn_factor,
@@ -148,6 +150,7 @@ def run_msi(args):
         ms1id_min_matched_peak=args.ms1id_min_matched_peak,
         ms1id_min_spec_usage=args.ms1id_min_spec_usage
     )
+
 
 def _verify_paths(paths):
     """Verify that all paths exist"""
@@ -163,6 +166,7 @@ def main():
     parser = argparse.ArgumentParser(description='Annotate LC-MS1 data, MS imaging data or pseudo MS/MS spectra using reference MS/MS libraries')
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
+    ####################
     # Subcommand for indexing library
     index_parser = subparsers.add_parser('index', help='Index MS/MS library from MGF or MSP file')
     index_parser.add_argument('--ms2db', type=str, required=True,
@@ -170,10 +174,11 @@ def main():
     # index_parser.add_argument('--mz_tol', type=float, default=0.05,
     #                     help='m/z tolerance for peak matching (default: 0.05)')
     index_parser.add_argument('--peak_scale_k', type=float, default=None,
-                        help='Peak scale factor. Set to None for no scaling (default: None)')
+                        help='Peak scaling factor. Set to None for no scaling (default: None)')
     index_parser.add_argument('--peak_intensity_power', type=float, default=0.5,
                         help='Peak intensity power. Use 0.5 for square root transformation (default: 0.5)')
 
+    ####################
     # Subcommand for annotation
     annotate_parser = subparsers.add_parser('annotate', help='Annotate pseudo MS/MS spectra in MGF format')
     annotate_parser.add_argument('--input_file', '-i', type=str, required=True,
@@ -184,33 +189,40 @@ def main():
                         help='Output folder for annotated results')
     annotate_parser.add_argument('--mz_tol', type=float, default=0.05,
                         help='m/z tolerance for peak matching (default: 0.05)')
-    annotate_parser.add_argument('--score_cutoff', type=float, default=0.7,
+    annotate_parser.add_argument('--min_score', type=float, default=0.7,
                         help='Minimum score for matching (default: 0.7)')
     annotate_parser.add_argument('--min_matched_peak', type=int, default=3,
                         help='Minimum number of matched peaks (default: 3)')
     annotate_parser.add_argument('--min_spec_usage', type=float, default=0.20,
                         help='Minimum spectral usage (default: 0.20)')
 
+    ####################
     # Subcommand for LC-MS data
     lcms_parser = subparsers.add_parser('lcms', help='Annotate LC-MS spectra in mzML or mzXML format')
     lcms_parser.add_argument('--project_dir', type=str, required=True,
                              help='Path to the project directory')
+    lcms_parser.add_argument('--sample_dir', type=str, default='data',
+                             help='Directory containing mzML or mzXML files (default: data)')
     lcms_parser.add_argument('--ms1_id_libs', type=str, nargs='*', default=None,
                         help='Optional: One or more paths to MS1 ID library files (.pkl). Paths with spaces should be quoted.')
     lcms_parser.add_argument('--ms2_id_libs', type=str, nargs='*', default=None,
                         help='Optional: One or more paths to MS2 ID library files (.pkl). Paths with spaces should be quoted.')
-    lcms_parser.add_argument('--sample_dir', type=str, default='data',
-                        help='Directory containing mzML or mzXML files (default: data)')
+
     lcms_parser.add_argument('--parallel', '-p', action='store_true', default=True,
-                        help='Run in parallel mode (default: True)')
-    lcms_parser.add_argument('--ms1_id', action='store_true', default=True,
-                        help='Perform MS1-based identification (default: True)')
-    lcms_parser.add_argument('--ms2_id', action='store_true', default=False,
-                        help='Perform MS2-based identification (default: False)')
+                             help='Run in parallel mode (default: True)')
+    lcms_parser.add_argument('--no-parallel', action='store_false', dest='parallel',
+                             help='Disable parallel mode')
+
     lcms_parser.add_argument('--run_rt_correction', action='store_true', default=True,
-                        help='Run retention time correction (default: True)')
+                             help='Run retention time correction (default: True)')
+    lcms_parser.add_argument('--no-run_rt_correction', action='store_false', dest='run_rt_correction',
+                             help='Skip retention time correction')
+
     lcms_parser.add_argument('--run_normalization', action='store_true', default=True,
-                        help='Run normalization (default: True)')
+                             help='Run normalization (default: True)')
+    lcms_parser.add_argument('--no-run_normalization', action='store_false', dest='run_normalization',
+                             help='Skip normalization')
+
     lcms_parser.add_argument('--cpu_ratio', type=float, default=0.9,
                         help='CPU usage ratio (default: 0.9)')
     lcms_parser.add_argument('--ms1_tol', type=float, default=0.01,
@@ -246,14 +258,15 @@ def main():
     lcms_parser.add_argument('--ms2id_min_matched_peak', type=int, default=3,
                         help='MS2 ID minimum matched peaks (default: 3)')
 
+    ####################
     # Subcommand for MSI data
     msi_parser = subparsers.add_parser('msi', help='Annotate MS imaging data in imzML & ibd format')
     msi_parser.add_argument('--project_dir', type=str, required=True,
                         help='Project directory containing imzML & ibd files')
     msi_parser.add_argument('--libs', '-l', type=str, nargs='*', default=None,
                         help='One or more paths to library files (.pkl). Paths with spaces should be quoted.')
-    msi_parser.add_argument('--n_processes', type=int, default=None,
-                        help='Number of processes to use (default: None, use all available cores)')
+    msi_parser.add_argument('--n_cores', type=int, default=None,
+                        help='Number of cores to use (default: None, use all available cores)')
     msi_parser.add_argument('--mass_detect_int_tol', type=float, default=None,
                         help='Mass detection intensity tolerance (default: None, automatically determined)')
     msi_parser.add_argument('--centroided', action='store_true', default=False,
