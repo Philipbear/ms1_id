@@ -24,7 +24,7 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 ```bash
 pip install ms1_id
 ```
-Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (Ubuntu 20.04). Typical installation time is <2 min.
+Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (Ubuntu 20.04).
 
 
 ## Example usage
@@ -44,13 +44,12 @@ To annotate LC-MS data, here is an example command:
   ```bash
   ms1_id lcms --project_dir lc_ms --sample_dir data --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl --ms2_id_libs data/gnps.pkl
   ```
-Here, `lc_ms` is the project directory. Raw mzML or mzXML files are stored in the `lc_ms/data` folder, and both MS1 and MS/MS annotations will be performed.
+Here, `lc_ms` is the project directory. Raw mzML or mzXML files are stored in the `lc_ms/data` folder. Both MS1 and MS/MS annotations will be performed, and the results can be accessed from `aligned_feature_table.tsv`.
 
 For more options, run:
   ```bash
   ms1_id lcms --help
   ```
-
 Expected runtime is <1 min for a single LC-MS file.
 
 ### Annotate MS imaging data
@@ -58,17 +57,12 @@ To annotate MS imaging data, here is an example command:
   ```bash
   ms1_id msi --project_dir msi --libs data/gnps.pkl data/gnps_k10.pkl --n_cores 12
   ```
-Here, `msi` is the project directory. Raw imzML and ibd files are stored in the `msi` folder, and 12 cores will be used for parallel processing.
+Here, `msi` is the project directory. Raw imzML and ibd files are stored in the `msi` folder, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
 
 For more options, run:
   ```bash
   ms1_id msi --help
   ```
-
-- Output files will be in the project directory. MS1 annotations can be accessed from:
-  - LC-MS data: `aligned_feature_table.tsv`
-  - MS imaging data: `ms1_id_annotations_derep.tsv`
-
 Expected runtime <5 min for a single MS imaging dataset.
 
 
