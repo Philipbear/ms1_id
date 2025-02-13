@@ -16,6 +16,12 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "masscube==1.0.11",     # Exact version required
+    "numba>=0.60.0",
+    "pyimzML>=1.5.4",
+    "requests>=2.32.3"
+]
 
 [project.urls]
 "Homepage" = "https://github.com/Philipbear/ms1_id"

@@ -12,7 +12,6 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 - annotate pseudo-MS/MS spectra: **mgf** files
 - build indexed MS/MS libraries from **mgf** or **msp** files (see [Flash entropy](https://github.com/YuanyueLi/FlashEntropySearch) for more details)
 
-## MS1 annotation
 #### Workflow
 ![Annotation workflow](fig/workflow.png)
 
@@ -27,7 +26,13 @@ pip install ms1_id
 Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (Ubuntu 20.04).
 
 
-## Example usage
+## Usage
+
+Note: Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases).
+```bash
+wget https://github.com/Philipbear/ms1_id/releases/latest/download/indexed_gnps_libs.zip
+unzip indexed_gnps_libs.zip
+```
 
 ### Annotate pseudo MS/MS spectra
 If you have pseudo MS/MS spectra in **mgf** format, you can directly annotate them:
@@ -67,8 +72,6 @@ Expected runtime <5 min for a single MS imaging dataset.
 
 
 ### Build indexed MS/MS libraries
-Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1). 
-
 To build your own indexed library, run:
   ```bash
   ms1_id index --ms2db library.msp --peak_scale_k 10 --peak_intensity_power 0.5
@@ -87,7 +90,7 @@ For more options, run:
 ## Data
 - GNPS MS/MS library
   - [ALL_GNPS_NO_PROPOGATED.msp](https://external.gnps2.org/gnpslibrary), downloaded on July 17, 2024
-  - Indexed version [available here](https://github.com/Philipbear/ms1_id/releases/tag/v0.0.1)
+  - Indexed version [available here](https://github.com/Philipbear/ms1_id/releases)
 - LC-MS data
   - Pooled chemical standards ([GNPS/MassIVE MSV000095789](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095789))
   - NIST human feces ([GNPS/MassIVE MSV000095787](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095787))

@@ -95,8 +95,8 @@ def run_lcms(args):
         ms2id_library_path=ms2_libs,
         sample_dir=args.sample_dir,
         parallel=args.parallel,
-        ms1_id=True if args.ms1_libs else False,
-        ms2_id=True if args.ms2_libs else False,
+        ms1_id=True if ms1_libs else False,
+        ms2_id=True if ms2_libs else False,
         cpu_ratio=args.cpu_ratio,
         run_rt_correction=args.run_rt_correction,
         run_normalization=args.run_normalization,
@@ -168,19 +168,19 @@ def main():
 
     ####################
     # Subcommand for indexing library
-    index_parser = subparsers.add_parser('index', help='Index MS/MS library from MGF or MSP file')
+    index_parser = subparsers.add_parser('index', help='Index MS/MS library from a msp or mgf file')
     index_parser.add_argument('--ms2db', type=str, required=True,
-                        help='Path to MS/MS database file in MGF or MSP format')
+                        help='Path to MS/MS database file in mgf or msp format')
     # index_parser.add_argument('--mz_tol', type=float, default=0.05,
     #                     help='m/z tolerance for peak matching (default: 0.05)')
     index_parser.add_argument('--peak_scale_k', type=float, default=None,
                         help='Peak scaling factor. Set to None for no scaling (default: None)')
-    index_parser.add_argument('--peak_intensity_power', type=float, default=0.5,
-                        help='Peak intensity power. Use 0.5 for square root transformation (default: 0.5)')
+    index_parser.add_argument('--peak_intensity_power', type=float, default=1.0,
+                        help='Peak intensity power. Use 0.5 for square root transformation (default: 1.0, no transformation)')
 
     ####################
     # Subcommand for annotation
-    annotate_parser = subparsers.add_parser('annotate', help='Annotate pseudo MS/MS spectra in MGF format')
+    annotate_parser = subparsers.add_parser('annotate', help='Annotate pseudo MS/MS spectra in mgf format')
     annotate_parser.add_argument('--input_file', '-i', type=str, required=True,
                         help='Path to the MGF file containing pseudo MS/MS spectra')
     annotate_parser.add_argument('--libs', '-l', type=str, required=True, nargs='*', default=None,
@@ -210,17 +210,17 @@ def main():
 
     lcms_parser.add_argument('--parallel', '-p', action='store_true', default=True,
                              help='Run in parallel mode (default: True)')
-    lcms_parser.add_argument('--no-parallel', action='store_false', dest='parallel',
+    lcms_parser.add_argument('--no_parallel', action='store_false', dest='parallel',
                              help='Disable parallel mode')
 
     lcms_parser.add_argument('--run_rt_correction', action='store_true', default=True,
                              help='Run retention time correction (default: True)')
-    lcms_parser.add_argument('--no-run_rt_correction', action='store_false', dest='run_rt_correction',
+    lcms_parser.add_argument('--no_run_rt_correction', action='store_false', dest='run_rt_correction',
                              help='Skip retention time correction')
 
     lcms_parser.add_argument('--run_normalization', action='store_true', default=True,
                              help='Run normalization (default: True)')
-    lcms_parser.add_argument('--no-run_normalization', action='store_false', dest='run_normalization',
+    lcms_parser.add_argument('--no_run_normalization', action='store_false', dest='run_normalization',
                              help='Skip normalization')
 
     lcms_parser.add_argument('--cpu_ratio', type=float, default=0.9,
