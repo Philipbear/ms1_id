@@ -1,4 +1,4 @@
-# Structure annotation of full-scan MS data
+# ms1_id: Structure annotation of full-scan MS data
 [![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-orange?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
@@ -6,6 +6,11 @@
 Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in/post-source fragments. 
 Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
 
+`ms1_id` is a Python package that annotates full-scan MS data using tandem MS libraries, specifically:
+- annotate LC-MS data: mzML or mzXML files
+- annotate MS imaging data: imzML and ibd files
+- annotate pseudo-MS/MS spectra: mgf files
+- build indexed MS/MS libraries from mgf or msp files
 
 ## MS1 annotation
 #### Workflow
@@ -15,18 +20,15 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 #### Example annotations
 ![Example annotation](fig/eg_annotation.png)
 
+## Installation
+```bash
+pip install ms1_id
+```
+Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (Ubuntu 20.04). Typical installation time is <2 min.
+
 
 ## Run the workflow
-This workflow requires Python 3.9+. It has been tested on macOS (14.6, M2 Max) and Linux (Ubuntu 20.04).
 
-- Clone the GitHub repository.
-```bash
-git clone git@github.com:Philipbear/ms1_id.git
-```
-- Install the dependencies. Typical installation time is <2 min.
-```bash
-pip install -r requirements.txt
-```
 - Run `ms1id_lcms.py` for LC-MS data, and `ms1id_msi.py` for MS imaging data.
   - An example command for LC-MS data (mzML or mzXML files in `lc_ms/data` folder):
     ```bash
