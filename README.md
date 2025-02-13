@@ -10,7 +10,7 @@ Here we leverage such fragments to structurally annotate full-scan data from **L
 - annotate LC-MS data: mzML or mzXML files
 - annotate MS imaging data: imzML and ibd files
 - annotate pseudo-MS/MS spectra: mgf files
-- build indexed MS/MS libraries from mgf or msp files
+- build indexed MS/MS libraries from mgf or msp files (see [Flash entropy](https://github.com/YuanyueLi/FlashEntropySearch) for more details)
 
 ## MS1 annotation
 #### Workflow
@@ -27,7 +27,7 @@ pip install ms1_id
 Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (Ubuntu 20.04). Typical installation time is <2 min.
 
 
-## Run the workflow
+## Example usage
 
 - Run `ms1id_lcms.py` for LC-MS data, and `ms1id_msi.py` for MS imaging data.
   - An example command for LC-MS data (mzML or mzXML files in `lc_ms/data` folder):
@@ -52,7 +52,7 @@ To build your own indexed library, run `index_library.py`.
 
 ## Citation
 
-> Shipei Xing, Vincent Charron-Lamoureux, Yasin El Abiead, Pieter C. Dorrestein. Annotating full-scan MS data using tandem MS libraries. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618269v1).
+> Shipei Xing, Vincent Charron-Lamoureux, Yasin El Abiead, Huaxu Yu, Oliver Fiehn, Theodore Alexandrov, Pieter C. Dorrestein. Annotating full-scan MS data using tandem MS libraries. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618269v1).
 
 
 

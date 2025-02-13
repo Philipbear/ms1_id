@@ -8,6 +8,7 @@ import pickle
 import numpy as np
 import pandas as pd
 from ms_entropy import read_one_spectrum
+from tqdm import tqdm
 
 from ms1_id.lcms.centroid_data import centroid_spectrum_for_search
 
@@ -16,7 +17,8 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
                              mz_tol=0.05,
                              score_cutoff=0.7,
                              min_matched_peak=3,
-                             min_spec_usage=0.0):
+                             min_spec_usage=0.20,
+                             save_dir=None):
     """
     Annotate pseudo MS/MS spectra in MGF format using indexed MS/MS libraries.
 
@@ -26,7 +28,8 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
     :param min_spec_usage: minimum spectral usage
-    :return: List of matching results
+    :param save_dir: path to save the annotated results
+    :return: DataFrame containing the annotation results
     """
     mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
 
@@ -41,9 +44,10 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
         with open(library, 'rb') as file:
             search_eng = pickle.load(file)
         db_name = os.path.basename(library)
+        print(f'Loaded {db_name}')
 
         spec_idx = 0
-        for spec in read_one_spectrum(ms2_file_path):
+        for spec in tqdm(read_one_spectrum(ms2_file_path)):
 
             spec_idx += 1
 
@@ -90,7 +94,7 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
 
                 # precursor should be in the pseudo MS2 spectrum
                 precursor_mz = matched.get('precursor_mz', 0)
-                if not any(np.isclose(np.array(spec.mzs), precursor_mz, atol=mz_tol)):
+                if not any(np.isclose(peaks[:, 0], precursor_mz, atol=mz_tol)):
                     continue
 
                 all_matches.append({
@@ -110,12 +114,28 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
                     'ref_db_name': db_name
                 })
 
-    return pd.DataFrame(all_matches)
+    df = pd.DataFrame(all_matches)
+
+    # sort by id, then score
+    df_top1 = df.sort_values(by=['id', 'score'], ascending=[True, False]).reset_index(drop=True)
+    df_top1 = df_top1.groupby('id').head(1)
+
+    out_basename = os.path.splitext(os.path.basename(ms2_file_path))[0] + '_annotations_all.tsv'
+    out_top1_basename = os.path.splitext(os.path.basename(ms2_file_path))[0] + '_annotations_top1.tsv'
+    if save_dir is not None:
+        out_dir = save_dir
+    else:
+        # folder of the input file
+        out_dir = os.path.dirname(ms2_file_path)
+
+    df.to_csv(os.path.join(out_dir, out_basename), sep='\t', index=False)
+    df_top1.to_csv(os.path.join(out_dir, out_top1_basename), sep='\t', index=False)
+
+    return
 
 
 if __name__ == "__main__":
-    df = annotate_pseudo_ms2_spec(
-        '/Users/shipei/Documents/projects/ms1_id/demo/lc_ms/single_files/NIST_pool_1_20eV_pseudo_ms2.mgf',
+    annotate_pseudo_ms2_spec(
+        '/demo/lc_ms/single_files/NIST_pool_1_20eV_pseudo_ms2.mgf',
         ['/Users/shipei/Documents/projects/ms1_id/data/gnps.pkl',
          '/Users/shipei/Documents/projects/ms1_id/data/gnps_k10.pkl'])
-    print(df)
