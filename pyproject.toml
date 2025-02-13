@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ms1_id"
+version = "0.1.0"
+authors = [
+    { name="Shipei Xing", email="philipxsp@hotmail.com" },
+]
+description = "Annotate LC-MS1 data, MS imaging data or pseudo MS/MS spectra using reference MS/MS libraries"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Philipbear/ms1_id"
+"Bug Tracker" = "https://github.com/Philipbear/ms1_id/issues"
+
+[project.scripts]
+ms1_id = "ms1_id.cli:main"

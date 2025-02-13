@@ -3,9 +3,9 @@ import pickle
 import numpy as np
 from ms_entropy import read_one_spectrum
 
-from ._utils import SpecAnnotation
-from .flash_cos import FlashCos
-from ._centroid_data import centroid_spectrum_for_search
+from ms1_id.lcms.utils import SpecAnnotation
+from ms1_id.search_utils.flash_cos import FlashCos
+from ms1_id.lcms.centroid_data import centroid_spectrum_for_search
 
 
 def prepare_ms2_lib(ms2db,
@@ -56,12 +56,12 @@ def prepare_ms2_lib(ms2db,
 
     print('Number of spectra in the database:', len(db))
 
-    print('initializing search engine')
+    print('Initializing search engine')
     search_engine = FlashCos(max_ms2_tolerance_in_da=mz_tol * 1.005,
                              mz_index_step=0.0001,
                              peak_scale_k=peak_scale_k,
                              peak_intensity_power=peak_intensity_power)
-    print('building index')
+    print('Building index')
     search_engine.build_index(db,
                               max_indexed_mz=2000,
                               precursor_ions_removal_da=0.5,
@@ -267,11 +267,13 @@ def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
 
 if __name__ == "__main__":
     ######### prepare the search engine #########
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=None, peak_intensity_power=0.5)
-    prepare_ms2_lib(ms2db='../../data/gnps.msp', mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/gnps.msp',
+                    mz_tol=0.05, peak_scale_k=None, peak_intensity_power=0.5)
+    prepare_ms2_lib(ms2db='/Users/shipei/Documents/projects/ms1_id/data/gnps.msp',
+                    mz_tol=0.05, peak_scale_k=10, peak_intensity_power=0.5)
 
     ######### load the search engine #########
-    # with open('../../data/gnps.pkl', 'rb') as file:
+    # with open('/Users/shipei/Documents/projects/ms1_id/data/gnps.pkl', 'rb') as file:
     #     search_eng = pickle.load(file)
     #
     # print(search_eng)

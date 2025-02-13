@@ -6,8 +6,8 @@ import numpy as np
 from scipy.sparse import csr_matrix
 from tqdm import tqdm
 
-from ._utils_imaging import PseudoMS2
-from ._export_msi import write_pseudoms2_to_mgf
+from ms1_id.msi.utils_imaging import PseudoMS2
+from ms1_id.msi.export_msi import write_pseudoms2_to_mgf
 
 
 def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,

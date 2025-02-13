@@ -6,9 +6,9 @@ from typing import List
 import numpy as np
 from tqdm import tqdm
 
-from ._centroid_data import centroid_spectrum_for_search
-from ._utils_imaging import SpecAnnotation
-from .flash_cos import FlashCos
+from ms1_id.msi.centroid_data import centroid_spectrum_for_search
+from ms1_id.msi.utils_imaging import SpecAnnotation
+from ms1_id.search_utils.flash_cos import FlashCos
 
 
 def validate_library_path(library_path):

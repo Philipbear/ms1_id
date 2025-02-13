@@ -13,13 +13,13 @@ from masscube.normalization import sample_normalization
 from masscube.params import Params
 from masscube.raw_data_utils import MSData
 
-from ._annotate_adduct import annotate_adduct
-from ._annotate_ms2 import feature_annotation
-from ._calculate_ppc import calc_all_ppc
-from ._export import write_feature_table
-from ._group_ppc import generate_pseudo_ms2, retrieve_pseudo_ms2_spectra
-from ._reverse_matching import ms1_id_annotation
-from ._utils import find_ms_info
+from ms1_id.lcms.annotate_adduct import annotate_adduct
+from ms1_id.lcms.annotate_ms2 import feature_annotation
+from ms1_id.lcms.calculate_ppc import calc_all_ppc
+from ms1_id.lcms.export import write_feature_table
+from ms1_id.lcms.group_ppc import generate_pseudo_ms2, retrieve_pseudo_ms2_spectra
+from ms1_id.lcms.reverse_matching import ms1_id_annotation
+from ms1_id.lcms.utils import find_ms_info
 
 # default parameters
 orbitrap_mass_detect_int_tol = 10000

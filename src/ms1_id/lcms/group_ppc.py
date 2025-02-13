@@ -5,8 +5,8 @@ import os
 import pickle
 import numpy as np
 
-from ._utils import PseudoMS2
-from ._export import write_pseudoms2_to_mgf
+from ms1_id.lcms.utils import PseudoMS2
+from ms1_id.lcms.export import write_pseudoms2_to_mgf
 
 
 def retrieve_pseudo_ms2_spectra(config):

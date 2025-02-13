@@ -1,6 +1,5 @@
 # Description: This file contains classes that are used in the main pipeline.
 import numpy as np
-import os
 
 
 class Spectrum:

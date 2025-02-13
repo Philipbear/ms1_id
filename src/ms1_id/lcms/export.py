@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import numpy as np
-from ._utils import AlignedMS1Annotation, AnnotatedPseudoMS2
-from ._centroid_data import consensus_spectrum
+from ms1_id.lcms.utils import AlignedMS1Annotation, AnnotatedPseudoMS2
+from ms1_id.lcms.centroid_data import consensus_spectrum
 
 
 # def write_ms1_id_results(ms1_spec_ls, out_dir=None):
@@ -328,12 +328,21 @@ def write_pseudoms2_to_mgf(pseudoms2_ls, save_dir, file_name):
         idx = 1
         for spec in pseudoms2_ls:
             f.write(f"BEGIN IONS\n")
-            f.write(f"PEPMASS={round(spec.t_mz, 5)}\n")
+            # f.write(f"PEPMASS={round(spec.t_mz, 5)}\n")
+            f.write("PEPMASS=0")
             f.write(f"SCANS={idx}\n")
             f.write(f"RTINSECONDS={spec.rt * 60}\n")
 
-            for i in range(len(spec.mzs)):
-                f.write(f"{spec.mzs[i]:.5f} {spec.intensities[i]:.0f}\n")
+            mz_arr = np.array(spec.mzs)
+            intensity_arr = np.array(spec.intensities)
+
+            # sort by mz
+            sort_idx = np.argsort(mz_arr)
+            mz_arr = mz_arr[sort_idx]
+            intensity_arr = intensity_arr[sort_idx]
+
+            for i in range(len(mz_arr)):
+                f.write(f"{mz_arr[i]:.5f} {intensity_arr[i]:.0f}\n")
 
             f.write(f"END IONS\n\n")
             idx += 1

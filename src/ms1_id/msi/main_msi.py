@@ -1,6 +1,6 @@
 import os
 
-from .ms1id_msi_workflow import ms1id_imaging_workflow
+from ms1_id.msi.ms1id_msi_workflow import ms1id_imaging_workflow
 
 
 def ms1id_single_file_batch(file_dir, library_path, n_processes=None,
