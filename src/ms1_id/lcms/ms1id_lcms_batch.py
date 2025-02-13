@@ -22,7 +22,7 @@ from ms1_id.lcms.reverse_matching import ms1_id_annotation
 from ms1_id.lcms.utils import find_ms_info
 
 # default parameters
-orbitrap_mass_detect_int_tol = 10000
+orbitrap_mass_detect_int_tol = 20000
 tof_mass_detect_int_tol = 500
 
 
@@ -207,7 +207,7 @@ def init_config(path=None,
         elif ms_type == "tof":
             config.int_tol = tof_mass_detect_int_tol
         else:
-            config.int_tol = 10000
+            config.int_tol = 20000
 
     ##########################
     # The project

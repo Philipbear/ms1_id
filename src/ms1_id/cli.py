@@ -230,7 +230,7 @@ def main():
     lcms_parser.add_argument('--ms2_tol', type=float, default=0.02,
                         help='MS2 tolerance (default: 0.02)')
     lcms_parser.add_argument('--mass_detect_int_tol', type=float, default=None,
-                        help='Mass detection intensity tolerance (default: None, 1e5 for Orbitraps, 5e2 for Q-TOFs)')
+                        help='Mass detection intensity tolerance (default: None, 2e5 for Orbitraps, 5e2 for Q-TOFs, 2e5 for others)')
     lcms_parser.add_argument('--align_mz_tol', type=float, default=0.01,
                         help='Feature alignment m/z tolerance (default: 0.01)')
     lcms_parser.add_argument('--align_rt_tol', type=float, default=0.2,
