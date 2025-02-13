@@ -39,7 +39,9 @@ If you have pseudo MS/MS spectra in **mgf** format, you can directly annotate th
   ```bash
   ms1_id annotate --input_file pseudo_msms.mgf --libs data/gnps.pkl data/gnps_k10.pkl --min_score 0.7 --min_matched_peak 3
   ```
-  For more options, run:
+Here, two indexed libraries are searched against, and the result tsv files will be saved in the same directory as the input file.
+
+For more options, run:
   ```bash
   ms1_id annotate --help
   ```
