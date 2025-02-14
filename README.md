@@ -34,6 +34,8 @@ wget https://github.com/Philipbear/ms1_id/releases/latest/download/indexed_gnps_
 unzip indexed_gnps_libs.zip
 ```
 
+---------
+
 ### Annotate pseudo MS/MS spectra
 If you have pseudo MS/MS spectra in **mgf** format, you can directly annotate them:
   ```bash
@@ -45,6 +47,8 @@ For more options, run:
   ```bash
   ms1_id annotate --help
   ```
+
+---------
 
 ### Annotate LC-MS data
 To annotate LC-MS data, here is an example command:
@@ -59,6 +63,8 @@ For more options, run:
   ```
 Expected runtime is <3 min for a single LC-MS file. If it takes longer than 10 min, please increase the `--mass_detect_int_tol` parameter (default: 2e5 for Orbitraps, 5e2 for QTOFs).
 
+---------
+
 ### Annotate MS imaging data
 To annotate MS imaging data, here is an example command:
   ```bash
@@ -72,6 +78,7 @@ For more options, run:
   ```
 Expected runtime <5 min for a single MS imaging dataset.
 
+---------
 
 ### Build indexed MS/MS libraries
 To build your own indexed library, run:
