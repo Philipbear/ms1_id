@@ -57,7 +57,7 @@ For more options, run:
   ```bash
   ms1_id lcms --help
   ```
-Expected runtime is <5 min for a single LC-MS file. If it takes longer than 10 min, please increase the `--mass_detect_int_tol` parameter (default: 2e5 for Orbitraps, 5e2 for QTOFs).
+Expected runtime is <3 min for a single LC-MS file. If it takes longer than 10 min, please increase the `--mass_detect_int_tol` parameter (default: 2e5 for Orbitraps, 5e2 for QTOFs).
 
 ### Annotate MS imaging data
 To annotate MS imaging data, here is an example command:
