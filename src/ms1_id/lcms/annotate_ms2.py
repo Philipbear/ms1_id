@@ -23,7 +23,7 @@ def feature_annotation(features, config, num=5):
     # load the MS/MS database
     search_eng = pickle.load(open(config.ms2id_library_path, 'rb'))
 
-    library_search_mztol = max(config.library_search_mztol, 0.05)  # indexed library mz_tol is 0.05
+    library_search_mztol = min(config.library_search_mztol, 0.05)  # indexed library mz_tol is 0.05
 
     for f in features:
         if len(f.ms2_seq) == 0:

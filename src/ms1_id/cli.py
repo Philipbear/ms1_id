@@ -69,7 +69,6 @@ def run_lcms(args):
 
     # Verify library paths
     ms1_libs = _verify_paths(args.ms1_id_libs)
-    ms2_libs = _verify_paths(args.ms2_id_libs)
 
     print(f"Running LC-MS data analysis in project directory: {args.project_dir}")
     print(f"Sample directory: {args.sample_dir}")
@@ -79,9 +78,10 @@ def run_lcms(args):
         print(f"Using MS1 ID libraries: {ms1_libs}")
     else:
         print("MS1 ID disabled, as no MS1 ID libraries are provided")
-    if ms2_libs:
+
+    if args.ms2_id_lib:
         print("MS2 ID enabled")
-        print(f"Using MS2 ID libraries: {ms2_libs}")
+        print(f"Using MS2 ID libraries: {args.ms2_id_lib}")
     else:
         print("MS2 ID disabled, as no MS2 ID libraries are provided")
 
@@ -92,11 +92,11 @@ def run_lcms(args):
     ms1id_lcms(
         project_path=args.project_dir,
         ms1id_library_path=ms1_libs,
-        ms2id_library_path=ms2_libs,
+        ms2id_library_path=args.ms2_id_lib,
         sample_dir=args.sample_dir,
         parallel=args.parallel,
         ms1_id=True if ms1_libs else False,
-        ms2_id=True if ms2_libs else False,
+        ms2_id=True if args.ms2_id_lib else False,
         cpu_ratio=args.cpu_ratio,
         run_rt_correction=args.run_rt_correction,
         run_normalization=args.run_normalization,
@@ -205,8 +205,8 @@ def main():
                              help='Directory containing mzML or mzXML files (default: data)')
     lcms_parser.add_argument('--ms1_id_libs', type=str, nargs='*', default=None,
                         help='Optional: One or more paths to MS1 ID library files (.pkl). Paths with spaces should be quoted.')
-    lcms_parser.add_argument('--ms2_id_libs', type=str, nargs='*', default=None,
-                        help='Optional: One or more paths to MS2 ID library files (.pkl). Paths with spaces should be quoted.')
+    lcms_parser.add_argument('--ms2_id_lib', type=str, default=None,
+                        help='Optional: Path to MS2 ID library file (.pkl).')
 
     lcms_parser.add_argument('--parallel', '-p', action='store_true', default=True,
                              help='Run in parallel mode (default: True)')
