@@ -1,5 +1,6 @@
 # ms1_id
 [![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-orange?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
+[![PyPI](https://img.shields.io/pypi/v/msbuddy?color=green)](https://pypi.org/project/msbuddy/)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
 
