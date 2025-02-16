@@ -54,7 +54,7 @@ For more options, run:
 ### Annotate LC-MS data
 To annotate LC-MS data, here is an example command:
   ```bash
-  ms1_id lcms --project_dir lc_ms --sample_dir data --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl --ms2_id_libs data/gnps.pkl
+  ms1_id lcms --project_dir lc_ms --sample_dir data --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl --ms2_id_lib data/gnps.pkl
   ```
 Here, `lc_ms` is the project directory. Raw mzML or mzXML files are stored in the `lc_ms/data` folder. Both MS1 and MS/MS annotations will be performed, and the results can be accessed from `aligned_feature_table.tsv`.
 
