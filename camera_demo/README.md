@@ -11,6 +11,8 @@ Users are encouraged to use their own tools to generate pseudo MS/MS spectra.
 ## Relevant publications
 
 CAMERA: https://pubs.acs.org/doi/10.1021/ac202450g
+
 CliqueMS: https://doi.org/10.1093/bioinformatics/btz207
+
 xMSannotator: https://pubs.acs.org/doi/10.1021/acs.analchem.6b01214
 
