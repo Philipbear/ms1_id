@@ -67,6 +67,9 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
             peaks = np.asarray(spec['peaks'], dtype=np.float32, order="C")
             peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
 
+            if len(peaks) < min_matched_peak:
+                continue
+
             matching_result = search_eng.search(
                 precursor_mz=2000.00,  # unused, open search
                 peaks=peaks,

@@ -40,6 +40,10 @@ def feature_annotation(features, config, num=5):
 
         for peaks in parsed_ms2:
             peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
+
+            if len(peaks) < config.ms2id_min_matched_peak:
+                continue
+
             search_result = search_eng.search(
                 precursor_mz=f.mz,
                 peaks=peaks,
@@ -124,6 +128,9 @@ def annotate_rois(d, ms2id_score_cutoff=0.8, ms2id_min_matched_peak=6, ion_mode=
 
             # centroid
             peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
+
+            if len(peaks) < ms2id_min_matched_peak:
+                continue
 
             search_result = search_eng.search(
                 precursor_mz=f.mz,

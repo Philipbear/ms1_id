@@ -163,6 +163,10 @@ def _process_chunk_multi_lib(args):
 
     for spec in chunk:
         for search_eng, db_name in search_engines:
+
+            if len(spec.centroided_peaks) < min_matched_peak:
+                continue
+
             # open search
             matching_result = search_eng.search(
                 precursor_mz=2000.00,  # unused, open search
