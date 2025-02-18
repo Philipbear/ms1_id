@@ -15,6 +15,7 @@ from ms1_id.lcms.centroid_data import centroid_spectrum_for_search
 
 def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
                              mz_tol=0.05,
+                             ion_mode=None,
                              score_cutoff=0.7,
                              min_matched_peak=3,
                              min_spec_usage=0.20,
@@ -23,8 +24,9 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
     Annotate pseudo MS/MS spectra in MGF format using indexed MS/MS libraries.
 
     :param ms2_file_path: path to the MGF file containing pseudo MS2 spectra
-    :param library: path to the pickle file, indexed library
+    :param library_ls: list of paths to indexed MS/MS libraries
     :param mz_tol: m/z tolerance in Da, for open matching
+    :param ion_mode: ion mode, 'positive' or 'negative' or None
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
     :param min_spec_usage: minimum spectral usage
@@ -94,6 +96,10 @@ def annotate_pseudo_ms2_spec(ms2_file_path, library_ls,
 
             for idx in v:
                 matched = {k.lower(): v for k, v in search_eng[idx].items()}
+
+                this_ion_mode = matched.get('ion_mode', '')
+                if ion_mode is not None and ion_mode != this_ion_mode:
+                    continue
 
                 # precursor should be in the pseudo MS2 spectrum
                 precursor_mz = matched.get('precursor_mz', 0)

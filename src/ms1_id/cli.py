@@ -42,6 +42,7 @@ def annotate_spectra(args):
     print(f"Annotating spectra from: {args.input_file}")
     print(f"Using libraries: {args.libs}")
     print(f"m/z tolerance: {args.mz_tol}")
+    print(f"Ion mode: {args.ion_mode}")
     print(f"Score cutoff: {args.min_score}")
     print(f"Minimum matched peak: {args.min_matched_peak}")
     print(f"Minimum spectral usage: {args.min_spec_usage}")
@@ -54,6 +55,7 @@ def annotate_spectra(args):
         ms2_file_path=args.input_file,
         library_ls=lib_ls,
         mz_tol=args.mz_tol,
+        ion_mode=args.ion_mode,
         score_cutoff=args.min_score,
         min_matched_peak=args.min_matched_peak,
         min_spec_usage=args.min_spec_usage,
@@ -189,6 +191,8 @@ def main():
                         help='Output folder for annotated results')
     annotate_parser.add_argument('--mz_tol', type=float, default=0.05,
                         help='m/z tolerance for peak matching (default: 0.05)')
+    annotate_parser.add_argument('--ion_mode', type=str, default=None,
+                        help='Ion mode, "positive" or "negative" (default: None)')
     annotate_parser.add_argument('--min_score', type=float, default=0.7,
                         help='Minimum score for matching (default: 0.7)')
     annotate_parser.add_argument('--min_matched_peak', type=int, default=3,
