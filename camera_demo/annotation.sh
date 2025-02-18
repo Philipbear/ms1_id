@@ -1,0 +1,1 @@
+ms1_id annotate --input_file pseudo_ms2.mgf --libs ../data/gnps.pkl ../data/gnps_k10.pkl --min_score 0.7 --min_matched_peak 3

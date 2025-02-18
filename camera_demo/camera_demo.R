@@ -9,7 +9,7 @@ library(BiocParallel)
 register(MulticoreParam(workers = 6))  # Adjust number of workers based on your CPU
 
 # Set your working directory and get file paths
-setwd("fullscan_20ev/data")
+setwd("../data/nist/fullscan_20ev/data")
 mzML_files <- list.files(pattern = "*.mzML", full.names = TRUE)
 
 # Create basic phenodata data frame without group information
