@@ -90,48 +90,8 @@ feature_table <- getPeaklist(xa)
 write.csv(annotated_peaks, "feature_table.csv", row.names = FALSE)
 
 ######################################
-# write pseudo MSMS spectra to mgf
+# write pseudo MSMS spectra
 ######################################
-write_pseudoms2_to_mgf <- function(pseudoms2_ls, save_dir) {
-  # Create the full file path
-  mgf_path <- file.path(save_dir, "pseudo_ms2.mgf")
-  
-  # Open file connection for writing
-  con <- file(mgf_path, "w")
-  
-  # Write spectra
-  idx <- 1
-  for (spec in pseudoms2_ls) {
-    # Write header information
-    writeLines("BEGIN IONS", con)
-    writeLines("PEPMASS=0", con)
-    writeLines(paste0("SCANS=", idx), con)
-    writeLines(paste0("RTINSECONDS=", spec$rt), con)
-    
-    # Convert mz and intensity arrays to vectors if they aren't already
-    mz_vec <- as.numeric(spec$mzs)
-    intensity_vec <- as.numeric(spec$intensities)
-    
-    # Sort by mz
-    sort_idx <- order(mz_vec)
-    mz_vec <- mz_vec[sort_idx]
-    intensity_vec <- intensity_vec[sort_idx]
-    
-    # Write peaks
-    for (i in seq_along(mz_vec)) {
-      writeLines(sprintf("%.5f %.0f", mz_vec[i], intensity_vec[i]), con)
-    }
-    
-    # Write end of spectrum
-    writeLines("END IONS\n", con)
-    
-    idx <- idx + 1
-  }
-  
-  # Close file connection
-  close(con)
-}
-
 # Create pseudo MS2 spectra from feature table
 create_pseudo_ms2_list <- function(feature_table, filled_intensity=2e4) {
   # Get unique pcgroups
@@ -185,6 +145,54 @@ create_pseudo_ms2_list <- function(feature_table, filled_intensity=2e4) {
   }
   
   return(pseudo_ms2_list)
+}
+
+write_pseudoms2_to_mgf <- function(pseudoms2_ls, save_dir) {
+  # Create the full file path
+  mgf_path <- file.path(save_dir, "pseudo_ms2.mgf")
+
+  # Open file connection for writing
+  con <- file(mgf_path, "w")
+
+  # Write spectra
+  idx <- 1
+  cnt <- 0
+  for (spec in pseudoms2_ls) {
+    # Write header information
+    writeLines("BEGIN IONS", con)
+    writeLines("PEPMASS=0", con)
+    writeLines(paste0("SCANS=", idx), con)
+    writeLines(paste0("RTINSECONDS=", spec$rt), con)
+
+    # Convert mz and intensity arrays to vectors if they aren't already
+    mz_vec <- as.numeric(spec$mzs)
+    intensity_vec <- as.numeric(spec$intensities)
+
+    # Sort by mz
+    sort_idx <- order(mz_vec)
+    mz_vec <- mz_vec[sort_idx]
+    intensity_vec <- intensity_vec[sort_idx]
+
+    # Write peaks
+    for (i in seq_along(mz_vec)) {
+      writeLines(sprintf("%.5f %.0f", mz_vec[i], intensity_vec[i]), con)
+    }
+
+    # Write end of spectrum
+    writeLines("END IONS\n", con)
+
+    idx <- idx + 1
+
+    if (length(mz_vec) >= 3) {
+      cnt <- cnt + 1
+    }
+  }
+
+  # Print the number of spectra written
+  message(paste0("Wrote ", cnt, " spectra with at least 3 peaks, to ", mgf_path))
+
+  # Close file connection
+  close(con)
 }
 
 # Create pseudo MS2 list
