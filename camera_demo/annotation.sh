@@ -1,1 +1,1 @@
-ms1_id annotate --input_file pseudo_ms2.mgf --ion_mode positive --libs ../data/gnps.pkl ../data/gnps_k10.pkl --min_score 0.7 --min_matched_peak 3
+ms1_id annotate --input_file pseudo_ms2.mgf --ion_mode positive --libs db/gnps.pkl db/gnps_k10.pkl --min_score 0.7 --min_matched_peak 3

@@ -92,6 +92,12 @@ For more options, run:
   ms1_id index --help
   ```
 
+## Demo
+We provide [a demo script](https://github.com/Philipbear/ms1_id/blob/main/run.sh) to prepare the environment, download libraries, download LC-MS data and run the annotation workflow. 
+```bash
+bash run.sh
+```
+
 
 ## Citation
 > Shipei Xing, Vincent Charron-Lamoureux, Yasin El Abiead, Huaxu Yu, Oliver Fiehn, Theodore Alexandrov, Pieter C. Dorrestein. Annotating full-scan MS data using tandem MS libraries. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618269v1).
