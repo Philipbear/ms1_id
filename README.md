@@ -113,7 +113,6 @@ bash run.sh
   - IBD dataset (Q Exactive) ([original paper](https://www.nature.com/articles/s41586-019-1237-9), [data](https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=PR000639))
   - Mouse feces (lipidomics, Q-TOF) ([GNPS/MassIVE MSV000095868](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095868))
   - Mouse bone tissue (lipidomics, Q Exactive) ([GNPS/MassIVE MSV000096539](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000096539))
-  - Marine heterotroph isolates (Q-TOF) ([GNPS/MassIVE MSV000090080](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090080))
   - Komagataella phaffii (yeast, Q Exactive) ([GNPS/MassIVE MSV000090053](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090053))
   - Bacterial isolates (Q Exactive) ([GNPS/MassIVE MSV000085024](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000085024))
   - Sea water DOM (Q Exactive) ([GNPS/MassIVE MSV000094338](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000094338))
