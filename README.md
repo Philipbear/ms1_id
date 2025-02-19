@@ -32,7 +32,7 @@ Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (U
 Note: Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases).
 ```bash
 wget https://github.com/Philipbear/ms1_id/releases/latest/download/indexed_gnps_libs.zip
-unzip indexed_gnps_libs.zip
+unzip indexed_gnps_libs.zip -d db
 ```
 
 ---------
@@ -40,7 +40,7 @@ unzip indexed_gnps_libs.zip
 ### Annotate pseudo MS/MS spectra
 If you have pseudo MS/MS spectra in **mgf** format, you can directly annotate them:
   ```bash
-  ms1_id annotate --input_file pseudo_msms.mgf --libs data/gnps.pkl data/gnps_k10.pkl --min_score 0.7 --min_matched_peak 3
+  ms1_id annotate --input_file pseudo_msms.mgf --libs db/gnps.pkl db/gnps_k10.pkl --min_score 0.7 --min_matched_peak 3
   ```
 Here, two indexed libraries are searched against, and the result tsv files will be saved in the same directory as the input file.
 
@@ -54,7 +54,7 @@ For more options, run:
 ### Annotate LC-MS data
 To annotate LC-MS data, here is an example command:
   ```bash
-  ms1_id lcms --project_dir lc_ms --sample_dir data --ms1_id_libs data/gnps.pkl data/gnps_k10.pkl --ms2_id_lib data/gnps.pkl
+  ms1_id lcms --project_dir lc_ms --sample_dir data --ms1_id_libs db/gnps.pkl db/gnps_k10.pkl --ms2_id_lib db/gnps.pkl
   ```
 Here, `lc_ms` is the project directory. Raw mzML or mzXML files are stored in the `lc_ms/data` folder. Both MS1 and MS/MS annotations will be performed, and the results can be accessed from `aligned_feature_table.tsv`.
 
@@ -69,7 +69,7 @@ Expected runtime is <3 min for a single LC-MS file. If it takes longer than 10 m
 ### Annotate MS imaging data
 To annotate MS imaging data, here is an example command:
   ```bash
-  ms1_id msi --project_dir msi --libs data/gnps.pkl data/gnps_k10.pkl --n_cores 12
+  ms1_id msi --project_dir msi --libs db/gnps.pkl db/gnps_k10.pkl --n_cores 12
   ```
 Here, `msi` is the project directory. Raw imzML and ibd files are stored in the `msi` folder, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
 
