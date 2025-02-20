@@ -6,13 +6,13 @@ for multiple files.
 import multiprocessing
 import os
 
-from masscube.alignment import feature_alignment, gap_filling
 from masscube.feature_grouping import annotate_isotope
 from masscube.feature_table_utils import convert_features_to_df
 from masscube.normalization import sample_normalization
 from masscube.params import Params
-# from masscube.raw_data_utils import MSData
+
 from ms1_id.lcms.masscube_raw_data_utils import MSData
+from ms1_id.lcms.masscube_alignment import feature_alignment, gap_filling
 
 from ms1_id.lcms.annotate_adduct import annotate_adduct
 from ms1_id.lcms.annotate_ms2 import feature_annotation
