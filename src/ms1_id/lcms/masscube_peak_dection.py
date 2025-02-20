@@ -43,7 +43,7 @@ def find_rois(d):
         if not s:
             continue
 
-        if not s.mz_seq:
+        if len(s.mz_seq) == 0:
             continue
 
         visited_idx = []  # A list to store the visited indices of ions in the current MS1 scan
