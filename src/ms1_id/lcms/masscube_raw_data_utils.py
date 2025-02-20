@@ -11,7 +11,7 @@ from datetime import datetime
 from time import time
 
 from masscube.params import Params
-from masscube.peak_detect import find_rois, cut_roi
+from ms1_id.lcms.masscube_peak_dection import find_rois, cut_roi
 
 
 class MSData:
@@ -118,18 +118,21 @@ class MSData:
                     mz_array = mz_array[int_array > int_tol]
                     int_array = int_array[int_array > int_tol]
 
-                    if len(mz_array) == 0:
-                        continue
-
                     if centroid:
                         mz_array, int_array = _centroid(mz_array, int_array)
 
-                    temp_scan.add_info_by_level(mz_seq=mz_array, int_seq=int_array)
                     self.ms1_idx.append(idx)
-
-                    # update base peak chromatogram
-                    self.bpc_int.append(np.max(int_array))
                     self.ms1_rt_seq.append(rt)
+
+                    if len(mz_array) == 0:
+                        # update base peak chromatogram
+                        self.bpc_int.append(0)
+                        temp_scan.add_info_by_level(mz_seq=np.array([], dtype=np.float64),
+                                                    int_seq=np.array([], dtype=np.int64))
+                    else:
+                        self.bpc_int.append(np.max(int_array))
+                        temp_scan.add_info_by_level(mz_seq=mz_array, int_seq=int_array)
+
 
                 elif spec['ms level'] == 2 and read_ms2:
                     temp_scan = Scan(level=2, scan=idx, rt=rt)
@@ -180,18 +183,20 @@ class MSData:
                     mz_array = mz_array[int_array > int_tol]
                     int_array = int_array[int_array > int_tol]
 
-                    if len(mz_array) == 0:
-                        continue
-
                     if centroid:
                         mz_array, int_array = _centroid(mz_array, int_array)
 
-                    temp_scan.add_info_by_level(mz_seq=mz_array, int_seq=int_array)
                     self.ms1_idx.append(idx)
-
-                    # update base peak chromatogram
-                    self.bpc_int.append(np.max(int_array))
                     self.ms1_rt_seq.append(rt)
+
+                    if len(mz_array) == 0:
+                        # update base peak chromatogram
+                        self.bpc_int.append(0)
+                        temp_scan.add_info_by_level(mz_seq=np.array([], dtype=np.float64),
+                                                    int_seq=np.array([], dtype=np.int64))
+                    else:
+                        self.bpc_int.append(np.max(int_array))
+                        temp_scan.add_info_by_level(mz_seq=mz_array, int_seq=int_array)
 
                 elif spec['msLevel'] == 2 and read_ms2:
                     temp_scan = Scan(level=2, scan=idx, rt=rt)
