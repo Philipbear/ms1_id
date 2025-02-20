@@ -118,7 +118,6 @@ bash run.sh
   - Sea water DOM (Q Exactive) ([GNPS/MassIVE MSV000094338](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000094338))
   - Foam DOM (Q Exactive) ([GNPS/MassIVE MSV000083888](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083888))
   - Ocean DOM (Q Exactive) ([GNPS/MassIVE MSV000083632](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083632))
-  - Euphorbia amygdaloides ssp. semiperfoliata plant extract (LTQ Orbitrap) ([GNPS/MassIVE MSV000079384](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000079384))
   - Psychotria plant extracts (Q-TOF) ([GNPS/MassIVE MSV000078931](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000078931))
   - Bidens sulphurea and Bidens gardneri plant extracts (Q-TOF) ([GNPS/MassIVE MSV000078727](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000078727))
 - MS imaging data
