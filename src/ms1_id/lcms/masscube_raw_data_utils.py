@@ -92,14 +92,14 @@ class MSData:
             An iteratable object that contains all MS1 and MS2 scans.
         """
 
-        # idx = 0  # Scan number
+        idx = 0  # Scan number
         self.ms1_idx = []  # MS1 scan index
         self.ms2_idx = []  # MS2 scan index
 
         rt_unit = spectra[0]['scanList']['scan'][0]['scan start time'].unit_info
 
         # Iterate over all scans
-        for idx, spec in enumerate(spectra):
+        for _, spec in enumerate(spectra):
             # Get the retention time and convert to minute
             try:
                 rt = spec['scanList']['scan'][0]['scan start time']
@@ -145,7 +145,7 @@ class MSData:
                     self.ms2_idx.append(idx)
 
                 self.scans.append(temp_scan)
-                # idx += 1
+                idx += 1
 
         self.ms1_rt_seq = np.array(self.ms1_rt_seq)
 
@@ -159,14 +159,14 @@ class MSData:
             An iteratable object that contains all MS1 and MS2 scans.
         """
 
-        # idx = 0  # Scan number
+        idx = 0  # Scan number
         self.ms1_idx = []  # MS1 scan index
         self.ms2_idx = []  # MS2 scan index
 
         rt_unit = spectra[0]["retentionTime"].unit_info
 
         # Iterate over all scans
-        for idx, spec in enumerate(spectra):
+        for _, spec in enumerate(spectra):
             # Get the retention time and convert to minute
             rt = spec["retentionTime"]  # retention time of mzXML is in minute
 
@@ -208,7 +208,7 @@ class MSData:
                     self.ms2_idx.append(idx)
 
                 self.scans.append(temp_scan)
-                # idx += 1
+                idx += 1
 
         self.ms1_rt_seq = np.array(self.ms1_rt_seq)
 
