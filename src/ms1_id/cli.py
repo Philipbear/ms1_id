@@ -140,7 +140,7 @@ def run_msi(args):
         library_path=library_paths,
         n_processes=args.n_cores,
         sn_factor=args.sn_factor,
-        mz_bin_size=args.mz_bin_size,
+        mz_ppm_tol=args.mz_ppm_tol,
         min_overlap=args.min_overlap,
         min_correlation=args.min_correlation,
         max_cor_depth=args.max_cor_depth,
@@ -270,8 +270,8 @@ def main():
                         help='Number of cores to use (default: None, use all available cores)')
     msi_parser.add_argument('--sn_factor', type=float, default=3.0,
                         help='Signal-to-noise factor for noise removal (default: 3.0)')
-    msi_parser.add_argument('--mz_bin_size', type=float, default=0.01,
-                        help='m/z bin size (default: 0.01)')
+    msi_parser.add_argument('--mz_ppm_tol', type=float, default=5.0,
+                        help='m/z tolerance in ppm for feature detection (default: 5.0)')
     msi_parser.add_argument('--min_overlap', type=int, default=10,
                         help='Minimum overlap between ion images (default: 10)')
     msi_parser.add_argument('--min_correlation', type=float, default=0.85,

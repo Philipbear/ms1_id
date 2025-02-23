@@ -71,7 +71,7 @@ To annotate MS imaging data, here is an example command:
   ```bash
   ms1_id msi --input_dir msi --libs db/gnps.pkl db/gnps_k10.pkl --n_cores 12
   ```
-Here, `msi` is the input directory. Raw imzML and ibd files are stored in the `msi` folder, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
+Here, `msi` is the input directory consisting of the imzML and ibd files. Both gnps.pkl and gnps_k10.pkl libraries are used, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
 
 For more options, run:
   ```bash
