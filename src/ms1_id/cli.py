@@ -124,25 +124,22 @@ def run_lcms(args):
 def run_msi(args):
 
     # Check if project directory exists
-    if not os.path.exists(args.project_dir):
-        raise FileNotFoundError(f"Project directory not found: {args.project_dir}")
+    if not os.path.exists(args.input_dir):
+        raise FileNotFoundError(f"Input directory not found: {args.input_dir}")
 
     # Verify library paths
     library_paths = _verify_paths(args.libs)
 
-    print(f"Running MS imaging data analysis in project directory: {args.project_dir}")
+    print(f"Running MS imaging data analysis in directory: {args.input_dir}")
     print(f"Using libraries: {library_paths}")
     print(f"Number of cores used: {args.n_cores}")
 
     # Run the analysis
     ms1id_msi(
-        file_dir=args.project_dir,
+        file_dir=args.input_dir,
         library_path=library_paths,
         n_processes=args.n_cores,
-        mass_detect_int_tol=args.mass_detect_int_tol,
-        noise_detection=args.noise_detection,
         sn_factor=args.sn_factor,
-        centroided=args.centroided,
         mz_bin_size=args.mz_bin_size,
         min_overlap=args.min_overlap,
         min_correlation=args.min_correlation,
@@ -203,13 +200,13 @@ def main():
     ####################
     # Subcommand for LC-MS data
     lcms_parser = subparsers.add_parser('lcms', help='Annotate LC-MS spectra in mzML or mzXML format')
-    lcms_parser.add_argument('--project_dir', type=str, required=True,
+    lcms_parser.add_argument('--project_dir', '-pd', type=str, required=True,
                              help='Path to the project directory')
-    lcms_parser.add_argument('--sample_dir', type=str, default='data',
+    lcms_parser.add_argument('--sample_dir', '-sd', type=str, default='data',
                              help='Directory containing mzML or mzXML files (default: data)')
-    lcms_parser.add_argument('--ms1_id_libs', type=str, nargs='*', default=None,
+    lcms_parser.add_argument('--ms1_id_libs', '-ms1l', type=str, nargs='*', default=None,
                         help='Optional: One or more paths to MS1 ID library files (.pkl). Paths with spaces should be quoted.')
-    lcms_parser.add_argument('--ms2_id_lib', type=str, default=None,
+    lcms_parser.add_argument('--ms2_id_lib', '-ms2l', type=str, default=None,
                         help='Optional: Path to MS2 ID library file (.pkl).')
 
     lcms_parser.add_argument('--parallel', '-p', action='store_true', default=True,
@@ -265,19 +262,12 @@ def main():
     ####################
     # Subcommand for MSI data
     msi_parser = subparsers.add_parser('msi', help='Annotate MS imaging data in imzML & ibd format')
-    msi_parser.add_argument('--project_dir', type=str, required=True,
-                        help='Project directory containing imzML & ibd files')
+    msi_parser.add_argument('--input_dir', '-i', type=str, required=True,
+                        help='Input directory containing imzML & ibd files')
     msi_parser.add_argument('--libs', '-l', type=str, nargs='*', default=None,
                         help='One or more paths to library files (.pkl). Paths with spaces should be quoted.')
     msi_parser.add_argument('--n_cores', type=int, default=None,
                         help='Number of cores to use (default: None, use all available cores)')
-    msi_parser.add_argument('--mass_detect_int_tol', type=float, default=None,
-                        help='Mass detection intensity tolerance (default: None, automatically determined)')
-    msi_parser.add_argument('--centroided', action='store_true', default=False,
-                        help='Whether the data is centroided (default: False, centroiding will be performed)')
-    msi_parser.add_argument('--noise_detection', type=str, default='moving_average',
-                        choices=['moving_average', 'percentile'],
-                        help='Noise detection method (default: moving_average)')
     msi_parser.add_argument('--sn_factor', type=float, default=3.0,
                         help='Signal-to-noise factor for noise removal (default: 3.0)')
     msi_parser.add_argument('--mz_bin_size', type=float, default=0.01,

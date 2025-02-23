@@ -9,15 +9,14 @@ from numba import njit
 from tqdm import tqdm
 
 from ms1_id.msi.centroid_data import centroid_spectrum
+from ms1_id.msi.msi_feature_extraction import get_msi_features
 
 
-def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
-                            mz_bin_size=0.005,
-                            noise_detection='moving_average', sn_factor=5.0,
-                            centroided=False,
+def process_ms_imaging_data(imzml_file, ibd_file,
+                            mz_ppm_tol=5,
+                            sn_factor=5.0,
                             n_processes=None,
                             save=False, save_dir=None):
-    validate_inputs(noise_detection)
 
     parser = imzml.ImzMLParser(imzml_file)
 
@@ -25,28 +24,16 @@ def process_ms_imaging_data(imzml_file, ibd_file, mass_detect_int_tol=None,
     if save_dir and check_existing_results(save_dir):
         return load_existing_results(save_dir)
 
-    # Auto-detect intensity threshold if not provided
-    if mass_detect_int_tol is None:
-        print(f'Auto-denoising MS spectra using {noise_detection} method.')
-        if noise_detection == 'percentile':
-            mass_detect_int_tol = detect_threshold_percentile(parser, sn_factor)
+    centroided = determine_centroid(imzml_file)
 
-    mz_intensity_dict, coordinates = process_spectra(parser, noise_detection, mass_detect_int_tol,
-                                                     mz_bin_size, sn_factor, centroided, n_processes)
-
-    mz_values, intensity_matrix = convert_to_arrays(mz_intensity_dict, coordinates)
+    feature_mzs, intensity_matrix, coordinates = process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes)
 
     # Save results if requested
     if save and save_dir:
         print(f'Saving mz values, intensity matrix, and coordinates...')
-        save_results(save_dir, mz_values, intensity_matrix, coordinates)
+        save_results(save_dir, feature_mzs, intensity_matrix, coordinates)
 
-    return mz_values, intensity_matrix, coordinates, parser.polarity
-
-
-def validate_inputs(noise_detection):
-    assert noise_detection in ['percentile', 'moving_average'], \
-        "Noise reduction method must be 'percentile' or 'moving_average'"
+    return feature_mzs, intensity_matrix, coordinates, parser.polarity
 
 
 def check_existing_results(save_dir):
@@ -64,22 +51,10 @@ def load_existing_results(save_dir):
     return mz_values, intensity_matrix, coordinates, None  # Note: parser.polarity is not saved
 
 
-def detect_threshold_percentile(parser, sn_factor=5.0):
-    all_intensities = []
-    for idx, _ in enumerate(parser.coordinates):
-        _, intensity = parser.getspectrum(idx)
-        all_intensities.extend(intensity)
+def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
 
-    all_intensities = np.array(all_intensities)
-    non_zero_intensities = all_intensities[all_intensities > 0.0]
-    threshold = max(np.min(non_zero_intensities) * sn_factor, np.percentile(non_zero_intensities, 10))
-    print('Auto-detected intensity threshold (percentile method):', threshold)
-    return threshold
-
-
-def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor, centroided, n_processes):
-    args_list = [(idx, *parser.getspectrum(idx), noise_detection, mass_detect_int_tol,
-                  mz_bin_size, sn_factor, centroided)
+    # first get all spectra and clean them
+    args_list = [(idx, *parser.getspectrum(idx), mz_ppm_tol, sn_factor, centroided)
                  for idx, _ in enumerate(parser.coordinates)]
 
     n_processes = n_processes or multiprocessing.cpu_count()
@@ -88,32 +63,52 @@ def process_spectra(parser, noise_detection, mass_detect_int_tol, mz_bin_size, s
         # Non-parallel processing
         results = []
         for args in tqdm(args_list, desc="Denoising spectra", unit="spectrum"):
-            results.append(process_spectrum(args))
+            results.append(clean_msi_spectrum(args))
     else:
         # Parallel processing
         with multiprocessing.Pool(processes=n_processes) as pool:
-            results = list(tqdm(pool.imap(process_spectrum, args_list),
-                                total=len(args_list),
-                                desc="Denoising spectra",
-                                unit="spectrum"))
+            results = list(tqdm(pool.imap(clean_msi_spectrum, args_list),
+                                total=len(args_list), desc="Denoising spectra", unit="spectrum"))
 
-    mz_intensity_dict = defaultdict(lambda: defaultdict(float))
+    # get all mzs and intensities
+    all_mzs = []
+    all_intensities = []
+    idx_mz_intensity_dict = {}  # no need to re-clean the spectra
+    for idx, mz_arr, intensity_arr in results:
+        idx_mz_intensity_dict[idx] = mz_arr, intensity_arr
+        all_mzs.extend(mz_arr.tolist())
+        all_intensities.extend(intensity_arr.tolist())
+
+    # get features from all mzs and intensities
+    feature_mzs = get_msi_features(np.array(all_mzs), np.array(all_intensities), mz_ppm_tol)
+    del all_mzs, all_intensities
+
+    # assign mzs to features
+    args_list = [(idx, idx_mz_intensity_dict[idx], feature_mzs)
+                 for idx, _ in enumerate(parser.coordinates)]
+    # assign mzs to features
+    if n_processes == 1:
+        results = []
+        for args in tqdm(args_list, desc="Feature detection", unit="spectrum"):
+            results.append(clean_msi_spectrum(args))
+    else:
+        with multiprocessing.Pool(processes=n_processes) as pool:
+            results = list(tqdm(pool.imap(clean_msi_spectrum, args_list),
+                                total=len(args_list), desc="Feature detection", unit="spectrum"))
+
+    # Create intensity matrix
+    feature_mzs = np.array(sorted(feature_mzs))
+    n_coordinates = len(parser.coordinates)
+    intensity_matrix = np.zeros((len(feature_mzs), n_coordinates))
     coordinates = []
-    for idx, binned_data in results:
-        for binned_m, summed_intensity in binned_data.items():
-            mz_intensity_dict[binned_m][idx] = summed_intensity
+
+    for idx, feature_intensity_dict in results:
         coordinates.append(parser.coordinates[idx][:2])  # Only x and y
+        for feature_idx, mz in enumerate(feature_mzs):
+            if mz in feature_intensity_dict:
+                intensity_matrix[feature_idx, idx] = feature_intensity_dict[mz]
 
-    return mz_intensity_dict, coordinates
-
-
-def convert_to_arrays(mz_intensity_dict, coordinates):
-    mz_values = np.array(sorted(mz_intensity_dict.keys()))
-    intensity_matrix = np.array([
-        [mz_intensity_dict[mz].get(idx, 0.0) for idx in range(len(coordinates))]
-        for mz in mz_values
-    ])
-    return mz_values, intensity_matrix
+    return feature_mzs, intensity_matrix, coordinates
 
 
 def save_results(save_dir, mz_values, intensity_matrix, coordinates):
@@ -123,14 +118,11 @@ def save_results(save_dir, mz_values, intensity_matrix, coordinates):
         pickle.dump(coordinates, f)
 
 
-def process_spectrum(args):
-    idx, mz, intensity, noise_detection, mass_detect_int_tol, mz_bin_size, sn_factor, centroided = args
+def clean_msi_spectrum(args):
+    idx, mz, intensity, mz_bin_size, sn_factor, centroided = args
 
-    if noise_detection == 'moving_average':
-        baseline = moving_average_baseline(mz, intensity, factor=sn_factor)
-        mask = intensity > baseline
-    else:
-        mask = intensity > mass_detect_int_tol
+    baseline = moving_average_baseline(mz, intensity, factor=sn_factor)
+    mask = intensity > baseline
 
     # Filter mz and intensity arrays
     filtered_mz = mz[mask]
@@ -140,16 +132,9 @@ def process_spectrum(args):
     if not centroided:
         filtered_mz, filtered_intensity = centroid_spectrum(filtered_mz, filtered_intensity,
                                                             centroid_mode='max',
-                                                            width_da=0.005, width_ppm=25)
+                                                            width_da=0.002, width_ppm=10)
 
-    # Bin m/z values and take max intensity within each bin
-    binned_data = {}
-    for m, i in zip(filtered_mz, filtered_intensity):
-        binned_m = round(m / mz_bin_size) * mz_bin_size
-        if binned_m not in binned_data or i > binned_data[binned_m]:
-            binned_data[binned_m] = i
-
-    return idx, binned_data
+    return idx, filtered_mz, filtered_intensity
 
 
 @njit
@@ -189,3 +174,17 @@ def moving_average_baseline(mz_array, intensity_array,
         baseline_array.append(baseline)
 
     return np.array(baseline_array)
+
+
+def determine_centroid(imzml_file):
+
+    centroid = False
+
+    with open(imzml_file, 'r') as f:
+        for i, line in enumerate(f):
+            if "centroid spectrum" in line.lower():
+                centroid = True
+            if i > 300:
+                break
+
+    return centroid

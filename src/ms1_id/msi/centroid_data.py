@@ -23,7 +23,7 @@ from numba import njit
 
 
 def centroid_spectrum(mz_list, intensity_list, centroid_mode='max',
-                      width_da=0.005, width_ppm=25.0):
+                      width_da=0.002, width_ppm=10.0):
     """
     Centroid a spectrum by merging peaks within the +/- ms2_ppm or +/- ms2_da.
     centroid_mode: 'max' or 'sum'

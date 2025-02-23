@@ -69,9 +69,9 @@ Expected runtime is <3 min for a single LC-MS file. If it takes longer than 10 m
 ### Annotate MS imaging data
 To annotate MS imaging data, here is an example command:
   ```bash
-  ms1_id msi --project_dir msi --libs db/gnps.pkl db/gnps_k10.pkl --n_cores 12
+  ms1_id msi --input_dir msi --libs db/gnps.pkl db/gnps_k10.pkl --n_cores 12
   ```
-Here, `msi` is the project directory. Raw imzML and ibd files are stored in the `msi` folder, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
+Here, `msi` is the input directory. Raw imzML and ibd files are stored in the `msi` folder, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
 
 For more options, run:
   ```bash
@@ -110,16 +110,16 @@ bash run.sh
 - LC-MS data
   - Pooled chemical standards ([GNPS/MassIVE MSV000095789](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095789))
   - NIST human feces (Q Exactive) ([GNPS/MassIVE MSV000095787](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095787))
-  - IBD dataset (Q Exactive) ([original paper](https://www.nature.com/articles/s41586-019-1237-9), [data](https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=PR000639))
+  - IBD dataset (Q Exactive) ([original paper](https://www.nature.com/articles/s41586-019-1237-9), [PR000639 data](https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=PR000639))
   - Mouse feces (lipidomics, Q-TOF) ([GNPS/MassIVE MSV000095868](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095868))
-  - Mouse bone tissue (lipidomics, Q Exactive) ([GNPS/MassIVE MSV000096539](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000096539))
   - Komagataella phaffii (yeast, Q Exactive) ([GNPS/MassIVE MSV000090053](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090053))
   - Bacterial isolates (Q Exactive) ([GNPS/MassIVE MSV000085024](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000085024))
+  - Bessbug beetle frass microbe isolates (Q Exactive) ([GNPS/MassIVE MSV000090030](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090030))
+  - Isolated bacteria (Lactobacillus paracasei, Bifidobacterium longum) (TripleTOF) ([GNPS/MassIVE MSV000090025](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090025))
   - Sea water DOM (Q Exactive) ([GNPS/MassIVE MSV000094338](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000094338))
   - Foam DOM (Q Exactive) ([GNPS/MassIVE MSV000083888](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083888))
   - Ocean DOM (Q Exactive) ([GNPS/MassIVE MSV000083632](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083632))
   - Psychotria plant extracts (Q-TOF) ([GNPS/MassIVE MSV000078931](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000078931))
-  - Bidens sulphurea and Bidens gardneri plant extracts (Q-TOF) ([GNPS/MassIVE MSV000078727](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000078727))
 - MS imaging data
   - Mouse brain ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
   - Mouse body ([METASPACE dataset](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))
