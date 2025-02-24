@@ -13,7 +13,7 @@ from ms1_id.msi.export_msi import write_pseudoms2_to_mgf
 def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
                         n_processes=None, min_cluster_size=6,
                         min_cor=0.90, max_cor_depth=1,
-                        save=False, save_dir=None, chunk_size=1000):
+                        save_dir=None, chunk_size=1000):
     """
     Generate pseudo MS2 spectra for imaging data using chunked parallel processing
     """
@@ -36,7 +36,7 @@ def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
     # Assign intensity values
     _assign_intensities(pseudo_ms2_spectra, intensity_matrix)
 
-    if save and save_dir:
+    if save_dir:
         pkl_path = os.path.join(save_dir, 'pseudo_ms2_spectra.pkl')
         with open(pkl_path, 'wb') as f:
             pickle.dump(pseudo_ms2_spectra, f)
@@ -89,7 +89,7 @@ def _process_chunk(args):
 
 
 def _perform_clustering(mz_values, correlation_matrix, n_processes=None, min_cor=0.90,
-                        min_cluster_size=6, max_cor_depth=1, chunk_size=800):
+                        min_cluster_size=3, max_cor_depth=1, chunk_size=800):
     """
     Perform clustering on m/z values based on correlation scores using chunked multiprocessing.
     """
@@ -120,7 +120,7 @@ def _assign_intensities(pseudo_ms2_spectra, intensity_matrix):
     Assign intensity values to pseudo MS2 spectra.
     """
     for spectrum in tqdm(pseudo_ms2_spectra, desc="Assigning intensities"):
-        # Get the intensities for all m/z values in this PseudoMS1 object
+        # Get the intensities for all m/z values in this PseudoMS2 object
         intensities = intensity_matrix[spectrum.indices, :]
 
         # Get the intensities for the target m/z across all spectra

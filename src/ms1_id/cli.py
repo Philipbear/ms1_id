@@ -111,7 +111,7 @@ def run_lcms(args):
         peak_cor_rt_tol=args.peak_cor_rt_tol,
         min_ppc=args.min_ppc,
         roi_min_length=args.roi_min_length,
-        library_search_mztol=args.library_search_mztol,
+        library_search_mztol=args.lib_search_mztol,
         ms1id_score_cutoff=args.ms1id_score_cutoff,
         ms1id_min_matched_peak=args.ms1id_min_matched_peak,
         ms1id_min_spec_usage=args.ms1id_min_spec_usage,
@@ -144,10 +144,10 @@ def run_msi(args):
         min_overlap=args.min_overlap,
         min_correlation=args.min_correlation,
         max_cor_depth=args.max_cor_depth,
-        library_search_mztol=args.library_search_mztol,
-        ms1id_score_cutoff=args.ms1id_score_cutoff,
-        ms1id_min_matched_peak=args.ms1id_min_matched_peak,
-        ms1id_min_spec_usage=args.ms1id_min_spec_usage
+        library_search_mztol=args.lib_search_mztol,
+        score_cutoff=args.score_cutoff,
+        min_matched_peak=args.min_matched_peak,
+        min_spec_usage=args.min_spec_usage
     )
 
 
@@ -244,7 +244,7 @@ def main():
                         help='Minimum peak-peak correlation to form a feature group (default: 0.80)')
     lcms_parser.add_argument('--roi_min_length', type=int, default=5,
                         help='ROI minimum length for a feature (default: 5)')
-    lcms_parser.add_argument('--library_search_mztol', type=float, default=0.05,
+    lcms_parser.add_argument('--lib_search_mztol', type=float, default=0.05,
                         help='Library search m/z tolerance (default: 0.05)')
     lcms_parser.add_argument('--ms1id_score_cutoff', type=float, default=0.7,
                         help='MS1 ID matching score cutoff (default: 0.7)')
@@ -270,21 +270,21 @@ def main():
                         help='Number of cores to use (default: None, use all available cores)')
     msi_parser.add_argument('--sn_factor', type=float, default=3.0,
                         help='Signal-to-noise factor for noise removal (default: 3.0)')
-    msi_parser.add_argument('--mz_ppm_tol', type=float, default=5.0,
-                        help='m/z tolerance in ppm for feature detection (default: 5.0)')
-    msi_parser.add_argument('--min_overlap', type=int, default=10,
-                        help='Minimum overlap between ion images (default: 10)')
+    msi_parser.add_argument('--mz_ppm_tol', type=float, default=10.0,
+                        help='m/z tolerance in ppm for feature detection (default: 10.0)')
+    msi_parser.add_argument('--min_overlap', type=int, default=5,
+                        help='Minimum overlap between ion images (default: 5)')
     msi_parser.add_argument('--min_correlation', type=float, default=0.85,
                         help='Minimum correlation between spectra (default: 0.85)')
     msi_parser.add_argument('--max_cor_depth', type=int, default=1,
                         help='Maximum correlation depth for spatial correlation (default: 1)')
-    msi_parser.add_argument('--library_search_mztol', type=float, default=0.05,
+    msi_parser.add_argument('--lib_search_mztol', type=float, default=0.05,
                         help='Library search m/z tolerance (default: 0.05)')
-    msi_parser.add_argument('--ms1id_score_cutoff', type=float, default=0.7,
+    msi_parser.add_argument('--score_cutoff', type=float, default=0.7,
                         help='MS1 ID matching score cutoff (default: 0.7)')
-    msi_parser.add_argument('--ms1id_min_matched_peak', type=int, default=3,
+    msi_parser.add_argument('--min_matched_peak', type=int, default=3,
                         help='MS1 ID minimum matched peaks (default: 3)')
-    msi_parser.add_argument('--ms1id_min_spec_usage', type=float, default=0.05,
+    msi_parser.add_argument('--min_spec_usage', type=float, default=0.05,
                         help='MS1 ID minimum spectrum usage (default: 0.05)')
 
     args = parser.parse_args()

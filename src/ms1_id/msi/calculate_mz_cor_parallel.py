@@ -52,14 +52,13 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overla
 
 
 def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.8,
-                             save=True, save_dir=None, n_processes=None, chunk_size=500):
+                             save_dir=None, n_processes=None, chunk_size=500):
     """
     Calculate m/z correlation matrix for MS imaging data using multiprocessing and numpy memmap
 
     :param intensity_matrix: 2D numpy array where rows are m/z values and columns are spectra
     :param min_overlap: Minimum number of overlapping spectra between two ions
     :param min_cor: Minimum correlation value to keep
-    :param save: Boolean indicating whether to save the result
     :param save_dir: Directory to save the result if save is True
     :param n_processes: Number of processes to use (default: number of CPU cores)
     :param chunk_size: Number of rows to process in each chunk
@@ -133,7 +132,7 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.8,
     corr_matrix = corr_matrix + corr_matrix.T
     corr_matrix.setdiag(1.0)
 
-    if save and save_dir:
+    if save_dir:
         path = os.path.join(save_dir, 'mz_correlation_matrix.npz')
         print(f"Saving correlation matrix to {path}...")
         save_npz(path, corr_matrix)

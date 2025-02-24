@@ -9,9 +9,9 @@ def ms1id_single_file_batch(
         mz_ppm_tol=5.0,
         min_overlap=10, min_correlation=0.85, max_cor_depth=1,
         library_search_mztol=0.01,
-        ms1id_score_cutoff=0.7,
-        ms1id_min_matched_peak=4,
-        ms1id_min_spec_usage=0.10,
+        score_cutoff=0.7,
+        min_matched_peak=4,
+        min_spec_usage=0.10,
         max_prec_rel_int_in_other_ms2=0.05
 ):
     files = [f for f in os.listdir(file_dir) if f.lower().endswith('.imzml') and not f.startswith('.')]
@@ -24,9 +24,10 @@ def ms1id_single_file_batch(
             mz_ppm_tol=mz_ppm_tol,
             min_overlap=min_overlap, min_correlation=min_correlation,
             max_cor_depth=max_cor_depth,
-            library_search_mztol=library_search_mztol, ms1id_score_cutoff=ms1id_score_cutoff,
-            ms1id_min_spec_usage=ms1id_min_spec_usage,
-            ms1id_min_matched_peak=ms1id_min_matched_peak,
+            library_search_mztol=library_search_mztol,
+            score_cutoff=score_cutoff,
+            min_matched_peak=min_matched_peak,
+            min_spec_usage=min_spec_usage,
             max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2
         )
 

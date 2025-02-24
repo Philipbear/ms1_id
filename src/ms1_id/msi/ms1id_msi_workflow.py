@@ -12,8 +12,8 @@ def ms1id_imaging_workflow(file_path, library_path, n_processes=None,
                            mz_ppm_tol=5.0,
                            min_overlap=10, min_correlation=0.85, max_cor_depth=1,
                            library_search_mztol=0.05,
-                           ms1id_score_cutoff=0.7, ms1id_min_matched_peak=4,
-                           ms1id_min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05):
+                           score_cutoff=0.7, min_matched_peak=4,
+                           min_spec_usage=0.10, max_prec_rel_int_in_other_ms2=0.05):
     file_dir = os.path.dirname(file_path)
     file_name = os.path.splitext(os.path.basename(file_path))[0]
 
@@ -31,7 +31,7 @@ def ms1id_imaging_workflow(file_path, library_path, n_processes=None,
         mz_ppm_tol=mz_ppm_tol,
         sn_factor=sn_factor,
         n_processes=n_processes,
-        save=True, save_dir=result_folder
+        save_dir=result_folder
     )
 
     print(f"Calculating ion image correlations for {file_name}")
@@ -39,27 +39,24 @@ def ms1id_imaging_workflow(file_path, library_path, n_processes=None,
                                           min_overlap=min_overlap,
                                           min_cor=min_correlation,
                                           n_processes=n_processes,
-                                          save=True,
                                           save_dir=result_folder)
 
     print(f"Generating pseudo MS2 spectra for {file_name}")
     pseudo_ms2 = generate_pseudo_ms2(mz_values, intensity_matrix, cor_matrix,
                                      n_processes=n_processes,
-                                     min_cluster_size=ms1id_min_matched_peak + 1,
+                                     min_cluster_size=min_matched_peak + 1,
                                      min_cor=min_correlation,
                                      max_cor_depth=max_cor_depth,
-                                     save=True,
                                      save_dir=result_folder)
 
     print(f"Annotating pseudo MS2 spectra for {file_name}")
     pseudo_ms2 = ms1_id_annotation(pseudo_ms2, library_path, n_processes=None,
                                    mz_tol=library_search_mztol,
                                    ion_mode=ion_mode,
-                                   score_cutoff=ms1id_score_cutoff,
-                                   min_matched_peak=ms1id_min_matched_peak,
-                                   min_spec_usage=ms1id_min_spec_usage,
+                                   score_cutoff=score_cutoff,
+                                   min_matched_peak=min_matched_peak,
+                                   min_spec_usage=min_spec_usage,
                                    max_prec_rel_int_in_other_ms2=max_prec_rel_int_in_other_ms2,
-                                   save=True,
                                    save_dir=result_folder)
 
     print(f"Writing results for {file_name}")

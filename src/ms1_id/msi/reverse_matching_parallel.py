@@ -34,7 +34,7 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                       ion_mode=None,
                       refine=False,
                       max_prec_rel_int_in_other_ms2=0.05,
-                      save=False, save_dir=None,
+                      save_dir=None,
                       chunk_size=1000):
     """
     Perform ms1 annotation
@@ -48,7 +48,6 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
     :param ion_mode: str, ion mode. If None, all ion modes are considered
     :param refine: bool, whether to refine the results
     :param max_prec_rel_int_in_other_ms2: float, maximum relative intensity of precursor in other MS2 spectra
-    :param save: bool, whether to save the results
     :param save_dir: str, directory to save the results
     :param chunk_size: int, number of spectra to process in each parallel task
     :return: PseudoMS2-like object
@@ -85,10 +84,9 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
         ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
                                             max_prec_rel_int=max_prec_rel_int_in_other_ms2)
 
-    if save:
-        save_path = os.path.join(save_dir, 'pseudo_ms2_annotated.pkl')
-        with open(save_path, 'wb') as file:
-            pickle.dump(ms1_spec_ls, file)
+    save_path = os.path.join(save_dir, 'pseudo_ms2_annotated.pkl')
+    with open(save_path, 'wb') as file:
+        pickle.dump(ms1_spec_ls, file)
 
     return ms1_spec_ls
 

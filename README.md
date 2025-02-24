@@ -77,7 +77,7 @@ For more options, run:
   ```bash
   ms1_id msi --help
   ```
-Expected runtime <5 min for a single MS imaging dataset.
+Expected runtime is ~10 min for a single MS imaging dataset if at least 12 cores are available.
 
 ---------
 
