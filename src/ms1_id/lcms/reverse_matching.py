@@ -11,13 +11,17 @@ from ms1_id.lcms.centroid_data import centroid_spectrum_for_search
 def prepare_ms2_lib(ms2db,
                     mz_tol: float = 0.05,
                     peak_scale_k: float = None,
-                    peak_intensity_power: float = 0.5):
+                    peak_intensity_power: float = 0.5,
+                    min_indexed_mz: float = 0.0,
+                    out_path: str = None):
     """
     prepare ms2 db using MSP or MGF formatted database
     :param ms2db: path to the MSP formatted database
     :param mz_tol: mz tolerance
     :param peak_scale_k: peak scaling factor, None for no scaling
     :param peak_intensity_power: peak intensity power, 0.5 for square root
+    :param min_indexed_mz: minimum mz to be indexed
+    :param out_path: output file path
     :return: a pickle file
     """
 
@@ -63,16 +67,20 @@ def prepare_ms2_lib(ms2db,
                              peak_intensity_power=peak_intensity_power)
     print('Building index')
     search_engine.build_index(db,
+                              min_indexed_mz=min_indexed_mz,
                               max_indexed_mz=2000,
                               precursor_ions_removal_da=0.5,
                               noise_threshold=0.01,
                               min_ms2_difference_in_da=mz_tol * 2.02,
                               clean_spectra=True)
 
-    if peak_scale_k is None:
-        new_path = os.path.splitext(ms2db)[0] + '.pkl'
+    if out_path is not None:
+        new_path = out_path
     else:
-        new_path = os.path.splitext(ms2db)[0] + f'_k{peak_scale_k}.pkl'
+        if peak_scale_k is None:
+            new_path = os.path.splitext(ms2db)[0] + '.pkl'
+        else:
+            new_path = os.path.splitext(ms2db)[0] + f'_k{peak_scale_k}.pkl'
 
     # save as pickle
     with open(new_path, 'wb') as file:

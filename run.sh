@@ -7,10 +7,10 @@ conda activate ms1_id
 pip install ms1_id
 
 # download indexed libraries
-wget https://github.com/Philipbear/ms1_id/releases/latest/download/indexed_gnps_libs.zip
+wget https://github.com/Philipbear/ms1_id/releases/latest/download/gnps.zip
 
 # unzip libraries
-unzip indexed_gnps_libs.zip -d db
+unzip gnps.zip -d db
 
 # download data
 lftp ftp://massive.ucsd.edu/v08/MSV000095868/peak/Lipids_pos

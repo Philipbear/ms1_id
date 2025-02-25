@@ -9,11 +9,16 @@ from tqdm import tqdm
 
 
 @njit
-def _mz_correlation(intensities1, intensities2, min_overlap=5):
-    # Remove zero intensities
-    non_zero_mask = (intensities1 != 0) & (intensities2 != 0)
-    x = intensities1[non_zero_mask]
-    y = intensities2[non_zero_mask]
+def _mz_correlation(intensities_x, intensities_y, min_overlap=10):
+    non_zero_mask_x = intensities_x > 0
+    non_zero_mask_y = intensities_y > 0
+    non_zero_mask = non_zero_mask_x & non_zero_mask_y
+
+    ratio_x = sum(non_zero_mask > 0) / sum(non_zero_mask_x > 0)
+    ratio_y = sum(non_zero_mask > 0) / sum(non_zero_mask_y > 0)
+
+    x = intensities_x[non_zero_mask]
+    y = intensities_y[non_zero_mask]
 
     n = len(x)
     if n < min_overlap:
@@ -28,7 +33,13 @@ def _mz_correlation(intensities1, intensities2, min_overlap=5):
     numerator = n * sum_xy - sum_x * sum_y
     denominator = np.sqrt((n * sum_x2 - sum_x ** 2) * (n * sum_y2 - sum_y ** 2))
 
-    return numerator / denominator if denominator != 0 else 0.0
+    p_corr = numerator / denominator if denominator != 0 else 0.0
+
+    # if largely overlapped, return 1.0
+    if max(ratio_x, ratio_y) > 0.98 and p_corr > 0.4:
+        return 1.0
+
+    return p_corr
 
 
 def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overlap,
@@ -51,7 +62,7 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overla
     return_dict[start_idx] = (rows, cols, data)
 
 
-def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.8,
+def calc_all_mz_correlations(intensity_matrix, min_overlap=10, min_cor=0.8,
                              save_dir=None, n_processes=None, chunk_size=500):
     """
     Calculate m/z correlation matrix for MS imaging data using multiprocessing and numpy memmap
@@ -73,8 +84,6 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.8,
             return load_npz(path)
 
     n_mzs, n_spectra = intensity_matrix.shape
-
-    n_processes = n_processes or mp.cpu_count()
 
     # Create a temporary memmap file
     temp_file = tempfile.NamedTemporaryFile(delete=False)
@@ -141,3 +150,27 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=5, min_cor=0.8,
     os.unlink(mmap_filename)
 
     return corr_matrix
+
+
+
+if __name__ == '__main__':
+
+    # from scipy.sparse import csr_matrix, load_npz
+    # mz_cor_matrix = load_npz('/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg/mz_correlation_matrix.npz')
+    # if not isinstance(mz_cor_matrix, csr_matrix):
+    #     correlation_matrix = csr_matrix(mz_cor_matrix)
+
+    # mz_values = np.load('/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg/mz_values.npy')
+    # print(mz_values.shape)
+
+
+    # 128.0353, 143.0462, 306.0765
+    # idx: 143, 255, 1315
+
+    ######
+    int_matrix = np.load('/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg/intensity_matrix.npy')
+    print(int_matrix.shape)
+
+    int_matrix = int_matrix[[1315, 255, 143]]
+
+    calc_all_mz_correlations(int_matrix, min_overlap=10, min_cor=0.85, save_dir=None, n_processes=1, chunk_size=500)

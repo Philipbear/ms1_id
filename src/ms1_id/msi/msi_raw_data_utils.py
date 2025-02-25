@@ -4,6 +4,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 from functools import partial
 from ms1_id.msi.centroid_data import centroid_spectrum
+from pyImagingMSpec.image_measures import measure_of_chaos
 
 
 def clean_msi_spec(mz, intensity, sn_factor, centroided):
@@ -88,7 +89,7 @@ def _process_mz_group(mz_values, intensities, ppm_tol):
     return group_mzs[:group_size], group_ints[:group_size]
 
 
-def _process_chunk(chunk_data, ppm_tol, min_group_size):
+def _process_chunk_get_features(chunk_data, ppm_tol, min_group_size):
     """
     Process a chunk of data and return unique m/z values
     """
@@ -107,7 +108,7 @@ def _process_chunk(chunk_data, ppm_tol, min_group_size):
     return chunk_unique_mzs
 
 
-def find_chunk_boundaries(mz_array, ppm_tol, min_chunk_size=1000):
+def _find_chunk_boundaries(mz_array, ppm_tol, min_chunk_size=1000):
     """
     Find safe splitting points for parallelization by identifying gaps in m/z values.
     For m/z < 200, use fixed tolerance of 200*ppm_tol/1e6.
@@ -198,7 +199,7 @@ def get_msi_features(mz_array, intensity_array, mz_ppm_tol=5.0, min_group_size=1
     sorted_intensities = intensity_array[sort_idx]
 
     # Find safe splitting points
-    split_points = find_chunk_boundaries(sorted_mzs, mz_ppm_tol, min_chunk_size)
+    split_points = _find_chunk_boundaries(sorted_mzs, mz_ppm_tol, min_chunk_size)
 
     # Create chunks based on split points
     chunks = []
@@ -213,7 +214,7 @@ def get_msi_features(mz_array, intensity_array, mz_ppm_tol=5.0, min_group_size=1
     # print(f"Chunk sizes - min: {min(chunk_sizes)}, max: {max(chunk_sizes)}, mean: {np.mean(chunk_sizes):.1f}\n")
 
     # Create partial function with fixed parameters
-    process_chunk_partial = partial(_process_chunk,
+    process_chunk_partial = partial(_process_chunk_get_features,
                                     ppm_tol=mz_ppm_tol,
                                     min_group_size=min_group_size)
 
@@ -283,24 +284,16 @@ def assign_spec_to_feature_array(mz_arr, intensity_arr, feature_mzs, mz_ppm_tol)
     return feature_intensities
 
 
-# Example usage
-if __name__ == "__main__":
-    # Example data
-    mz_example = [
-        100.001, 100.002, 100.003, 100.004, 100.005,  # Should be grouped together
-        200.001, 200.002,  # Should be grouped together
-        300.001, 300.009  # Should be separate features
-    ]
+def calc_spatial_chaos(feature_intensity_array, x_size, y_size):
+    """
+    Calculate the spatial chaos of a feature intensity array.
+    :param feature_intensity_array: 1D array of feature intensities
+    """
+    im = feature_intensity_array.reshape(y_size, x_size)
+    chaos = measure_of_chaos(im, 30)
 
-    intensity_example = [
-        500, 550, 450, 480, 520,  # Intensities for first group
-        1000, 980,  # Intensities for second group
-        100, 90  # Intensities for third group
-    ]
+    # check if nan
+    if np.isnan(chaos):
+        chaos = 0.0
 
-    # Generate unique features with 15 ppm tolerance
-    unique_features = get_msi_features(mz_example, intensity_example, mz_ppm_tol=15)
-    print("Original m/z values:", mz_example)
-    print("Original intensities:", intensity_example)
-    print("Unique m/z features:", unique_features)
-
+    return chaos

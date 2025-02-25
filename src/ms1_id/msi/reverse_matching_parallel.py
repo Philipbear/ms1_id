@@ -28,14 +28,13 @@ def validate_library_path(library_path):
     return library_path
 
 
-def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
+def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes,
                       mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4, min_spec_usage=0.0,
                       ion_mode=None,
                       refine=False,
                       max_prec_rel_int_in_other_ms2=0.05,
-                      save_dir=None,
-                      chunk_size=1000):
+                      save_dir=None):
     """
     Perform ms1 annotation
     :param ms1_spec_ls: a list of PseudoMS2-like object
@@ -49,7 +48,6 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
     :param refine: bool, whether to refine the results
     :param max_prec_rel_int_in_other_ms2: float, maximum relative intensity of precursor in other MS2 spectra
     :param save_dir: str, directory to save the results
-    :param chunk_size: int, number of spectra to process in each parallel task
     :return: PseudoMS2-like object
     """
 
@@ -61,16 +59,16 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes=None,
                 ms1_spec_ls = pickle.load(file)
             return ms1_spec_ls
 
-    if n_processes is None:
-        n_processes = max(1, cpu_count() // 5)  # ms2 library is large, for RAM usage
+    n_processes = min(max(1, cpu_count() // 2), n_processes)  # ms2 library is large, for RAM usage
 
-    chunk_size = min(chunk_size, len(ms1_spec_ls))
+    chunk_size = len(ms1_spec_ls) // n_processes + 1
 
     # Perform centroiding for all spectra before annotation
     ms1_spec_ls = centroid_all_spectra(ms1_spec_ls, n_processes)
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=n_processes,
+    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, library_ls,
+                                         n_processes=n_processes,
                                          mz_tol=mz_tol,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
@@ -109,7 +107,7 @@ def _centroid_spectrum(spec):
     return spec
 
 
-def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes=None,
+def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes,
                            mz_tol=0.05,
                            ion_mode=None,
                            score_cutoff=0.7,

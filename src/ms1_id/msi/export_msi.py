@@ -52,8 +52,9 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
                                         ascending=[False, False, False])
 
             # dereplicate by [inchikey, rounded precursor mz]  # rounded precursor mz indicating precursor type
-            out_df['rounded_precursor_mz'] = out_df['precursor_mz'].round(1)
-            out_df = out_df.drop_duplicates(['inchikey', 'rounded_precursor_mz'], keep='first')
+            out_df['rounded_precursor_mz'] = out_df['precursor_mz'].round(2)
+            out_df['2d_inchikey'] = out_df['inchikey'].str[:14]
+            out_df = out_df.drop_duplicates(['2d_inchikey', 'rounded_precursor_mz'], keep='first')
             out_df.drop(columns=['rounded_precursor_mz'], inplace=True)
 
             out_df.to_csv(save_path.replace('_all.tsv', '_derep.tsv'), index=False, sep='\t')

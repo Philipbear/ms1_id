@@ -1,117 +1,66 @@
 import multiprocessing
 import os
-import pickle
 
 import numpy as np
 import pyimzml.ImzMLParser as imzml
 from tqdm import tqdm
 
 
-from ms1_id.msi.msi_raw_data_utils import clean_msi_spec, get_msi_features, assign_spec_to_feature_array
+from ms1_id.msi.msi_raw_data_utils import (clean_msi_spec, get_msi_features,
+                                           calc_spatial_chaos, assign_spec_to_feature_array)
 
 
 def process_ms_imaging_data(imzml_file, ibd_file,
                             mz_ppm_tol=10.0,
                             sn_factor=5.0,
+                            min_spatial_chaos=0.6,
                             n_processes=None,
                             save_dir=None):
+
     parser = imzml.ImzMLParser(imzml_file)
 
     # Check if results already exist
     if save_dir and check_existing_results(save_dir):
-        mz_values, intensity_matrix, coordinates = load_existing_results(save_dir)
-        return mz_values, intensity_matrix, coordinates, parser.polarity
+        mz_values, intensity_matrix = load_existing_results(save_dir)
+        return mz_values, intensity_matrix, parser.polarity
 
     centroided = determine_centroid(imzml_file)
 
     if not centroided:
         print("Input data are not centroided, centroiding spectra...")
 
-    feature_mzs, intensity_matrix, coordinates = process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes)
+    feature_mzs, intensity_matrix = process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes)
+
+    # debug
+    save_results(save_dir, feature_mzs, intensity_matrix)
+
+    feature_mzs, intensity_matrix = filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, parser.coordinates,
+                                                                     min_spatial_chaos, n_processes)
 
     # Save
     if save_dir:
         print(f'Saving mz values, intensity matrix, and coordinates...')
-        save_results(save_dir, feature_mzs, intensity_matrix, coordinates)
+        save_results(save_dir, feature_mzs, intensity_matrix)
 
-    return feature_mzs, intensity_matrix, coordinates, parser.polarity
+    return feature_mzs, intensity_matrix, parser.polarity
 
 
 def check_existing_results(save_dir):
     mz_values_path = os.path.join(save_dir, 'mz_values.npy')
     intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
-    coordinates_path = os.path.join(save_dir, 'coordinates.pkl')
-    return all(os.path.exists(path) for path in [mz_values_path, intensity_matrix_path, coordinates_path])
+    return all(os.path.exists(path) for path in [mz_values_path, intensity_matrix_path])
 
 
 def load_existing_results(save_dir):
     mz_values = np.load(os.path.join(save_dir, 'mz_values.npy'))
     intensity_matrix = np.load(os.path.join(save_dir, 'intensity_matrix.npy'))
-    with open(os.path.join(save_dir, 'coordinates.pkl'), 'rb') as f:
-        coordinates = pickle.load(f)
-    return mz_values, intensity_matrix, coordinates
-
-
-# def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
-#     # first get all spectra and clean them
-#     args_list = [(idx, *parser.getspectrum(idx), sn_factor, centroided)
-#                  for idx, _ in enumerate(parser.coordinates)]
-#
-#     n_processes = n_processes or multiprocessing.cpu_count()
-#
-#     if n_processes == 1:
-#         # Non-parallel processing
-#         results = []
-#         for args in tqdm(args_list, desc="Denoising spectra", unit="spectrum"):
-#             results.append(clean_msi_spectrum(args))
-#     else:
-#         # Parallel processing
-#         with multiprocessing.Pool(processes=n_processes) as pool:
-#             results = list(tqdm(pool.imap(clean_msi_spectrum, args_list),
-#                                 total=len(args_list), desc="Denoising spectra", unit="spectrum"))
-#
-#     # get all mzs and intensities
-#     all_mzs = []
-#     all_intensities = []
-#     for idx, mz_arr, intensity_arr in results:
-#         all_mzs.extend(mz_arr.tolist())
-#         all_intensities.extend(intensity_arr.tolist())
-#
-#     # get features from all mzs and intensities
-#     feature_mzs = get_msi_features(np.array(all_mzs), np.array(all_intensities), mz_ppm_tol)
-#     del all_mzs, all_intensities
-#
-#     # assign mzs to features
-#     args_list = [(idx, *parser.getspectrum(idx), sn_factor, centroided, feature_mzs)
-#                  for idx, _ in enumerate(parser.coordinates)]
-#
-#     # Initialize intensity matrix
-#     n_coordinates = len(parser.coordinates)
-#     intensity_matrix = np.zeros((len(feature_mzs), n_coordinates))
-#
-#     # assign mzs to features
-#     if n_processes == 1:
-#         for args in tqdm(args_list, desc="Feature detection", unit="spectrum"):
-#             idx, intensities = assign_spectrum_to_feature(args)
-#             intensity_matrix[:, idx] = intensities
-#     else:
-#         with multiprocessing.Pool(processes=n_processes) as pool:
-#             for idx, intensities in tqdm(pool.imap(assign_spectrum_to_feature, args_list),
-#                                          total=len(args_list), desc="Feature detection", unit="spectrum"):
-#                 intensity_matrix[:, idx] = intensities
-#
-#     # Get coordinates (x,y only)
-#     coordinates = [coord[:2] for coord in parser.coordinates]
-#
-#     return feature_mzs, intensity_matrix, coordinates
+    return mz_values, intensity_matrix
 
 
 def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
     # first get all spectra and clean them
     args_list = [(idx, *parser.getspectrum(idx), sn_factor, centroided)
                  for idx, _ in enumerate(parser.coordinates)]
-
-    n_processes = n_processes or multiprocessing.cpu_count()
 
     if n_processes == 1:
         # Non-parallel processing
@@ -120,7 +69,7 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
             results.append(clean_msi_spectrum(args))
     else:
         # Parallel processing with chunks
-        chunk_size = min(200, len(parser.coordinates) // n_processes)
+        chunk_size = min(200, len(parser.coordinates) // n_processes + 1)
         arg_chunks = chunk_list(args_list, chunk_size)
 
         with multiprocessing.Pool(processes=n_processes) as pool:
@@ -141,6 +90,7 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
         all_intensities.extend(intensity_arr.tolist())
     feature_mzs = get_msi_features(np.array(all_mzs), np.array(all_intensities), mz_ppm_tol, min_group_size=10,
                                    n_processes=n_processes)
+    print(f"Found {len(feature_mzs)} features.")
     del all_mzs, all_intensities
 
     # assign mzs to features
@@ -158,7 +108,7 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
             intensity_matrix[:, idx] = intensities
     else:
         # Parallel processing with chunks
-        chunk_size = min(200, len(parser.coordinates) // n_processes)
+        chunk_size = min(200, len(parser.coordinates) // n_processes + 1)
         arg_chunks = chunk_list(args_list, chunk_size)
 
         with multiprocessing.Pool(processes=n_processes) as pool:
@@ -171,10 +121,89 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
                 for idx, intensities in chunk_results:
                     intensity_matrix[:, idx] = intensities
 
-    # Get coordinates (x,y only)
-    coordinates = [coord[:2] for coord in parser.coordinates]
+    return feature_mzs, intensity_matrix
 
-    return feature_mzs, intensity_matrix, coordinates
+
+def filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, coordinates, min_spatial_chaos, n_processes):
+    """
+    Filter features based on their spatial chaos score.
+
+    Parameters:
+    -----------
+    feature_mzs : numpy.ndarray
+        Array of m/z values for each feature
+    intensity_matrix : numpy.ndarray
+        Matrix of intensities for each feature at each coordinate
+    coordinates : list
+        List of (x, y, z) coordinates
+    min_spatial_chaos : float
+        Minimum spatial chaos score to keep a feature
+    n_processes : int, optional
+        Number of processes to use for parallel processing
+
+    Returns:
+    --------
+    numpy.ndarray
+        Filtered array of m/z values
+    numpy.ndarray
+        Filtered intensity matrix
+    """
+    # Get size of the image
+    x_ls = []
+    y_ls = []
+    for coord in coordinates:
+        x_ls.append(coord[0])
+        y_ls.append(coord[1])
+
+    x_size = max(x_ls) - min(x_ls) + 1
+    y_size = max(y_ls) - min(y_ls) + 1
+
+    # Calculate spatial chaos for each feature
+    print(f"Calculating spatial chaos for {len(feature_mzs)} features...")
+
+    if n_processes == 1:
+        all_results = []
+        # Non-parallel processing
+        for idx in tqdm(range(len(feature_mzs)), desc="Calculating spatial chaos", unit="feature"):
+            chaos = calc_spatial_chaos(intensity_matrix[idx], x_size, y_size)
+            all_results.append((idx, chaos))
+    else:
+        # Parallel processing
+        args_list = [(idx, intensity_matrix[idx], x_size, y_size)
+                     for idx in range(len(feature_mzs))]
+
+        # Split into chunks for better progress tracking
+        chunk_size = min(500, len(feature_mzs) // n_processes + 1)
+        arg_chunks = chunk_list(args_list, chunk_size)
+
+        with multiprocessing.Pool(processes=n_processes) as pool:
+            chunk_results = list(tqdm(
+                pool.imap(process_spatial_chaos_chunk, arg_chunks),
+                total=len(arg_chunks),
+                desc="Calculating spatial chaos chunks",
+                unit="chunk"
+            ))
+            all_results = [item for sublist in chunk_results for item in sublist]
+
+    keep_features = [idx for idx, chaos in all_results if chaos > min_spatial_chaos]
+
+    # Filter features based on spatial chaos
+    filtered_feature_mzs = feature_mzs[keep_features]
+    filtered_intensity_matrix = intensity_matrix[keep_features, :]
+
+    print(f"Kept {len(filtered_feature_mzs)} out of {len(feature_mzs)} features after spatial chaos filtering.")
+
+    return filtered_feature_mzs, filtered_intensity_matrix
+
+
+def process_spatial_chaos_chunk(chunk_args):
+    """Process a chunk of features for spatial chaos calculation."""
+    chunk_results = []
+    for args in chunk_args:
+        feature_idx, feature_intensity_array, x_size, y_size = args
+        chaos = calc_spatial_chaos(feature_intensity_array, x_size, y_size)
+        chunk_results.append((feature_idx, chaos))
+    return chunk_results
 
 
 def chunk_list(lst, chunk_size):
@@ -221,11 +250,9 @@ def assign_spectrum_to_feature(args):
     return idx, feature_intensities
 
 
-def save_results(save_dir, mz_values, intensity_matrix, coordinates):
+def save_results(save_dir, mz_values, intensity_matrix):
     np.save(os.path.join(save_dir, 'mz_values.npy'), mz_values)
     np.save(os.path.join(save_dir, 'intensity_matrix.npy'), intensity_matrix)
-    with open(os.path.join(save_dir, 'coordinates.pkl'), 'wb') as f:
-        pickle.dump(coordinates, f)
 
 
 def determine_centroid(imzml_file):
@@ -241,10 +268,15 @@ def determine_centroid(imzml_file):
 
 
 if __name__ == '__main__':
-    # process_ms_imaging_data(
-    #     "/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg.imzML",
-    #     "/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg.ibd",
-    #     n_processes=1)
 
-    feature_mzs = np.load('/Users/shipei/Documents/projects/ms1_id/imaging/feature_mzs.npy')
-    print('mz features:', len(feature_mzs))
+    from scipy.sparse import csr_matrix, load_npz
+    mz_cor_matrix = load_npz('/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg/mz_correlation_matrix.npz')
+    if not isinstance(mz_cor_matrix, csr_matrix):
+        correlation_matrix = csr_matrix(mz_cor_matrix)
+
+    mz_values = np.load('/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg/mz_values.npy')
+    print(mz_values.shape)
+
+
+    # 128.0353, 143.0462, 306.0765
+    # idx: 143, 255, 1315

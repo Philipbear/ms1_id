@@ -77,7 +77,7 @@ For more options, run:
   ```bash
   ms1_id msi --help
   ```
-Expected runtime is ~10 min for a single MS imaging dataset if at least 12 cores are available.
+Expected runtime is ~10-15 min for a single MS imaging dataset if at least 12 cores are available.
 
 ---------
 
@@ -119,7 +119,8 @@ bash run.sh
   - Sea water DOM (Q Exactive) ([GNPS/MassIVE MSV000094338](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000094338))
   - Foam DOM (Q Exactive) ([GNPS/MassIVE MSV000083888](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083888))
   - Ocean DOM (Q Exactive) ([GNPS/MassIVE MSV000083632](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083632))
-  - Psychotria plant extracts (Q-TOF) ([GNPS/MassIVE MSV000078931](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000078931))
+  - XXX (Q-TOF) ([GNPS/MassIVE MSV000090975](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090975))
+  - XXX (Q-TOF) ([GNPS/MassIVE MSV000078931](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000078931))
 - MS imaging data
   - Mouse brain ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
   - Mouse body ([METASPACE dataset](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))

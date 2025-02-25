@@ -82,8 +82,12 @@ def _process_chunk(args):
 
         if len(correlated_indices) >= min_cluster_size:
             cluster_mzs = mz_values[list(correlated_indices)]
+
+            # sort by mz
+            cluster_mzs = np.sort(cluster_mzs).tolist()
+
             indices = sorted(correlated_indices)
-            chunk_results.append(PseudoMS2(mz, i, cluster_mzs.tolist(), [0] * len(cluster_mzs), indices))
+            chunk_results.append(PseudoMS2(mz, cluster_mzs, [0] * len(cluster_mzs), indices))
 
     return chunk_results
 
@@ -95,8 +99,6 @@ def _perform_clustering(mz_values, correlation_matrix, n_processes=None, min_cor
     """
     if not isinstance(correlation_matrix, csr_matrix):
         correlation_matrix = csr_matrix(correlation_matrix)
-
-    n_processes = n_processes or mp.cpu_count()
 
     # Prepare chunks
     n_chunks = (len(mz_values) + chunk_size - 1) // chunk_size
@@ -118,15 +120,29 @@ def _perform_clustering(mz_values, correlation_matrix, n_processes=None, min_cor
 def _assign_intensities(pseudo_ms2_spectra, intensity_matrix):
     """
     Assign intensity values to pseudo MS2 spectra.
+    For each spectrum, find the scan where the most m/z values show up
+    (have intensity > 0).
     """
     for spectrum in tqdm(pseudo_ms2_spectra, desc="Assigning intensities"):
         # Get the intensities for all m/z values in this PseudoMS2 object
         intensities = intensity_matrix[spectrum.indices, :]
 
-        # Get the intensities for the target m/z across all spectra
-        t_mz_intensities = intensity_matrix[spectrum.t_mz_idx, :]
+        # Count number of non-zero intensities for each scan
+        non_zero_counts = np.count_nonzero(intensities > 0, axis=0)
 
-        # Find the spectrum with the highest intensity at the target m/z
-        max_spectrum_index = np.argmax(t_mz_intensities)
+        # Find the scan with the most non-zero intensities
+        max_spectrum_index = np.argmax(non_zero_counts)
 
+        # Assign the intensities from the scan with most non-zero values
         spectrum.intensities = intensities[:, max_spectrum_index].tolist()
+
+        ##################################################
+        # Get the scan with the highest total intensity
+        # # Sum intensities across all m/z values for each scan
+        # total_intensities_per_scan = np.sum(intensities, axis=0)
+        #
+        # # Find the scan with the highest total intensity
+        # max_spectrum_index = np.argmax(total_intensities_per_scan)
+        #
+        # # Assign the intensities from the scan with highest total intensity
+        # spectrum.intensities = intensities[:, max_spectrum_index].tolist()

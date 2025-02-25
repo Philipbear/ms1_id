@@ -701,6 +701,7 @@ class FlashCos:
     def clean_spectrum_for_search(self,
                                   precursor_mz,
                                   peaks,
+                                  min_mz,
                                   precursor_ions_removal_da: float = 1.6,
                                   noise_threshold=0.01,
                                   min_ms2_difference_in_da: float = 0.05,
@@ -726,7 +727,7 @@ class FlashCos:
 
         return preprocess_ms2(peaks=peaks,
                               prec_mz=precursor_mz,
-                              min_mz=-1,
+                              min_mz=min_mz,
                               max_mz=max_mz,
                               relative_intensity_cutoff=noise_threshold,
                               min_ms2_difference_in_da=min_ms2_difference_in_da,
@@ -850,6 +851,7 @@ class FlashCos:
 
     def build_index(self,
                     all_spectra_list: list = None,
+                    min_indexed_mz: float = 0.0,
                     max_indexed_mz: float = 1500.00005,
                     precursor_ions_removal_da: Union[float, None] = 1.6,
                     noise_threshold=0.01,
@@ -871,6 +873,7 @@ class FlashCos:
             # Clean the peaks
             if clean_spectra:
                 spec["peaks"] = self.clean_spectrum_for_search(peaks=spec["peaks"],
+                                                               min_mz=min_indexed_mz,
                                                                precursor_mz=spec["precursor_mz"],
                                                                precursor_ions_removal_da=precursor_ions_removal_da,
                                                                noise_threshold=noise_threshold,

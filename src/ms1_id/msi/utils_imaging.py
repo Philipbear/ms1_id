@@ -2,12 +2,11 @@
 
 
 class PseudoMS2:
-    def __init__(self, t_mz, t_mz_idx, mz_ls, int_ls, idx_ls):
-        self.t_mz = t_mz  # this PseudoMS1 spectrum is generated starting from this mz
-        self.t_mz_idx = t_mz_idx  # idx of t_mz in the mz_values
+    def __init__(self, t_mz, mz_ls, int_ls, idx_ls):
+        self.t_mz = t_mz  # this PseudoMS2 spectrum is generated starting from this mz
         self.mzs = mz_ls
         self.intensities = int_ls
-        self.indices = idx_ls  # indices of mzs, for later assign intensities
+        self.indices = idx_ls  # indices of mzs in original mz feature array, for later assign intensities
         self.annotated = False
         self.annotation_ls = []  # list of SpecAnnotation objects
 

@@ -17,13 +17,17 @@ def index_library(args):
     # print(f"Using m/z tolerance: {args.mz_tol}")
     print(f"Peak scaling factor: {args.peak_scale_k}")
     print(f"Peak intensity power: {args.peak_intensity_power}")
+    print(f"Minimum indexed m/z: {args.min_indexed_mz}")
+    print(f"Output path: {args.out_path}")
 
     # Call your actual indexing function here
     prepare_ms2_lib(
         ms2db=args.ms2db,
         # mz_tol=args.mz_tol,
         peak_scale_k=args.peak_scale_k,
-        peak_intensity_power=args.peak_intensity_power
+        peak_intensity_power=args.peak_intensity_power,
+        min_indexed_mz=args.min_indexed_mz,
+        out_path=args.out_path
     )
 
 
@@ -141,6 +145,7 @@ def run_msi(args):
         n_processes=args.n_cores,
         sn_factor=args.sn_factor,
         mz_ppm_tol=args.mz_ppm_tol,
+        min_spatial_chaos=args.min_spatial_chaos,
         min_overlap=args.min_overlap,
         min_correlation=args.min_correlation,
         max_cor_depth=args.max_cor_depth,
@@ -174,8 +179,12 @@ def main():
     #                     help='m/z tolerance for peak matching (default: 0.05)')
     index_parser.add_argument('--peak_scale_k', type=float, default=None,
                         help='Peak scaling factor. Set to None for no scaling (default: None)')
-    index_parser.add_argument('--peak_intensity_power', type=float, default=1.0,
-                        help='Peak intensity power. Use 0.5 for square root transformation (default: 1.0, no transformation)')
+    index_parser.add_argument('--peak_intensity_power', type=float, default=0.5,
+                        help='Peak intensity power. Use 0.5 for square root transformation (default: 0.5)')
+    index_parser.add_argument('--min_indexed_mz', type=float, default=0.0,
+                        help='Minimum m/z value to be indexed (default: 0.0)')
+    index_parser.add_argument('--out_path', '-o', type=str, default=None,
+                        help='Output path for indexed library (default: None, same as input file)')
 
     ####################
     # Subcommand for annotation
@@ -270,10 +279,12 @@ def main():
                         help='Number of cores to use (default: None, use all available cores)')
     msi_parser.add_argument('--sn_factor', type=float, default=3.0,
                         help='Signal-to-noise factor for noise removal (default: 3.0)')
-    msi_parser.add_argument('--mz_ppm_tol', type=float, default=10.0,
-                        help='m/z tolerance in ppm for feature detection (default: 10.0)')
-    msi_parser.add_argument('--min_overlap', type=int, default=5,
-                        help='Minimum overlap between ion images (default: 5)')
+    msi_parser.add_argument('--mz_ppm_tol', type=float, default=5.0,
+                        help='m/z tolerance in ppm for feature detection (default: 5.0)')
+    msi_parser.add_argument('--min_spatial_chaos', type=float, default=0.6,
+                        help='Minimum spatial chaos for feature detection (default: 0.6)')
+    msi_parser.add_argument('--min_overlap', type=int, default=10,
+                        help='Minimum overlap between ion images to be considered as positively correlated (default: 10)')
     msi_parser.add_argument('--min_correlation', type=float, default=0.85,
                         help='Minimum correlation between spectra (default: 0.85)')
     msi_parser.add_argument('--max_cor_depth', type=int, default=1,
