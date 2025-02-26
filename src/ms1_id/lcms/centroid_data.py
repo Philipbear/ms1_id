@@ -83,7 +83,7 @@ def check_centroid_for_search(peaks, width_da=0.105):
     return True if np.all(np.diff(peaks[:, 0]) >= width_da) else False
 
 
-def centroid_spectrum_for_search(peaks, width_da=0.105, width_ppm=25.0):
+def centroid_spectrum_for_search(peaks, width_da=0.05, width_ppm=25.0):
     """Centroid a spectrum for search."""
     if len(peaks) == 0:
         return peaks

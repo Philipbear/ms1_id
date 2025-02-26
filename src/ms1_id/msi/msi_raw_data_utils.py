@@ -284,7 +284,7 @@ def assign_spec_to_feature_array(mz_arr, intensity_arr, feature_mzs, mz_ppm_tol)
     return feature_intensities
 
 
-def calc_spatial_chaos(feature_intensity_array, x_size, y_size):
+def calc_spatial_chaos_easy_version(feature_intensity_array, x_size, y_size):
     """
     Calculate the spatial chaos of a feature intensity array.
     :param feature_intensity_array: 1D array of feature intensities
@@ -293,6 +293,59 @@ def calc_spatial_chaos(feature_intensity_array, x_size, y_size):
     chaos = measure_of_chaos(im, 30)
 
     # check if nan
+    if np.isnan(chaos):
+        chaos = 0.0
+
+    return chaos
+
+
+def calc_spatial_chaos(feature_intensity_array, coordinates):
+    """
+    Calculate the spatial chaos of a feature intensity array with disordered coordinates.
+
+    Parameters:
+    -----------
+    feature_intensity_array : numpy.ndarray
+        1D array of feature intensities
+    coordinates : list
+        List of (x, y, z) coordinates corresponding to each intensity value
+
+    Returns:
+    --------
+    float
+        Spatial chaos score
+    """
+    # Extract x and y coordinates
+    x_coords = np.array([coord[0] for coord in coordinates])
+    y_coords = np.array([coord[1] for coord in coordinates])
+
+    # Find min and max coordinates if not provided
+    min_x = np.min(x_coords)
+    min_y = np.min(y_coords)
+
+    max_x = np.max(x_coords)
+    max_y = np.max(y_coords)
+
+    # Calculate dimensions
+    x_size = max_x - min_x + 1
+    y_size = max_y - min_y + 1
+
+    # Create empty 2D array
+    im = np.zeros((y_size, x_size))
+
+    # Fill the 2D array with intensity values at their specific positions
+    for i, (x, y, _) in enumerate(coordinates):
+        # Adjust coordinates to start from 0
+        adjusted_x = x - min_x
+        adjusted_y = y - min_y
+
+        # Place intensity value at the correct position
+        im[adjusted_y, adjusted_x] = feature_intensity_array[i]
+
+    # Calculate spatial chaos
+    chaos = measure_of_chaos(im, 30)
+
+    # Check if nan
     if np.isnan(chaos):
         chaos = 0.0
 

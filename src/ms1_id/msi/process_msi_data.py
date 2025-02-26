@@ -6,14 +6,13 @@ import pyimzml.ImzMLParser as imzml
 from tqdm import tqdm
 
 
-from ms1_id.msi.msi_raw_data_utils import (clean_msi_spec, get_msi_features,
-                                           calc_spatial_chaos, assign_spec_to_feature_array)
+from ms1_id.msi.msi_raw_data_utils import clean_msi_spec, get_msi_features, assign_spec_to_feature_array, calc_spatial_chaos
 
 
 def process_ms_imaging_data(imzml_file, ibd_file,
                             mz_ppm_tol=10.0,
                             sn_factor=5.0,
-                            min_spatial_chaos=0.6,
+                            min_spatial_chaos=0.0,
                             n_processes=None,
                             save_dir=None):
 
@@ -29,17 +28,16 @@ def process_ms_imaging_data(imzml_file, ibd_file,
     if not centroided:
         print("Input data are not centroided, centroiding spectra...")
 
+    # Get features
     feature_mzs, intensity_matrix = process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes)
 
-    # debug
-    save_results(save_dir, feature_mzs, intensity_matrix)
-
+    # Filter features based on spatial chaos
     feature_mzs, intensity_matrix = filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, parser.coordinates,
                                                                      min_spatial_chaos, n_processes)
 
     # Save
     if save_dir:
-        print(f'Saving mz values, intensity matrix, and coordinates...')
+        print(f'Saving mz values and intensity matrix...')
         save_results(save_dir, feature_mzs, intensity_matrix)
 
     return feature_mzs, intensity_matrix, parser.polarity
@@ -88,7 +86,7 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
     for idx, mz_arr, intensity_arr in results:
         all_mzs.extend(mz_arr.tolist())
         all_intensities.extend(intensity_arr.tolist())
-    feature_mzs = get_msi_features(np.array(all_mzs), np.array(all_intensities), mz_ppm_tol, min_group_size=10,
+    feature_mzs = get_msi_features(np.array(all_mzs), np.array(all_intensities), mz_ppm_tol, min_group_size=50,
                                    n_processes=n_processes)
     print(f"Found {len(feature_mzs)} features.")
     del all_mzs, all_intensities
@@ -148,15 +146,6 @@ def filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, coordinates,
     numpy.ndarray
         Filtered intensity matrix
     """
-    # Get size of the image
-    x_ls = []
-    y_ls = []
-    for coord in coordinates:
-        x_ls.append(coord[0])
-        y_ls.append(coord[1])
-
-    x_size = max(x_ls) - min(x_ls) + 1
-    y_size = max(y_ls) - min(y_ls) + 1
 
     # Calculate spatial chaos for each feature
     print(f"Calculating spatial chaos for {len(feature_mzs)} features...")
@@ -165,11 +154,11 @@ def filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, coordinates,
         all_results = []
         # Non-parallel processing
         for idx in tqdm(range(len(feature_mzs)), desc="Calculating spatial chaos", unit="feature"):
-            chaos = calc_spatial_chaos(intensity_matrix[idx], x_size, y_size)
+            chaos = calc_spatial_chaos(intensity_matrix[idx], coordinates)
             all_results.append((idx, chaos))
     else:
         # Parallel processing
-        args_list = [(idx, intensity_matrix[idx], x_size, y_size)
+        args_list = [(idx, intensity_matrix[idx], coordinates)
                      for idx in range(len(feature_mzs))]
 
         # Split into chunks for better progress tracking
@@ -200,8 +189,8 @@ def process_spatial_chaos_chunk(chunk_args):
     """Process a chunk of features for spatial chaos calculation."""
     chunk_results = []
     for args in chunk_args:
-        feature_idx, feature_intensity_array, x_size, y_size = args
-        chaos = calc_spatial_chaos(feature_intensity_array, x_size, y_size)
+        feature_idx, feature_intensity_array, coordinates = args
+        chaos = calc_spatial_chaos(feature_intensity_array, coordinates)
         chunk_results.append((feature_idx, chaos))
     return chunk_results
 
@@ -265,18 +254,3 @@ def determine_centroid(imzml_file):
                 break
 
     return centroid
-
-
-if __name__ == '__main__':
-
-    from scipy.sparse import csr_matrix, load_npz
-    mz_cor_matrix = load_npz('/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg/mz_correlation_matrix.npz')
-    if not isinstance(mz_cor_matrix, csr_matrix):
-        correlation_matrix = csr_matrix(mz_cor_matrix)
-
-    mz_values = np.load('/Users/shipei/Documents/projects/ms1_id/imaging/spotted_stds/2020-12-05_ME_X190_L1_Spotted_20umss_375x450_33at_DAN_Neg/mz_values.npy')
-    print(mz_values.shape)
-
-
-    # 128.0353, 143.0462, 306.0765
-    # idx: 143, 255, 1315

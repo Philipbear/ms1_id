@@ -111,14 +111,14 @@ def _check_centroid(peaks, width_da=0.005, width_ppm=25.0) -> int:
     return 1 if np.all(np.diff(peaks[:, 0]) >= threshold) else 0
 
 
-def check_centroid_for_search(peaks, width_da=0.105):
+def check_centroid_for_search(peaks, width_da=0.05):
     """Check if the spectrum is centroided. True for centroided and False for not centroided."""
 
     # Check if the spectrum is centroided
     return True if np.all(np.diff(peaks[:, 0]) >= width_da) else False
 
 
-def centroid_spectrum_for_search(peaks, width_da=0.105):
+def centroid_spectrum_for_search(peaks, width_da=0.05):
     """Centroid a spectrum for search."""
     if len(peaks) == 0:
         return peaks

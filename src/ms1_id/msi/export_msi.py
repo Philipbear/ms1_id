@@ -22,6 +22,7 @@ def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
 
         for annotation in spec.annotation_ls:
             out_list.append({
+                'pms2_idx': spec.spec_idx,
                 'name': annotation.name,
                 'mz': round(annotation.mz, 4),
                 'matched_score': round(annotation.score, 4),

@@ -28,25 +28,20 @@ def validate_library_path(library_path):
     return library_path
 
 
-def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes,
+def ms1_id_annotation(ms2_spec_ls, library_ls, n_processes,
                       mz_tol=0.05,
                       score_cutoff=0.6, min_matched_peak=4, min_spec_usage=0.0,
                       ion_mode=None,
-                      refine=False,
-                      max_prec_rel_int_in_other_ms2=0.05,
                       save_dir=None):
     """
     Perform ms1 annotation
-    :param ms1_spec_ls: a list of PseudoMS2-like object
-    :param library: path to the pickle file, indexed library
+    :param ms2_spec_ls: a list of PseudoMS2-like object
+    :param library_ls: list of paths to the indexed library
     :param n_processes: number of processes to use
     :param mz_tol: mz tolerance in Da, for rev cos matching
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
-    :param peak_scale_k: for rev cos, peak scaling factor
     :param ion_mode: str, ion mode. If None, all ion modes are considered
-    :param refine: bool, whether to refine the results
-    :param max_prec_rel_int_in_other_ms2: float, maximum relative intensity of precursor in other MS2 spectra
     :param save_dir: str, directory to save the results
     :return: PseudoMS2-like object
     """
@@ -56,18 +51,18 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes,
         save_path = os.path.join(save_dir, 'pseudo_ms2_annotated.pkl')
         if os.path.exists(save_path):
             with open(save_path, 'rb') as file:
-                ms1_spec_ls = pickle.load(file)
-            return ms1_spec_ls
+                ms2_spec_ls = pickle.load(file)
+            return ms2_spec_ls
 
     n_processes = min(max(1, cpu_count() // 2), n_processes)  # ms2 library is large, for RAM usage
 
-    chunk_size = len(ms1_spec_ls) // n_processes + 1
+    chunk_size = max(20, len(ms2_spec_ls) // (n_processes * 10) + 1)
 
     # Perform centroiding for all spectra before annotation
-    ms1_spec_ls = centroid_all_spectra(ms1_spec_ls, n_processes)
+    ms2_spec_ls = centroid_all_spectra(ms2_spec_ls, n_processes)
 
     # perform revcos matching
-    ms1_spec_ls = ms1_id_revcos_matching(ms1_spec_ls, library_ls,
+    ms2_spec_ls = ms1_id_revcos_matching(ms2_spec_ls, library_ls,
                                          n_processes=n_processes,
                                          mz_tol=mz_tol,
                                          ion_mode=ion_mode,
@@ -76,28 +71,23 @@ def ms1_id_annotation(ms1_spec_ls, library_ls, n_processes,
                                          min_spec_usage=min_spec_usage,
                                          chunk_size=chunk_size)
 
-    # refine the results, to avoid wrong annotations (ATP, ADP, AMP all annotated at the same RT)
-    if refine:
-        print('Refining MS1 ID results...')
-        ms1_spec_ls = refine_ms1_id_results(ms1_spec_ls, mz_tol=mz_tol,
-                                            max_prec_rel_int=max_prec_rel_int_in_other_ms2)
-
+    # save the results
     save_path = os.path.join(save_dir, 'pseudo_ms2_annotated.pkl')
     with open(save_path, 'wb') as file:
-        pickle.dump(ms1_spec_ls, file)
+        pickle.dump(ms2_spec_ls, file)
 
-    return ms1_spec_ls
+    return ms2_spec_ls
 
 
-def centroid_all_spectra(ms1_spec_ls, n_processes):
+def centroid_all_spectra(ms2_spec_ls, n_processes):
     """
     Centroid all spectra in parallel
     """
     with Pool(processes=n_processes) as pool:
-        ms1_spec_ls = list(tqdm(pool.imap(_centroid_spectrum, ms1_spec_ls),
-                                total=len(ms1_spec_ls),
+        ms2_spec_ls = list(tqdm(pool.imap(_centroid_spectrum, ms2_spec_ls),
+                                total=len(ms2_spec_ls),
                                 desc="Centroiding spectra"))
-    return ms1_spec_ls
+    return ms2_spec_ls
 
 
 def _centroid_spectrum(spec):
@@ -107,17 +97,17 @@ def _centroid_spectrum(spec):
     return spec
 
 
-def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes,
+def ms1_id_revcos_matching(ms2_spec_ls, library_ls, n_processes,
                            mz_tol=0.05,
                            ion_mode=None,
                            score_cutoff=0.7,
-                           min_matched_peak=4,
+                           min_matched_peak=3,
                            min_spec_usage=0.0,
                            chunk_size=500) -> List:
     """
     Perform MS1 annotation using parallel open search for the entire spectrum, with filters similar to identity search.
 
-    :param ms1_spec_ls: a list of PseudoMS2-like objects
+    :param ms2_spec_ls: a list of PseudoMS2-like objects
     :param library_ls: path to the pickle file, indexed library
     :param n_processes: number of processes to use
     :param mz_tol: m/z tolerance in Da, for open matching
@@ -140,7 +130,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, n_processes,
         print(f"Loaded library: {db_name}")
 
     # Prepare chunks
-    chunks = [ms1_spec_ls[i:i + chunk_size] for i in range(0, len(ms1_spec_ls), chunk_size)]
+    chunks = [ms2_spec_ls[i:i + chunk_size] for i in range(0, len(ms2_spec_ls), chunk_size)]
 
     # Prepare arguments for parallel processing
     args_list = [(chunk, search_engines, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage)
@@ -225,53 +215,3 @@ def _process_chunk_multi_lib(args):
                     spec.annotation_ls.append(annotation)
 
     return chunk
-
-
-def refine_ms1_id_results(ms1_spec_ls, mz_tol=0.01, max_prec_rel_int=0.05):
-    """
-    Refine MS1 ID results within each pseudo MS2 spectrum using a cumulative public spectrum approach.
-
-    :param ms1_spec_ls: List of PseudoMS2-like objects
-    :param mz_tol: m/z tolerance for comparing precursor masses
-    :param max_prec_rel_int: Maximum relative intensity threshold for precursor in public spectrum
-    :return: Refined list of PseudoMS2-like objects
-    """
-    for spec in ms1_spec_ls:
-        if spec.annotated and len(spec.annotation_ls) > 1:
-            # Sort annotations by precursor m/z in descending order
-            spec.annotation_ls.sort(key=lambda x: x.precursor_mz, reverse=True)
-
-            public_mz = np.array([])  # Public spectrum, all matched peaks
-            public_intensity = np.array([])
-            to_keep = []
-
-            for annotation in spec.annotation_ls:
-
-                current_precursor_mz = annotation.precursor_mz
-
-                # Check if precursor appears in public spectrum
-                if public_mz.size > 0:
-                    mz_diff = np.abs(public_mz - current_precursor_mz)
-                    min_diff_idx = np.argmin(mz_diff)
-                    if mz_diff[min_diff_idx] <= mz_tol and public_intensity[min_diff_idx] > max_prec_rel_int:
-                        continue
-
-                to_keep.append(annotation)
-
-                # Add the reference spectrum to the public spectrum
-                ref_spectrum = np.array(annotation.matched_spec)
-                ref_mz = ref_spectrum[:, 0]
-                ref_intensity = ref_spectrum[:, 1] / np.max(ref_spectrum[:, 1])
-
-                if public_mz.size == 0:
-                    public_mz = ref_mz
-                    public_intensity = ref_intensity
-                else:
-                    # Add peaks
-                    public_mz = np.concatenate([public_mz, ref_mz])
-                    public_intensity = np.concatenate([public_intensity, ref_intensity])
-
-            # Update annotations
-            spec.annotation_ls = to_keep
-
-    return ms1_spec_ls

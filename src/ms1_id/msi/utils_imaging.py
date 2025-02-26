@@ -3,6 +3,7 @@
 
 class PseudoMS2:
     def __init__(self, t_mz, mz_ls, int_ls, idx_ls):
+        self.spec_idx = None
         self.t_mz = t_mz  # this PseudoMS2 spectrum is generated starting from this mz
         self.mzs = mz_ls
         self.intensities = int_ls

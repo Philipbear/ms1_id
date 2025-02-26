@@ -11,9 +11,11 @@ from ms1_id.msi.export_msi import write_pseudoms2_to_mgf
 
 
 def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
-                        n_processes=None, min_cluster_size=6,
-                        min_cor=0.90, max_cor_depth=1,
-                        save_dir=None, chunk_size=1000):
+                        n_processes=None,
+                        min_cluster_size=6,
+                        min_cor=0.90,
+                        save_dir=None,
+                        chunk_size=1000):
     """
     Generate pseudo MS2 spectra for imaging data using chunked parallel processing
     """
@@ -29,12 +31,16 @@ def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
     pseudo_ms2_spectra = _perform_clustering(mz_values, correlation_matrix,
                                              n_processes=n_processes,
                                              min_cor=min_cor,
-                                             max_cor_depth=max_cor_depth,
                                              min_cluster_size=min_cluster_size,
                                              chunk_size=chunk_size)
 
     # Assign intensity values
     _assign_intensities(pseudo_ms2_spectra, intensity_matrix)
+
+    # sort ms2_spec_ls by t_mz, add spec_idx
+    pseudo_ms2_spectra = sorted(pseudo_ms2_spectra, key=lambda x: x.t_mz)
+    for idx, spec in enumerate(pseudo_ms2_spectra):
+        spec.spec_idx = idx
 
     if save_dir:
         pkl_path = os.path.join(save_dir, 'pseudo_ms2_spectra.pkl')
@@ -49,51 +55,32 @@ def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
 
 def _process_chunk(args):
     """
-    Process a chunk of m/z values for clustering, considering max_cor_depth and correlation threshold.
+    Process a chunk of m/z values for clustering, considering correlation threshold.
     """
-    start_idx, end_idx, mz_values, correlation_matrix, min_cor, min_cluster_size, max_cor_depth = args
+    start_idx, end_idx, mz_values, correlation_matrix, min_cor, min_cluster_size = args
     chunk_results = []
-
-    def find_correlated_mzs(target_idx, current_depth, visited):
-        if current_depth > max_cor_depth:
-            return set()
-
-        row = correlation_matrix[target_idx].toarray().flatten()
-
-        if current_depth == 0:
-            # correlated_indices = set(np.where((mz_values <= mz_values[target_idx] + 1e-2) & (row > 0))[0]) - visited
-            correlated_indices = set(np.where(row > 0)[0]) - visited
-        else:
-            # For depth >= 1, apply the correlation threshold with the original target
-            original_target_row = correlation_matrix[start_idx].toarray().flatten()
-            # correlated_indices = set(np.where((mz_values <= mz_values[target_idx] + 1e-2) &
-            #                                   (row > 0) & (original_target_row >= (min_cor - 0.10)))[0]) - visited
-            correlated_indices = set(np.where((row > 0) & (original_target_row >= (min_cor - 0.10)))[0]) - visited
-
-        if current_depth < max_cor_depth:
-            for idx in correlated_indices.copy():
-                correlated_indices.update(find_correlated_mzs(idx, current_depth + 1, visited | correlated_indices))
-
-        return correlated_indices
 
     for i in range(start_idx, end_idx):
         mz = mz_values[i]
-        correlated_indices = find_correlated_mzs(i, 0, set())
+
+        # Get correlated indices directly from the correlation matrix row
+        row = correlation_matrix[i].toarray().flatten()
+        correlated_indices = set(np.where(row > 0)[0])
 
         if len(correlated_indices) >= min_cluster_size:
-            cluster_mzs = mz_values[list(correlated_indices)]
+            # Extract cluster m/z values and sort them
+            cluster_mzs = np.sort(mz_values[list(correlated_indices)]).tolist()
 
-            # sort by mz
-            cluster_mzs = np.sort(cluster_mzs).tolist()
-
+            # Sort indices
             indices = sorted(correlated_indices)
+
             chunk_results.append(PseudoMS2(mz, cluster_mzs, [0] * len(cluster_mzs), indices))
 
     return chunk_results
 
 
 def _perform_clustering(mz_values, correlation_matrix, n_processes=None, min_cor=0.90,
-                        min_cluster_size=3, max_cor_depth=1, chunk_size=800):
+                        min_cluster_size=3, chunk_size=800):
     """
     Perform clustering on m/z values based on correlation scores using chunked multiprocessing.
     """
@@ -103,7 +90,7 @@ def _perform_clustering(mz_values, correlation_matrix, n_processes=None, min_cor
     # Prepare chunks
     n_chunks = (len(mz_values) + chunk_size - 1) // chunk_size
     chunks = [(i * chunk_size, min((i + 1) * chunk_size, len(mz_values)),
-               mz_values, correlation_matrix, min_cor, min_cluster_size, max_cor_depth)
+               mz_values, correlation_matrix, min_cor, min_cluster_size)
               for i in range(n_chunks)]
 
     # Process chunks in parallel

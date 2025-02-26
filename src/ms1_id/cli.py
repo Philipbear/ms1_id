@@ -148,7 +148,6 @@ def run_msi(args):
         min_spatial_chaos=args.min_spatial_chaos,
         min_overlap=args.min_overlap,
         min_correlation=args.min_correlation,
-        max_cor_depth=args.max_cor_depth,
         library_search_mztol=args.lib_search_mztol,
         score_cutoff=args.score_cutoff,
         min_matched_peak=args.min_matched_peak,
@@ -279,16 +278,14 @@ def main():
                         help='Number of cores to use (default: None, use all available cores)')
     msi_parser.add_argument('--sn_factor', type=float, default=3.0,
                         help='Signal-to-noise factor for noise removal (default: 3.0)')
-    msi_parser.add_argument('--mz_ppm_tol', type=float, default=5.0,
-                        help='m/z tolerance in ppm for feature detection (default: 5.0)')
-    msi_parser.add_argument('--min_spatial_chaos', type=float, default=0.6,
-                        help='Minimum spatial chaos for feature detection (default: 0.6)')
-    msi_parser.add_argument('--min_overlap', type=int, default=10,
-                        help='Minimum overlap between ion images to be considered as positively correlated (default: 10)')
+    msi_parser.add_argument('--mz_ppm_tol', type=float, default=10.0,
+                        help='m/z tolerance in ppm for feature detection (default: 10.0)')
+    msi_parser.add_argument('--min_spatial_chaos', type=float, default=0.10,
+                        help='Minimum spatial chaos for feature detection (default: 0.10)')
+    msi_parser.add_argument('--min_overlap', type=int, default=30,
+                        help='Minimum pixel overlap between ion images to be considered as positively correlated (default: 30)')
     msi_parser.add_argument('--min_correlation', type=float, default=0.85,
                         help='Minimum correlation between spectra (default: 0.85)')
-    msi_parser.add_argument('--max_cor_depth', type=int, default=1,
-                        help='Maximum correlation depth for spatial correlation (default: 1)')
     msi_parser.add_argument('--lib_search_mztol', type=float, default=0.05,
                         help='Library search m/z tolerance (default: 0.05)')
     msi_parser.add_argument('--score_cutoff', type=float, default=0.7,
