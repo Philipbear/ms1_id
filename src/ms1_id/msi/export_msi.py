@@ -1,30 +1,40 @@
 import os
-
+import numpy as np
 import pandas as pd
 
 
-def write_ms1_id_results(ms1_spec_ls, save=True, save_dir=None):
+def write_ms1_id_results(feature_ls, ms2_spec_ls, save=True, save_dir=None):
     """
-    Output the annotated ms1 spectra
-    :param ms1_spec_ls: a list of PseudoMS2-like object
+    Output the annotated spectra
+    :param feature_ls: a list of MSiFeature object
+    :param ms2_spec_ls: a list of PseudoMS2-like object
     :param save: bool, whether to save the results
     :param save_dir: str, path to save the results
     :return: None
     """
 
     # only write out spectra with annotations
-    ms1_spec_ls = [spec for spec in ms1_spec_ls if spec.annotated]
+    ms2_spec_ls = [spec for spec in ms2_spec_ls if spec.annotated]
+
+    mz_values = np.array([feature.mz for feature in feature_ls])
+    spatial_chaos = np.array([feature.spatial_chaos for feature in feature_ls])
 
     out_list = []
-    for spec in ms1_spec_ls:
+    for spec in ms2_spec_ls:
         # pseudo_ms2_str: mz1 int1; mz2 int2; ...
         pseudo_ms2_str = ' '.join([f"{mz:.4f} {intensity:.0f};" for mz, intensity in zip(spec.mzs, spec.intensities)])
 
         for annotation in spec.annotation_ls:
+
+            # find the idx of the closest mz and get the corresponding spatial chaos
+            t_mz_idx = np.argmin(np.abs(mz_values - annotation.mz))
+            spatial_chaos_value = spatial_chaos[t_mz_idx]
+
             out_list.append({
                 'pms2_idx': spec.spec_idx,
                 'name': annotation.name,
                 'mz': round(annotation.mz, 4),
+                'spatial_chaos':  round(spatial_chaos_value, 4),
                 'matched_score': round(annotation.score, 4),
                 'matched_peak': annotation.matched_peak,
                 'spectral_usage': round(annotation.spectral_usage, 4) if annotation.spectral_usage else None,

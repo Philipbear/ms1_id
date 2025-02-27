@@ -1,9 +1,16 @@
 # Description: This file contains classes that are used in the main pipeline.
 
+class MsiFeature:
+    def __init__(self, feature_id, mz, intensity_arr, spatial_chaos):
+        self.feature_id = feature_id
+        self.mz = mz
+        self.intensity_arr = intensity_arr
+        self.spatial_chaos = spatial_chaos
+
 
 class PseudoMS2:
     def __init__(self, t_mz, mz_ls, int_ls, idx_ls):
-        self.spec_idx = None
+        self.spec_idx = None  # index of pseudo MS2 spectrum
         self.t_mz = t_mz  # this PseudoMS2 spectrum is generated starting from this mz
         self.mzs = mz_ls
         self.intensities = int_ls

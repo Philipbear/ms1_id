@@ -14,15 +14,15 @@ def _mz_correlation(intensities_x, intensities_y, min_overlap=30):
     non_zero_mask_y = intensities_y > 0
     non_zero_mask = non_zero_mask_x & non_zero_mask_y
 
+    if sum(non_zero_mask) < min_overlap:
+        return 0.0
+
     ratio_x = sum(non_zero_mask > 0) / sum(non_zero_mask_x > 0)
     ratio_y = sum(non_zero_mask > 0) / sum(non_zero_mask_y > 0)
 
     x = intensities_x[non_zero_mask]
     y = intensities_y[non_zero_mask]
-
     n = len(x)
-    if n < min_overlap:
-        return 0.0
 
     sum_x = np.sum(x)
     sum_y = np.sum(y)
@@ -33,13 +33,13 @@ def _mz_correlation(intensities_x, intensities_y, min_overlap=30):
     numerator = n * sum_xy - sum_x * sum_y
     denominator = np.sqrt((n * sum_x2 - sum_x ** 2) * (n * sum_y2 - sum_y ** 2))
 
-    p_corr = numerator / denominator if denominator != 0 else 0.0
+    corr = numerator / denominator if denominator != 0 else 0.0
 
     # if largely overlapped, return 1.0
-    if max(ratio_x, ratio_y) > 0.98 and p_corr > 0.4:
+    if max(ratio_x, ratio_y) > 0.95 and corr > 0.4:
         return 1.0
 
-    return p_corr
+    return corr
 
 
 def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overlap,
@@ -62,13 +62,13 @@ def worker(start_idx, end_idx, mmap_filename, intensity_matrix_shape, min_overla
     return_dict[start_idx] = (rows, cols, data)
 
 
-def calc_all_mz_correlations(intensity_matrix, min_overlap=50, min_cor=0.8,
+def calc_all_mz_correlations(intensity_matrix, min_pixel_overlap=50, min_cor=0.8,
                              save_dir=None, n_processes=None, chunk_size=500):
     """
     Calculate m/z correlation matrix for MS imaging data using multiprocessing and numpy memmap
 
     :param intensity_matrix: 2D numpy array where rows are m/z values and columns are spectra
-    :param min_overlap: Minimum number of overlapping spectra between two ions
+    :param min_pixel_overlap: Minimum number of overlapping spectra between two ions
     :param min_cor: Minimum correlation value to keep
     :param save_dir: Directory to save the result if save is True
     :param n_processes: Number of processes to use (default: number of CPU cores)
@@ -106,7 +106,7 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=50, min_cor=0.8,
             rows, cols, data = [], [], []
             for i in range(start, end):
                 for j in range(i + 1, n_mzs):
-                    corr = _mz_correlation(mmap_array[i], mmap_array[j], min_overlap)
+                    corr = _mz_correlation(mmap_array[i], mmap_array[j], min_pixel_overlap)
                     if corr >= min_cor:
                         rows.append(i)
                         cols.append(j)
@@ -122,7 +122,7 @@ def calc_all_mz_correlations(intensity_matrix, min_overlap=50, min_cor=0.8,
         with mp.Pool(processes=n_processes) as pool:
             jobs = [
                 pool.apply_async(worker, (start, end, mmap_filename, intensity_matrix.shape,
-                                          min_overlap, min_cor, return_dict))
+                                          min_pixel_overlap, min_cor, return_dict))
                 for start, end in chunks
             ]
 

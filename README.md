@@ -1,6 +1,6 @@
 # ms1_id
 [![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-orange?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
-[![PyPI](https://img.shields.io/pypi/v/msbuddy?color=green)](https://pypi.org/project/msbuddy/)
+[![PyPI](https://img.shields.io/pypi/v/ms1_id?color=green)](https://pypi.org/project/ms1_id/)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
 
@@ -31,8 +31,13 @@ Python 3.9+ is required. It has been tested on macOS (14.6, M2 Max) and Linux (U
 
 Note: Indexed libraries are needed for the workflow. You can download the indexed GNPS library [here](https://github.com/Philipbear/ms1_id/releases).
 ```bash
-wget https://github.com/Philipbear/ms1_id/releases/latest/download/indexed_gnps_libs.zip
-unzip indexed_gnps_libs.zip -d db
+# For LC-MS data
+wget https://github.com/Philipbear/ms1_id/releases/latest/download/gnps.zip
+unzip gnps.zip -d db
+
+# For MS imaging data
+wget https://github.com/Philipbear/ms1_id/releases/latest/download/gnps_minmz100.zip
+unzip gnps_minmz100.zip -d db
 ```
 
 ---------
@@ -56,28 +61,29 @@ To annotate LC-MS data, here is an example command:
   ```bash
   ms1_id lcms --project_dir lc_ms --sample_dir data --ms1_id_libs db/gnps.pkl db/gnps_k10.pkl --ms2_id_lib db/gnps.pkl
   ```
-Here, `lc_ms` is the project directory. Raw mzML or mzXML files are stored in the `lc_ms/data` folder. Both MS1 and MS/MS annotations will be performed, and the results can be accessed from `aligned_feature_table.tsv`.
+Here, `lc_ms` is the project directory. Raw mzML or mzXML files are stored in the `lc_ms/data` folder. Both MS1 and MS/MS annotations will be performed. For MS1 annotation, both gnps.pkl and gnps_k10.pkl libraries are used. For MS/MS annotation, the gnps.pkl library is used. Results can be accessed from `aligned_feature_table.tsv`.
 
 For more options, run:
   ```bash
   ms1_id lcms --help
   ```
-Expected runtime is <3 min for a single LC-MS file. If it takes longer than 10 min, please increase the `--mass_detect_int_tol` parameter (default: 2e5 for Orbitraps, 5e2 for QTOFs).
+Expected runtime is <5 min for a single LC-MS file. If it takes longer than 10 min, please increase the `--mass_detect_int_tol` parameter (default: 2e5 for Orbitraps, 5e2 for QTOFs).
 
 ---------
 
 ### Annotate MS imaging data
 To annotate MS imaging data, here is an example command:
   ```bash
-  ms1_id msi --input_dir msi --libs db/gnps.pkl db/gnps_k10.pkl --n_cores 12
+  ms1_id msi --input_dir msi --libs db/gnps_minmz100.pkl db/gnps_minmz100_k10.pkl --n_cores 12
   ```
-Here, `msi` is the input directory consisting of the imzML and ibd files. Both gnps.pkl and gnps_k10.pkl libraries are used, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
+Here, `msi` is the input directory consisting of the imzML and ibd files. All the imzML files in the directory will be annotated individually.
+Two libraries are used simultaneously, and 12 cores will be used for parallel processing. Annotation results can be accessed from `ms1_id_annotations_derep.tsv`
 
 For more options, run:
   ```bash
   ms1_id msi --help
   ```
-Expected runtime is ~10-15 min for a single MS imaging dataset if at least 12 cores are available.
+Expected runtime is ~2-10 min for a single MS imaging dataset if at least 12 cores are available.
 
 ---------
 
@@ -114,17 +120,18 @@ bash run.sh
   - Mouse feces (lipidomics, Q-TOF) ([GNPS/MassIVE MSV000095868](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095868))
   - Komagataella phaffii (yeast, Q Exactive) ([GNPS/MassIVE MSV000090053](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090053))
   - Bacterial isolates (Q Exactive) ([GNPS/MassIVE MSV000085024](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000085024))
-  - Bessbug beetle frass microbe isolates (Q Exactive) ([GNPS/MassIVE MSV000090030](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090030))
+  - Environmental fungal strains (Q Exactive) ([GNPS/MassIVE MSV000090000](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090000))
   - Isolated bacteria (Lactobacillus paracasei, Bifidobacterium longum) (TripleTOF) ([GNPS/MassIVE MSV000090025](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090025))
   - Sea water DOM (Q Exactive) ([GNPS/MassIVE MSV000094338](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000094338))
   - Foam DOM (Q Exactive) ([GNPS/MassIVE MSV000083888](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083888))
   - Ocean DOM (Q Exactive) ([GNPS/MassIVE MSV000083632](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083632))
-  - XXX (Q-TOF) ([GNPS/MassIVE MSV000090975](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090975))
-  - XXX (Q-TOF) ([GNPS/MassIVE MSV000078931](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000078931))
+  - Plant extracts (Q-TOF) ([GNPS/MassIVE MSV000090975](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090975))
+  - 32 plant species (Q Exactive) ([GNPS/MassIVE MSV000090968](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090968))
 - MS imaging data
-  - Mouse brain ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
-  - Mouse body ([METASPACE dataset](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))
-  - Hepatocytes ([METASPACE dataset](https://metaspace2020.eu/project/Rappez_2021_SpaceM))
+  - Mouse liver with spotted standards (MALDI-Orbitrap) ([METASPACE dataset](https://metaspace2020.org/dataset/2020-12-07_03h16m14s))
+  - Mouse brain (MALDI-FTICR) ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
+  - Mouse body (MALDI-FTICR) ([METASPACE dataset](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))
+  - Hepatocytes (MALDI-Orbitrap) ([METASPACE dataset](https://metaspace2020.eu/project/Rappez_2021_SpaceM))
 
 
 ## License

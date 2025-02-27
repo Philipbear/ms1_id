@@ -1,46 +1,67 @@
 import multiprocessing
 import os
+import pickle
 
 import numpy as np
 import pyimzml.ImzMLParser as imzml
 from tqdm import tqdm
 
-
+from ms1_id.msi.utils_imaging import MsiFeature
 from ms1_id.msi.msi_raw_data_utils import clean_msi_spec, get_msi_features, assign_spec_to_feature_array, calc_spatial_chaos
 
 
 def process_ms_imaging_data(imzml_file, ibd_file,
+                            polarity=None,
                             mz_ppm_tol=10.0,
                             sn_factor=5.0,
-                            min_spatial_chaos=0.0,
+                            min_feature_pixel_count=50,
+                            min_feature_spatial_chaos=0.01,
                             n_processes=None,
                             save_dir=None):
 
     parser = imzml.ImzMLParser(imzml_file)
 
+    # Set polarity
+    file_polarity = determine_file_polarity(parser, polarity)
+
     # Check if results already exist
     if save_dir and check_existing_results(save_dir):
-        mz_values, intensity_matrix = load_existing_results(save_dir)
-        return mz_values, intensity_matrix, parser.polarity
+        feature_ls, intensity_matrix = load_existing_results(save_dir)
+        return feature_ls, intensity_matrix, file_polarity
 
     centroided = determine_centroid(imzml_file)
 
     if not centroided:
         print("Input data are not centroided, centroiding spectra...")
 
-    # Get features
-    feature_mzs, intensity_matrix = process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes)
+    # Get features (list of MsiFeature)
+    feature_ls, intensity_matrix = process_spectra(parser, mz_ppm_tol, sn_factor, centroided, min_feature_pixel_count, n_processes)
 
     # Filter features based on spatial chaos
-    feature_mzs, intensity_matrix = filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, parser.coordinates,
-                                                                     min_spatial_chaos, n_processes)
+    feature_ls, intensity_matrix = filter_features_by_spatial_chaos(feature_ls, intensity_matrix, parser.coordinates,
+                                                                    min_feature_spatial_chaos, n_processes)
 
     # Save
     if save_dir:
-        print(f'Saving mz values and intensity matrix...')
-        save_results(save_dir, feature_mzs, intensity_matrix)
+        print(f'Saving features and intensity matrix...')
+        save_results(save_dir, feature_ls, intensity_matrix)
 
-    return feature_mzs, intensity_matrix, parser.polarity
+    return feature_ls, intensity_matrix, file_polarity
+
+
+def determine_file_polarity(parser, file_polarity):
+    if parser.polarity in ['positive', 'negative']:
+        return parser.polarity
+
+    if file_polarity is not None:
+        if file_polarity.lower() in ['positive', 'pos', 'p']:
+            file_polarity = 'positive'
+        elif file_polarity.lower() in ['negative', 'neg', 'n']:
+            file_polarity = 'negative'
+        else:
+            file_polarity = None
+
+    return file_polarity
 
 
 def check_existing_results(save_dir):
@@ -50,12 +71,13 @@ def check_existing_results(save_dir):
 
 
 def load_existing_results(save_dir):
-    mz_values = np.load(os.path.join(save_dir, 'mz_values.npy'))
+    with open(os.path.join(save_dir, 'features.pkl'), 'rb') as f:
+        feature_ls = pickle.load(f)
     intensity_matrix = np.load(os.path.join(save_dir, 'intensity_matrix.npy'))
-    return mz_values, intensity_matrix
+    return feature_ls, intensity_matrix
 
 
-def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
+def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, min_feature_pixel_count, n_processes):
     # first get all spectra and clean them
     args_list = [(idx, *parser.getspectrum(idx), sn_factor, centroided)
                  for idx, _ in enumerate(parser.coordinates)]
@@ -86,7 +108,8 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
     for idx, mz_arr, intensity_arr in results:
         all_mzs.extend(mz_arr.tolist())
         all_intensities.extend(intensity_arr.tolist())
-    feature_mzs = get_msi_features(np.array(all_mzs), np.array(all_intensities), mz_ppm_tol, min_group_size=50,
+    feature_mzs = get_msi_features(np.array(all_mzs), np.array(all_intensities), mz_ppm_tol,
+                                   min_group_size=min_feature_pixel_count,
                                    n_processes=n_processes)
     print(f"Found {len(feature_mzs)} features.")
     del all_mzs, all_intensities
@@ -119,22 +142,29 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, n_processes):
                 for idx, intensities in chunk_results:
                     intensity_matrix[:, idx] = intensities
 
-    return feature_mzs, intensity_matrix
+    # Create MsiFeature objects
+    feature_ls = [MsiFeature(i, mz, None, None) for i, mz in enumerate(feature_mzs)]
+
+    # # Assign feature intensities
+    # for idx in range(len(feature_ls)):
+    #     feature_ls[idx].intensity_arr = intensity_matrix[idx, :]
+
+    return feature_ls, intensity_matrix
 
 
-def filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, coordinates, min_spatial_chaos, n_processes):
+def filter_features_by_spatial_chaos(feature_ls, intensity_matrix, coordinates,
+                                     min_feature_spatial_chaos, n_processes):
     """
     Filter features based on their spatial chaos score.
 
     Parameters:
     -----------
-    feature_mzs : numpy.ndarray
-        Array of m/z values for each feature
+    feature_ls : list of MsiFeature
     intensity_matrix : numpy.ndarray
         Matrix of intensities for each feature at each coordinate
     coordinates : list
         List of (x, y, z) coordinates
-    min_spatial_chaos : float
+    min_feature_spatial_chaos : float
         Minimum spatial chaos score to keep a feature
     n_processes : int, optional
         Number of processes to use for parallel processing
@@ -148,21 +178,21 @@ def filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, coordinates,
     """
 
     # Calculate spatial chaos for each feature
-    print(f"Calculating spatial chaos for {len(feature_mzs)} features...")
+    print(f"Calculating spatial chaos for {len(feature_ls)} features...")
 
     if n_processes == 1:
         all_results = []
         # Non-parallel processing
-        for idx in tqdm(range(len(feature_mzs)), desc="Calculating spatial chaos", unit="feature"):
+        for idx in tqdm(range(len(feature_ls)), desc="Calculating spatial chaos", unit="feature"):
             chaos = calc_spatial_chaos(intensity_matrix[idx], coordinates)
             all_results.append((idx, chaos))
     else:
         # Parallel processing
         args_list = [(idx, intensity_matrix[idx], coordinates)
-                     for idx in range(len(feature_mzs))]
+                     for idx in range(len(feature_ls))]
 
         # Split into chunks for better progress tracking
-        chunk_size = min(500, len(feature_mzs) // n_processes + 1)
+        chunk_size = min(500, len(feature_ls) // n_processes + 1)
         arg_chunks = chunk_list(args_list, chunk_size)
 
         with multiprocessing.Pool(processes=n_processes) as pool:
@@ -174,15 +204,22 @@ def filter_features_by_spatial_chaos(feature_mzs, intensity_matrix, coordinates,
             ))
             all_results = [item for sublist in chunk_results for item in sublist]
 
-    keep_features = [idx for idx, chaos in all_results if chaos > min_spatial_chaos]
-
     # Filter features based on spatial chaos
-    filtered_feature_mzs = feature_mzs[keep_features]
-    filtered_intensity_matrix = intensity_matrix[keep_features, :]
+    indices_to_keep = []
+    new_feature_ls = []
+    new_idx = 0
+    for idx, chaos in all_results:
+        if chaos > min_feature_spatial_chaos:
+            indices_to_keep.append(idx)
+            new_feature_ls.append(MsiFeature(new_idx, feature_ls[idx].mz, None, chaos))
+            new_idx += 1
 
-    print(f"Kept {len(filtered_feature_mzs)} out of {len(feature_mzs)} features after spatial chaos filtering.")
+    # Filter intensity matrix
+    filtered_intensity_matrix = intensity_matrix[indices_to_keep, :]
 
-    return filtered_feature_mzs, filtered_intensity_matrix
+    print(f"Kept {len(new_feature_ls)} out of {len(feature_ls)} features after spatial chaos filtering.")
+
+    return new_feature_ls, filtered_intensity_matrix
 
 
 def process_spatial_chaos_chunk(chunk_args):
@@ -239,8 +276,10 @@ def assign_spectrum_to_feature(args):
     return idx, feature_intensities
 
 
-def save_results(save_dir, mz_values, intensity_matrix):
-    np.save(os.path.join(save_dir, 'mz_values.npy'), mz_values)
+def save_results(save_dir, feature_ls, intensity_matrix):
+    """Save the results to the specified directory."""
+    with open(os.path.join(save_dir, 'features.pkl'), 'wb') as f:
+        pickle.dump(feature_ls, f)
     np.save(os.path.join(save_dir, 'intensity_matrix.npy'), intensity_matrix)
 
 
@@ -254,3 +293,11 @@ def determine_centroid(imzml_file):
                 break
 
     return centroid
+
+
+if __name__ == '__main__':
+    # Example usage
+    imzml_file = '/Users/shipei/Documents/projects/ms1_id/imaging/mouse_body/wb xenograft in situ metabolomics test - rms_corrected.imzML'
+
+    parser = imzml.ImzMLParser(imzml_file)
+    print(parser.polarity)

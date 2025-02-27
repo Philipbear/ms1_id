@@ -29,7 +29,7 @@ def validate_library_path(library_path):
 
 
 def ms1_id_annotation(ms2_spec_ls, library_ls, n_processes,
-                      mz_tol=0.05,
+                      library_search_mz_tol=0.05, ms1_ppm_tol=5.0,
                       score_cutoff=0.6, min_matched_peak=4, min_spec_usage=0.0,
                       ion_mode=None,
                       save_dir=None):
@@ -38,7 +38,8 @@ def ms1_id_annotation(ms2_spec_ls, library_ls, n_processes,
     :param ms2_spec_ls: a list of PseudoMS2-like object
     :param library_ls: list of paths to the indexed library
     :param n_processes: number of processes to use
-    :param mz_tol: mz tolerance in Da, for rev cos matching
+    :param library_search_mz_tol: mz tolerance in Da, for rev cos matching
+    :param ms1_ppm_tol: ppm tolerance for ms1 matching (precursor existence)
     :param score_cutoff: for rev cos
     :param min_matched_peak: for rev cos
     :param ion_mode: str, ion mode. If None, all ion modes are considered
@@ -64,7 +65,8 @@ def ms1_id_annotation(ms2_spec_ls, library_ls, n_processes,
     # perform revcos matching
     ms2_spec_ls = ms1_id_revcos_matching(ms2_spec_ls, library_ls,
                                          n_processes=n_processes,
-                                         mz_tol=mz_tol,
+                                         library_search_mz_tol=library_search_mz_tol,
+                                         ms1_ppm_tol=ms1_ppm_tol,
                                          ion_mode=ion_mode,
                                          score_cutoff=score_cutoff,
                                          min_matched_peak=min_matched_peak,
@@ -98,7 +100,7 @@ def _centroid_spectrum(spec):
 
 
 def ms1_id_revcos_matching(ms2_spec_ls, library_ls, n_processes,
-                           mz_tol=0.05,
+                           library_search_mz_tol=0.05, ms1_ppm_tol=5.0,
                            ion_mode=None,
                            score_cutoff=0.7,
                            min_matched_peak=3,
@@ -110,7 +112,8 @@ def ms1_id_revcos_matching(ms2_spec_ls, library_ls, n_processes,
     :param ms2_spec_ls: a list of PseudoMS2-like objects
     :param library_ls: path to the pickle file, indexed library
     :param n_processes: number of processes to use
-    :param mz_tol: m/z tolerance in Da, for open matching
+    :param library_search_mz_tol: mz tolerance in Da, for rev cos matching
+    :param ms1_ppm_tol: ppm tolerance for ms1 matching (precursor existence)
     :param ion_mode: str, ion mode
     :param score_cutoff: minimum score for matching
     :param min_matched_peak: minimum number of matched peaks
@@ -118,7 +121,7 @@ def ms1_id_revcos_matching(ms2_spec_ls, library_ls, n_processes,
     :param chunk_size: number of spectra to process in each parallel task
     :return: List of updated PseudoMS2-like objects
     """
-    mz_tol = min(mz_tol, 0.05)  # indexed library mz_tol is 0.05
+    library_search_mz_tol = min(library_search_mz_tol, 0.05)  # indexed library mz_tol is 0.05
 
     # Load all libraries
     search_engines = []
@@ -133,7 +136,8 @@ def ms1_id_revcos_matching(ms2_spec_ls, library_ls, n_processes,
     chunks = [ms2_spec_ls[i:i + chunk_size] for i in range(0, len(ms2_spec_ls), chunk_size)]
 
     # Prepare arguments for parallel processing
-    args_list = [(chunk, search_engines, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage)
+    args_list = [(chunk, search_engines, library_search_mz_tol, ms1_ppm_tol,
+                  ion_mode, score_cutoff, min_matched_peak, min_spec_usage)
                  for chunk in chunks]
 
     # Use multiprocessing to process chunks in parallel
@@ -145,7 +149,7 @@ def ms1_id_revcos_matching(ms2_spec_ls, library_ls, n_processes,
 
 
 def _process_chunk_multi_lib(args):
-    chunk, search_engines, mz_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage = args
+    chunk, search_engines, library_search_mz_tol, ms1_ppm_tol, ion_mode, score_cutoff, min_matched_peak, min_spec_usage = args
 
     for spec in chunk:
         for search_eng, db_name in search_engines:
@@ -157,12 +161,12 @@ def _process_chunk_multi_lib(args):
             matching_result = search_eng.search(
                 precursor_mz=2000.00,  # unused, open search
                 peaks=spec.centroided_peaks,
-                ms1_tolerance_in_da=mz_tol,
-                ms2_tolerance_in_da=mz_tol,
+                ms1_tolerance_in_da=library_search_mz_tol,
+                ms2_tolerance_in_da=library_search_mz_tol,
                 method="open",
                 precursor_ions_removal_da=0.5,
                 noise_threshold=0.0,
-                min_ms2_difference_in_da=mz_tol * 2.02,
+                min_ms2_difference_in_da=library_search_mz_tol * 2.02,
                 reverse=True
             )
 
@@ -185,7 +189,8 @@ def _process_chunk_multi_lib(args):
 
                 # precursor should be in the pseudo MS2 spectrum with intensity > 0
                 precursor_mz = matched.get('precursor_mz', 0)
-                if not any(np.isclose(nonzero_mzs, precursor_mz, atol=mz_tol)):
+                # mass diff between ref precursor and pseudo MS2 precursor (2 * mz_tol)
+                if not any(np.isclose(nonzero_mzs, precursor_mz, atol=ms1_ppm_tol * precursor_mz * 1e-6 * 2)):
                     continue
 
                 all_matches.append((idx, score_arr[idx], matched_peak_arr[idx], spec_usage_arr[idx]))

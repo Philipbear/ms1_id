@@ -142,11 +142,12 @@ def run_msi(args):
     ms1id_msi(
         file_dir=args.input_dir,
         library_path=library_paths,
+        polarity=args.mode,
         n_processes=args.n_cores,
         sn_factor=args.sn_factor,
         mz_ppm_tol=args.mz_ppm_tol,
-        min_spatial_chaos=args.min_spatial_chaos,
-        min_overlap=args.min_overlap,
+        min_feature_spatial_chaos=args.min_feature_spatial_chaos,
+        min_pixel_overlap=args.min_pixel_overlap,
         min_correlation=args.min_correlation,
         library_search_mztol=args.lib_search_mztol,
         score_cutoff=args.score_cutoff,
@@ -274,16 +275,18 @@ def main():
                         help='Input directory containing imzML & ibd files')
     msi_parser.add_argument('--libs', '-l', type=str, nargs='*', default=None,
                         help='One or more paths to library files (.pkl). Paths with spaces should be quoted.')
+    msi_parser.add_argument('--mode', '-m', type=str, default=None,
+                        help='Ion mode, "positive" or "negative" (default: None)')
     msi_parser.add_argument('--n_cores', type=int, default=None,
                         help='Number of cores to use (default: None, use all available cores)')
     msi_parser.add_argument('--sn_factor', type=float, default=3.0,
                         help='Signal-to-noise factor for noise removal (default: 3.0)')
     msi_parser.add_argument('--mz_ppm_tol', type=float, default=10.0,
                         help='m/z tolerance in ppm for feature detection (default: 10.0)')
-    msi_parser.add_argument('--min_spatial_chaos', type=float, default=0.10,
+    msi_parser.add_argument('--min_feature_spatial_chaos', type=float, default=0.10,
                         help='Minimum spatial chaos for feature detection (default: 0.10)')
-    msi_parser.add_argument('--min_overlap', type=int, default=30,
-                        help='Minimum pixel overlap between ion images to be considered as positively correlated (default: 30)')
+    msi_parser.add_argument('--min_pixel_overlap', type=int, default=50,
+                        help='Minimum pixel overlap between ion images to be considered as positively correlated (default: 50)')
     msi_parser.add_argument('--min_correlation', type=float, default=0.85,
                         help='Minimum correlation between spectra (default: 0.85)')
     msi_parser.add_argument('--lib_search_mztol', type=float, default=0.05,

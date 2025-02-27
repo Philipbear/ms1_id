@@ -10,7 +10,7 @@ from ms1_id.msi.utils_imaging import PseudoMS2
 from ms1_id.msi.export_msi import write_pseudoms2_to_mgf
 
 
-def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
+def generate_pseudo_ms2(feature_ls, intensity_matrix, correlation_matrix,
                         n_processes=None,
                         min_cluster_size=6,
                         min_cor=0.90,
@@ -28,7 +28,7 @@ def generate_pseudo_ms2(mz_values, intensity_matrix, correlation_matrix,
                 return pickle.load(f)
 
     # Perform clustering
-    pseudo_ms2_spectra = _perform_clustering(mz_values, correlation_matrix,
+    pseudo_ms2_spectra = _perform_clustering(feature_ls, correlation_matrix,
                                              n_processes=n_processes,
                                              min_cor=min_cor,
                                              min_cluster_size=min_cluster_size,
@@ -79,13 +79,15 @@ def _process_chunk(args):
     return chunk_results
 
 
-def _perform_clustering(mz_values, correlation_matrix, n_processes=None, min_cor=0.90,
+def _perform_clustering(feature_ls, correlation_matrix, n_processes=None, min_cor=0.90,
                         min_cluster_size=3, chunk_size=800):
     """
     Perform clustering on m/z values based on correlation scores using chunked multiprocessing.
     """
     if not isinstance(correlation_matrix, csr_matrix):
         correlation_matrix = csr_matrix(correlation_matrix)
+
+    mz_values = np.array([feature.mz for feature in feature_ls])
 
     # Prepare chunks
     n_chunks = (len(mz_values) + chunk_size - 1) // chunk_size
