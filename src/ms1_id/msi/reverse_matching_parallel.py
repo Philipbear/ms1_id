@@ -95,6 +95,9 @@ def centroid_all_spectra(ms2_spec_ls, n_processes):
 def _centroid_spectrum(spec):
     peaks = list(zip(spec.mzs, spec.intensities))
     peaks = np.asarray(peaks, dtype=np.float32, order="C")
+
+    peaks = peaks[peaks[:, 1] > 0]  # remove zero intensity peaks
+
     spec.centroided_peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
     return spec
 

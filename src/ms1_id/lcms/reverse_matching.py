@@ -152,6 +152,7 @@ def ms1_id_revcos_matching(ms1_spec_ls, library_ls, mz_tol=0.02,
     for spec in ms1_spec_ls:
         peaks = list(zip(spec.mzs, spec.intensities))
         peaks = np.asarray(peaks, dtype=np.float32, order="C")
+        peaks = peaks[peaks[:, 1] > 0]  # remove zero intensity peaks
         peaks = centroid_spectrum_for_search(peaks, width_da=0.05 * 2.015)
         spec.centroided_peaks = peaks
 

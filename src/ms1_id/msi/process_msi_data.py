@@ -14,6 +14,8 @@ def process_ms_imaging_data(imzml_file, ibd_file,
                             polarity=None,
                             mz_ppm_tol=10.0,
                             sn_factor=5.0,
+                            mass_calibration_mz=None,
+                            max_allowed_mz_diff_da=0.2,
                             min_feature_pixel_count=50,
                             min_feature_spatial_chaos=0.01,
                             n_processes=None,
@@ -36,6 +38,10 @@ def process_ms_imaging_data(imzml_file, ibd_file,
 
     # Get features (list of MsiFeature)
     feature_ls, intensity_matrix = process_spectra(parser, mz_ppm_tol, sn_factor, centroided, min_feature_pixel_count, n_processes)
+
+    # Mass calibration
+    feature_ls, intensity_matrix = mass_calibration(feature_ls, intensity_matrix,
+                                                    mass_calibration_mz, max_allowed_mz_diff_da)
 
     # Filter features based on spatial chaos
     feature_ls, intensity_matrix = filter_features_by_spatial_chaos(feature_ls, intensity_matrix, parser.coordinates,
@@ -65,9 +71,9 @@ def determine_file_polarity(parser, file_polarity):
 
 
 def check_existing_results(save_dir):
-    mz_values_path = os.path.join(save_dir, 'mz_values.npy')
+    feature_mz_values_path = os.path.join(save_dir, 'features.pkl')
     intensity_matrix_path = os.path.join(save_dir, 'intensity_matrix.npy')
-    return all(os.path.exists(path) for path in [mz_values_path, intensity_matrix_path])
+    return all(os.path.exists(path) for path in [feature_mz_values_path, intensity_matrix_path])
 
 
 def load_existing_results(save_dir):
@@ -150,6 +156,75 @@ def process_spectra(parser, mz_ppm_tol, sn_factor, centroided, min_feature_pixel
     #     feature_ls[idx].intensity_arr = intensity_matrix[idx, :]
 
     return feature_ls, intensity_matrix
+
+
+def mass_calibration(feature_ls, intensity_matrix, mass_calibration_mz, max_allowed_mz_diff_da):
+    """
+    Apply one-point mass calibration to the feature m/z values using an additive offset.
+
+    Parameters:
+    -----------
+    feature_ls : list of MsiFeature
+        List of features to calibrate
+    intensity_matrix : numpy.ndarray
+        Matrix of intensities for each feature
+    mass_calibration_mz : float or None
+        Theoretical m/z value of a known peak for calibration
+    max_allowed_mz_diff_da : float
+        Maximum allowed mass difference between the theoretical and measured m/z values
+
+    Returns:
+    --------
+    list of MsiFeature
+        Calibrated feature list
+    numpy.ndarray
+        Intensity matrix (unchanged)
+    """
+    if mass_calibration_mz is None:
+        return feature_ls, intensity_matrix
+
+    if mass_calibration_mz < 100:
+        print("Mass calibration m/z value is too low (<100), skipping mass calibration...")
+        return feature_ls, intensity_matrix
+
+    print(f"Applying one-point mass calibration using m/z {mass_calibration_mz}...")
+
+    # Get all feature m/z values
+    mz_values = np.array([feature.mz for feature in feature_ls])
+
+    # Find the closest feature to the calibration point
+    closest_idx = np.argmin(np.abs(mz_values - mass_calibration_mz))
+    closest_mz = mz_values[closest_idx]
+    mass_diff = np.abs(closest_mz - mass_calibration_mz)
+
+    print(f"Closest feature found at m/z {closest_mz:.6f}, difference: {mass_diff:.6f} Da")
+
+    # Only proceed if the closest peak is within max_allowed_mz_diff_da
+    if mass_diff > max_allowed_mz_diff_da:
+        print(f"Mass difference ({mass_diff:.6f} Da) is > {max_allowed_mz_diff_da:.2f} Da, skipping calibration...")
+        return feature_ls, intensity_matrix
+
+    # Calculate mass offset (difference between theoretical and measured m/z)
+    mass_offset = mass_calibration_mz - closest_mz
+
+    print(f"Applying mass offset: {mass_offset:.6f} Da")
+
+    # Apply calibration to all features
+    calibrated_feature_ls = []
+    for i, feature in enumerate(feature_ls):
+        # Create a new calibrated feature
+        calibrated_mz = feature.mz + mass_offset
+        calibrated_feature = MsiFeature(
+            feature.idx,
+            calibrated_mz,
+            feature.intensity_arr,
+            feature.spatial_chaos
+        )
+        calibrated_feature_ls.append(calibrated_feature)
+
+    print(f"Mass calibration complete. Example: m/z {feature_ls[0].mz:.6f} → {calibrated_feature_ls[0].mz:.6f}")
+
+    return calibrated_feature_ls, intensity_matrix
 
 
 def filter_features_by_spatial_chaos(feature_ls, intensity_matrix, coordinates,

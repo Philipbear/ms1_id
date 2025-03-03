@@ -1,5 +1,6 @@
 import os
 import argparse
+import time
 from ms1_id.lcms.reverse_matching import prepare_ms2_lib
 from ms1_id.lcms.main_lcms import ms1id_batch_mode as ms1id_lcms
 from ms1_id.msi.main_msi import ms1id_single_file_batch as ms1id_msi
@@ -145,6 +146,8 @@ def run_msi(args):
         polarity=args.mode,
         n_processes=args.n_cores,
         sn_factor=args.sn_factor,
+        mass_calibration_mz=args.mass_calibration_mz,
+        max_allowed_mz_diff_da=args.max_allowed_mz_diff_da,
         mz_ppm_tol=args.mz_ppm_tol,
         min_feature_spatial_chaos=args.min_feature_spatial_chaos,
         min_pixel_overlap=args.min_pixel_overlap,
@@ -281,8 +284,12 @@ def main():
                         help='Number of cores to use (default: None, use all available cores)')
     msi_parser.add_argument('--sn_factor', type=float, default=3.0,
                         help='Signal-to-noise factor for noise removal (default: 3.0)')
-    msi_parser.add_argument('--mz_ppm_tol', type=float, default=10.0,
-                        help='m/z tolerance in ppm for feature detection (default: 10.0)')
+    msi_parser.add_argument('--mass_calibration_mz', type=float, default=None,
+                        help='Mass calibration m/z value (default: None)')
+    msi_parser.add_argument('--max_allowed_mz_diff_da', type=float, default=0.2,
+                        help='Maximum allowed mass difference in Da for mass calibration (default: 0.2)')
+    msi_parser.add_argument('--mz_ppm_tol', type=float, default=5.0,
+                        help='m/z tolerance in ppm for feature detection (default: 5.0)')
     msi_parser.add_argument('--min_feature_spatial_chaos', type=float, default=0.10,
                         help='Minimum spatial chaos for feature detection (default: 0.10)')
     msi_parser.add_argument('--min_pixel_overlap', type=int, default=50,
@@ -301,6 +308,7 @@ def main():
     args = parser.parse_args()
 
     # Execute appropriate function based on subcommand
+    start_time = time.time()
     if args.command == 'index':
         index_library(args)
     elif args.command == 'annotate':
@@ -311,6 +319,11 @@ def main():
         run_msi(args)
     else:
         parser.print_help()
+        return
+
+    end_time = time.time()
+    exec_time_min = (end_time - start_time) / 60
+    print(f"Execution time: {exec_time_min:.2f} minutes")
 
 
 if __name__ == "__main__":

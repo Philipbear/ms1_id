@@ -35,7 +35,7 @@ Note: Indexed libraries are needed for the workflow. You can download the indexe
 wget https://github.com/Philipbear/ms1_id/releases/latest/download/gnps.zip
 unzip gnps.zip -d db
 
-# For MS imaging data
+# For MS imaging data (fragments with mz < 100 are removed, as they are not usually included in MS imaging data)
 wget https://github.com/Philipbear/ms1_id/releases/latest/download/gnps_minmz100.zip
 unzip gnps_minmz100.zip -d db
 ```
@@ -67,7 +67,7 @@ For more options, run:
   ```bash
   ms1_id lcms --help
   ```
-Expected runtime is <5 min for a single LC-MS file. If it takes longer than 10 min, please increase the `--mass_detect_int_tol` parameter (default: 2e5 for Orbitraps, 5e2 for QTOFs).
+Expected runtime is ~5-7 min for a single LC-MS file. If it takes longer than 10 min, please increase the `--mass_detect_int_tol` parameter (default: 2e5 for Orbitraps, 5e2 for QTOFs).
 
 ---------
 
@@ -83,7 +83,7 @@ For more options, run:
   ```bash
   ms1_id msi --help
   ```
-Expected runtime is ~2-10 min for a single MS imaging dataset if at least 12 cores are available.
+Expected runtime is ~3-20 min for a single MS imaging dataset if at least 12 cores are available.
 
 ---------
 
@@ -110,28 +110,31 @@ bash run.sh
 
 
 ## Data
-- GNPS MS/MS library
-  - [ALL_GNPS_NO_PROPOGATED.msp](https://external.gnps2.org/gnpslibrary), downloaded on July 17, 2024
-  - Indexed version [available here](https://github.com/Philipbear/ms1_id/releases)
-- LC-MS data
-  - Pooled chemical standards ([GNPS/MassIVE MSV000095789](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095789))
-  - NIST human feces (Q Exactive) ([GNPS/MassIVE MSV000095787](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095787))
-  - IBD dataset (Q Exactive) ([original paper](https://www.nature.com/articles/s41586-019-1237-9), [PR000639 data](https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=PR000639))
-  - Mouse feces (lipidomics, Q-TOF) ([GNPS/MassIVE MSV000095868](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095868))
-  - Komagataella phaffii (yeast, Q Exactive) ([GNPS/MassIVE MSV000090053](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090053))
-  - Bacterial isolates (Q Exactive) ([GNPS/MassIVE MSV000085024](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000085024))
-  - Environmental fungal strains (Q Exactive) ([GNPS/MassIVE MSV000090000](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090000))
-  - Isolated bacteria (Lactobacillus paracasei, Bifidobacterium longum) (TripleTOF) ([GNPS/MassIVE MSV000090025](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090025))
-  - Sea water DOM (Q Exactive) ([GNPS/MassIVE MSV000094338](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000094338))
-  - Foam DOM (Q Exactive) ([GNPS/MassIVE MSV000083888](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083888))
-  - Ocean DOM (Q Exactive) ([GNPS/MassIVE MSV000083632](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083632))
-  - Plant extracts (Q-TOF) ([GNPS/MassIVE MSV000090975](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090975))
-  - 32 plant species (Q Exactive) ([GNPS/MassIVE MSV000090968](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090968))
-- MS imaging data
-  - Mouse liver with spotted standards (MALDI-Orbitrap) ([METASPACE dataset](https://metaspace2020.org/dataset/2020-12-07_03h16m14s))
-  - Mouse brain (MALDI-FTICR) ([original paper](https://www.nature.com/articles/nmeth.4072), [data](https://www.ebi.ac.uk/metabolights/editor/MTBLS313))
-  - Mouse body (MALDI-FTICR) ([METASPACE dataset](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s))
-  - Hepatocytes (MALDI-Orbitrap) ([METASPACE dataset](https://metaspace2020.eu/project/Rappez_2021_SpaceM))
+| Data type  |                  Dataset                  |                                                  Link                                                   |   Instrument   |
+|:----------:|:-----------------------------------------:|:-------------------------------------------------------------------------------------------------------:|:--------------:|
+|   LC-MS    |         Pooled chemical standards         |              [MSV000095789](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095789)               |   Q Exactive   |
+|   LC-MS    |             NIST human feces              |              [MSV000095787](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095787)               |   Q Exactive   |
+|   LC-MS    |                IBD dataset                | [PR000639](https://www.metabolomicsworkbench.org/data/DRCCMetadata.php?Mode=Project&ProjectID=PR000639) |   Q Exactive   |
+|   LC-MS    |         Mouse feces (lipidomics)          |              [MSV000095868](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000095868)               |     Q-TOF      |
+|   LC-MS    |       Komagataella phaffii (yeast)        |              [MSV000090053](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090053)               |   Q Exactive   |
+|   LC-MS    |            Bacterial isolates             |              [MSV000085024](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000085024)               |   Q Exactive   |
+|   LC-MS    | Odontotaenius disjunctus microbe isolates |              [MSV000090030](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090030)               |   Q Exactive   |
+|   LC-MS    |       Environmental fungal strains        |              [MSV000090000](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090000)               |   Q Exactive   |
+|   LC-MS    |               Sea water DOM               |              [MSV000094338](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000094338)               |   Q Exactive   |
+|   LC-MS    |                 Foam DOM                  |              [MSV000083888](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083888)               |   Q Exactive   |
+|   LC-MS    |                 Ocean DOM                 |              [MSV000083632](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083632)               |   Q Exactive   |
+|   LC-MS    |              Plant extracts               |              [MSV000090975](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090975)               |   Q Exactive   |
+|   LC-MS    |             32 plant species              |              [MSV000090968](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090968)               |   Q Exactive   |
+| MS imaging |    Mouse liver with spotted standards     |                   [METASPACE](https://metaspace2020.org/dataset/2020-12-07_03h16m14s)                   | MALDI-Orbitrap |
+| MS imaging |                Mouse brain                |                     [MTBLS313](https://www.ebi.ac.uk/metabolights/editor/MTBLS313)                      |  MALDI-FTICR   |
+| MS imaging |                Mouse body                 |                   [METASPACE](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s)                    |  MALDI-FTICR   |
+| MS imaging |                Hepatocytes                |                [METASPACE project](https://metaspace2020.eu/project/Rappez_2021_SpaceM)                 | MALDI-Orbitrap |
+| MS imaging |         Populus trichocarpa root          |                   [METASPACE](https://metaspace2020.org/dataset/2025-01-07_19h33m53s)                   | MALDI-timsTOF  |
+| MS imaging |                Human liver                |                   [METASPACE](https://metaspace2020.org/dataset/2017-09-07_15h14m40s)                   |   MALDI-TOF    |
+| MS imaging |               Human kidney                |                   [METASPACE](https://metaspace2020.org/dataset/2024-09-19_00h01m48s)                   | MALDI-timsTOF  |
+| MS imaging |               Mouse kidney                |                   [METASPACE](https://metaspace2020.org/dataset/2019-03-28_18h03m06s)                   |  MALDI-FTICR   |
+| MS imaging |             Mouse brain (TOF)             |                   [METASPACE](https://metaspace2020.org/dataset/2024-12-21_10h17m55s)                   |   MALDI-TOF    |
+
 
 
 ## License

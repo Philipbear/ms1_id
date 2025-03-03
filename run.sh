@@ -20,7 +20,13 @@ mirror . ./MSV000095868/data
 ms1_id lcms --project_dir MSV000095868 --sample_dir data --ms1_id_libs db/gnps.pkl db/gnps_k10.pkl --ms2_id_lib db/gnps.pkl
 
 ##################
-## for MS imaging data, use the indexed libraries with m/z > 100
-#wget https://github.com/Philipbear/ms1_id/releases/latest/download/gnps_minmz100.zip
-#unzip gnps_minmz100.zip -d db
-#ms1_id msi --input_dir msi_dir --libs db/gnps_minmz100.pkl db/gnps_minmz100_k10.pkl
+## MS imaging data
+# ms1_id msi -i mouse_body --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 5.0 -m pos
+# ms1_id msi -i mouse_brain --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 3.0 -m pos
+# ms1_id msi -i plant_root --libs ../data/gnps.pkl ../data/gnps_k10.pkl --sn_factor 0.0 -m neg --mz_ppm_tol 10.0
+# ms1_id msi -i human_kidney --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m pos --mz_ppm_tol 10.0
+# ms1_id msi -i human_liver --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m pos --mz_ppm_tol 10.0
+# ms1_id msi -i hepatocytes --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m pos
+# ms1_id msi -i hela --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m neg
+# ms1_id msi -i mouse_kidney --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 10.0 -m pos
+# ms1_id msi -i mouse_brain_malditof --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 3.0 -m pos --mz_ppm_tol 50.0
