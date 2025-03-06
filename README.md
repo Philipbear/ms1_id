@@ -1,4 +1,4 @@
-# ms1_id
+# Structure annotation of full-scan MS data for LC-MS and MS imaging
 [![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-orange?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
 [![PyPI](https://img.shields.io/pypi/v/ms1_id?color=green)](https://pypi.org/project/ms1_id/)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
