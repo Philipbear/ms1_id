@@ -21,12 +21,13 @@ ms1_id lcms --project_dir MSV000095868 --sample_dir data --ms1_id_libs db/gnps.p
 
 ##################
 ## MS imaging data
+# ms1_id msi -i spotted_stds --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl -m neg
 # ms1_id msi -i mouse_body --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 5.0 -m pos
 # ms1_id msi -i mouse_brain --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 3.0 -m pos
-# ms1_id msi -i plant_root --libs ../data/gnps.pkl ../data/gnps_k10.pkl --sn_factor 0.0 -m neg --mz_ppm_tol 10.0
-# ms1_id msi -i human_kidney --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m pos --mz_ppm_tol 10.0
+# ms1_id msi -i plant_root --libs ../data/gnps.pkl ../data/gnps_k10.pkl --min_pixel_overlap 10 --sn_factor 0.0 -m neg --mz_ppm_tol 10.0
 # ms1_id msi -i human_liver --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m pos --mz_ppm_tol 10.0
 # ms1_id msi -i hepatocytes --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m pos
 # ms1_id msi -i hela --libs ../data/gnps_minmz200.pkl ../data/gnps_minmz200_k10.pkl --sn_factor 3.0 -m neg
 # ms1_id msi -i mouse_kidney --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 10.0 -m pos
 # ms1_id msi -i mouse_brain_malditof --libs ../data/gnps_minmz100.pkl ../data/gnps_minmz100_k10.pkl --sn_factor 3.0 -m pos --mz_ppm_tol 50.0
+# ms1_id msi -i human_kidney --libs ../data/gnps_minmz300.pkl ../data/gnps_minmz300_k10.pkl --sn_factor 3.0 -m pos  --mz_ppm_tol 10
