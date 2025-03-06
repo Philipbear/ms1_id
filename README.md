@@ -106,7 +106,7 @@ bash run.sh
 
 
 ## Citation
-> Shipei Xing, Vincent Charron-Lamoureux, Yasin El Abiead, Huaxu Yu, Oliver Fiehn, Theodore Alexandrov, Pieter C. Dorrestein. Annotating full-scan MS data using tandem MS libraries. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618269v1).
+> Shipei Xing, Vincent Charron-Lamoureux, Måns Ekelöf, Yasin El Abiead, Huaxu Yu, Oliver Fiehn, Theodore Alexandrov, Pieter C. Dorrestein. Structural annotation of full-scan MS data: A unified solution for LC-MS and MS imaging analyses. [bioRxiv 2024](https://www.biorxiv.org/content/10.1101/2024.10.14.618269v1).
 
 
 ## Data
