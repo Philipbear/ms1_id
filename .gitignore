@@ -167,6 +167,10 @@ cython_debug/
 /repo/
 /src/deprecated/
 /fig/
+/zenodo/
+
+# OS specific
+.DS_Store
 
 *.mgf
 *.tsv
@@ -174,3 +178,5 @@ cython_debug/
 *.pkl
 *.svg
 *.pptx
+*.pdf
+*.docx

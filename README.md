@@ -125,16 +125,16 @@ bash run.sh
 |   LC-MS    |                    Ocean DOM                     |              [MSV000083632](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000083632)               |   Q Exactive   |
 |   LC-MS    |                  Plant extracts                  |              [MSV000090975](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090975)               |   Q Exactive   |
 |   LC-MS    |                 32 plant species                 |              [MSV000090968](https://massive.ucsd.edu/ProteoSAFe/QueryMSV?id=MSV000090968)               |   Q Exactive   |
-| MS imaging |        Mouse liver with spotted standards        |                   [METASPACE](https://metaspace2020.org/dataset/2020-12-07_03h16m14s)                   | MALDI-Orbitrap |
-| MS imaging |                   Mouse brain                    |                     [MTBLS313](https://www.ebi.ac.uk/metabolights/editor/MTBLS313)                      |  MALDI-FTICR   |
-| MS imaging |                    Mouse body                    |                   [METASPACE](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s)                    |  MALDI-FTICR   |
-| MS imaging |                Human hepatocytes                 |                [METASPACE project](https://metaspace2020.eu/project/Rappez_2021_SpaceM)                 | MALDI-Orbitrap |
-| MS imaging |                   HeLa_NIH3T3                    |                [METASPACE project](https://metaspace2020.eu/project/Rappez_2021_SpaceM)                 | MALDI-Orbitrap |
-| MS imaging |             Populus trichocarpa root             |                   [METASPACE](https://metaspace2020.org/dataset/2025-01-07_19h33m53s)                   | MALDI-timsTOF  |
-| MS imaging |                Human liver tissue                |                   [METASPACE](https://metaspace2020.org/dataset/2017-11-28_11h28m57s)                   |   MALDI-TOF    |
-| MS imaging |                   Human kidney                   |                   [METASPACE](https://metaspace2020.org/dataset/2024-09-19_00h01m48s)                   | MALDI-timsTOF  |
-| MS imaging |                   Mouse kidney                   |                   [METASPACE](https://metaspace2020.org/dataset/2019-03-28_18h03m06s)                   |  MALDI-FTICR   |
-| MS imaging |                Mouse brain (TOF)                 |                   [METASPACE](https://metaspace2020.org/dataset/2024-12-21_10h17m55s)                   |   MALDI-TOF    |
+| Imaging MS |        Mouse liver with spotted standards        |                   [METASPACE](https://metaspace2020.org/dataset/2020-12-07_03h16m14s)                   | MALDI-Orbitrap |
+| Imaging MS |                   Mouse brain                    |                     [MTBLS313](https://www.ebi.ac.uk/metabolights/editor/MTBLS313)                      |  MALDI-FTICR   |
+| Imaging MS |                    Mouse body                    |                   [METASPACE](https://metaspace2020.eu/dataset/2022-07-08_20h45m00s)                    |  MALDI-FTICR   |
+| Imaging MS |                Human hepatocytes                 |                [METASPACE project](https://metaspace2020.eu/project/Rappez_2021_SpaceM)                 | MALDI-Orbitrap |
+| Imaging MS |                   HeLa_NIH3T3                    |                [METASPACE project](https://metaspace2020.eu/project/Rappez_2021_SpaceM)                 | MALDI-Orbitrap |
+| Imaging MS |             Populus trichocarpa root             |                   [METASPACE](https://metaspace2020.org/dataset/2025-01-07_19h33m53s)                   | MALDI-timsTOF  |
+| Imaging MS |                Human liver tissue                |                   [METASPACE](https://metaspace2020.org/dataset/2017-11-28_11h28m57s)                   |   MALDI-TOF    |
+| Imaging MS |                   Human kidney                   |                   [METASPACE](https://metaspace2020.org/dataset/2024-09-19_00h01m48s)                   | MALDI-timsTOF  |
+| Imaging MS |                   Mouse kidney                   |                   [METASPACE](https://metaspace2020.org/dataset/2019-03-28_18h03m06s)                   |  MALDI-FTICR   |
+| Imaging MS |                Mouse brain (TOF)                 |                   [METASPACE](https://metaspace2020.org/dataset/2024-12-21_10h17m55s)                   |   MALDI-TOF    |
 
 
 
