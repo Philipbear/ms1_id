@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
 
-Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in/post-source fragments. 
+Full-scan MS data from both LC-MS and imaging MS capture multiple ion forms, including their in/post-source fragments. 
 Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **imaging MS** by matching against MS/MS spectral libraries.
 
 `ms1_id` is a Python package that annotates full-scan MS data using tandem MS libraries, specifically:
