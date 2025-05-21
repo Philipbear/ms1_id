@@ -167,3 +167,10 @@ cython_debug/
 /repo/
 /src/deprecated/
 /fig/
+
+*.mgf
+*.tsv
+*.csv
+*.pkl
+*.svg
+*.pptx

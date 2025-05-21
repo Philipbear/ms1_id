@@ -1,16 +1,16 @@
-# Structure annotation of full-scan MS data for LC-MS and MS imaging
+# Structure annotation of full-scan MS data for LC-MS and imaging MS
 [![Developer](https://img.shields.io/badge/Developer-Shipei_Xing-orange?logo=github&logoColor=white)](https://scholar.google.ca/citations?user=en0zumcAAAAJ&hl=en)
 [![PyPI](https://img.shields.io/pypi/v/ms1_id?color=green)](https://pypi.org/project/ms1_id/)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg?style=flat&logo=apache)
 ![Python](https://img.shields.io/badge/Python-3.9+-green.svg?style=flat&logo=python&logoColor=lightblue)
 
 Full-scan MS data from both LC-MS and MS imaging capture multiple ion forms, including their in/post-source fragments. 
-Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **MS imaging** by matching against MS/MS spectral libraries.
+Here we leverage such fragments to structurally annotate full-scan data from **LC-MS** or **imaging MS** by matching against MS/MS spectral libraries.
 
 `ms1_id` is a Python package that annotates full-scan MS data using tandem MS libraries, specifically:
 - annotate pseudo MS/MS spectra: **mgf** files
 - annotate LC-MS data: **mzML** or **mzXML** files
-- annotate MS imaging data: **imzML** and **ibd** files
+- annotate imaging MS data: **imzML** files
 - build indexed MS/MS libraries from **mgf** or **msp** files (see [Flash entropy](https://github.com/YuanyueLi/FlashEntropySearch) for more details)
 
 #### Workflow
